@@ -11,7 +11,7 @@ class Policy:
     allowed_merchants: Set[str]
     allowed_purposes: Set[str]
     allowed_actions: Set[str]
-    allowed_destinations: Set[str] | None = None
+    allowed_destinations: Optional[Set[str]] = None
     daily_limit: Optional[float] = None
 
 
