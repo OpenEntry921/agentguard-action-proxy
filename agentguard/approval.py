@@ -13,3 +13,6 @@ class ApprovalStore:
 
     def get(self, action_id: str) -> Optional[str]:
         return self._decisions.get(action_id)
+
+    def clear(self) -> None:
+        self._decisions.clear()

@@ -109,6 +109,27 @@ def get_audit() -> list[dict[str, Any]]:
     return audit.list()
 
 
+@app.post("/demo/reset")
+def reset_demo() -> dict[str, Any]:
+    audit.clear()
+    approvals.clear()
+    tokens.clear()
+    previews.clear()
+    attempt_counter.clear()
+    return {
+        "status": "reset",
+        "message": "새 데모 세션 초기화됨",
+        "cleared": [
+            "audit_timeline",
+            "approval_workflow_state",
+            "pending_actions",
+            "execution_result",
+            "issued_execution_tokens",
+            "current_scenario_state",
+        ],
+    }
+
+
 @app.get("/demo", response_class=HTMLResponse)
 def demo() -> str:
     return Path("agentguard/demo/demo.html").read_text(encoding="utf-8")
