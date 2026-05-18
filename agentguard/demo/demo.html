@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AgentGuard | Cloud RBI Runtime Governance Demo</title>
+  <title>AgentGuard | AI 실행행위 통제 보안 콘솔 데모</title>
   <style>
     :root {
       --bg:#f3f6fb; --panel:#ffffff; --line:#dbe3ef; --text:#0f172a; --muted:#64748b;
@@ -38,44 +38,44 @@
 <body>
 <div class="container">
   <section class="hero">
-    <h1>Cloud RBI Console + AI Action Governance Layer (Simulated)</h1>
-    <p><b>Traditional browser security verifies browser safety.</b> AgentGuard verifies AI execution safety inside the browser session.</p>
-    <p>RBI secures the browser environment. AgentGuard secures AI execution inside that environment.</p>
+    <h1>AgentGuard AI 실행 거버넌스 보안 콘솔 (시뮬레이션)</h1>
+    <p><b>기존 브라우저 보안은 접속 채널을 보호합니다.</b> AgentGuard는 브라우저 세션 내부에서 AI가 수행하는 실행행위를 정책 기반으로 통제합니다.</p>
+    <p>Cloud RBI가 브라우저 환경을 격리하고, AgentGuard Runtime Governance가 AI 실행 리스크를 실시간으로 차단·승인합니다.</p>
   </section>
 
   <section class="grid">
-    <div class="card"><div class="k">Environment</div><div class="v">Cloud Remote Browser Session (simulated)</div></div>
-    <div class="card"><div class="k">Session Isolation</div><div class="v">Active</div></div>
-    <div class="card"><div class="k">AI Browser Agent</div><div class="v">Connected</div></div>
-    <div class="card"><div class="k">AgentGuard Runtime Governance</div><div class="v">Enabled</div></div>
+    <div class="card"><div class="k">실행 환경</div><div class="v">클라우드 격리 브라우저 세션 (시뮬레이션)</div></div>
+    <div class="card"><div class="k">세션 격리 상태</div><div class="v">활성화</div></div>
+    <div class="card"><div class="k">AI 브라우저 에이전트</div><div class="v">연결됨</div></div>
+    <div class="card"><div class="k">AgentGuard 실행 거버넌스</div><div class="v">활성화</div></div>
   </section>
 
   <section class="main">
     <div class="panel">
-      <h2>Browser Scenario</h2>
-      <p class="kv">Scenario: AI Browser Agent attempts to optimize Meta Ads campaign and submit a budget increase.</p>
+      <h2>시나리오 실행 화면</h2>
+      <p class="kv">시나리오: AI 브라우저 에이전트가 Meta Ads 캠페인 최적화 과정에서 비정상 예산 증액을 시도합니다.</p>
       <div class="controls">
-        <select id="scenario"><option value="C">Meta Ads abnormal budget increase (500,000 → 50,000,000 KRW)</option></select>
-        <button onclick="loadScenario()">Load Scenario</button>
-        <button class="primary" onclick="preview()">1) Intercept & Analyze</button>
-        <button onclick="approve()">Approve</button>
-        <button onclick="deny()">Deny</button>
-        <button onclick="issueToken()">Issue Token</button>
-        <button class="primary" onclick="executeAction()">Execute</button>
+        <select id="scenario"><option value="C">시나리오 C: 비정상 광고 예산 증액 시도 (500,000 → 50,000,000 KRW)</option></select>
+        <button onclick="loadScenario()">시나리오 불러오기</button>
+        <button class="primary" onclick="preview()">1) 실행 가로채기 및 위험 분석</button>
+        <button onclick="approve()">승인</button>
+        <button onclick="deny()">차단</button>
+        <button onclick="issueToken()">실행 토큰 발급</button>
+        <button class="primary" onclick="executeAction()">실행</button>
       </div>
-      <div id="workflow" class="status info">Workflow status: Waiting for interception.</div>
+      <div id="workflow" class="status info">워크플로우 상태: 실행 요청 대기 중</div>
       <div id="riskPanel" style="margin-top:12px"></div>
-      <h3>Action Payload</h3>
+      <h3>실행 요청 정보</h3>
       <pre id="req" class="raw"></pre>
-      <h3>Execution Result</h3>
+      <h3>실행 결과</h3>
       <pre id="exec" class="raw"></pre>
     </div>
 
     <div class="panel">
-      <h2>Approval Workflow + Audit Timeline</h2>
+      <h2>승인 워크플로우 + 실행 감사 이력</h2>
       <div id="approvalPanel"></div>
       <div class="timeline" id="timeline"></div>
-      <h3>Raw Audit Events</h3>
+      <h3>원본 Audit 이벤트</h3>
       <pre id="audit" class="raw"></pre>
     </div>
   </section>
@@ -92,57 +92,61 @@ function scenarioMetaAds(){
     context:{environment:'cloud_rbi_simulated', flow:'ad_optimization'}, requested_at:new Date().toISOString()
   };
 }
-function loadScenario(){ req = scenarioMetaAds(); document.getElementById('req').textContent = JSON.stringify(req,null,2); setWorkflow('pending approval','info'); renderApproval(); }
-function setWorkflow(text, cls){ document.getElementById('workflow').className='status '+cls; document.getElementById('workflow').textContent='Workflow status: '+text; }
+function loadScenario(){ req = scenarioMetaAds(); document.getElementById('req').textContent = JSON.stringify(req,null,2); setWorkflow('관리자 승인 대기 상태로 진입','info'); renderApproval(); }
+function setWorkflow(text, cls){ document.getElementById('workflow').className='status '+cls; document.getElementById('workflow').textContent='워크플로우 상태: '+text; }
 
 async function preview(){
   const r = await fetch('/actions/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)});
   previewData = await r.json();
-  renderRisk(previewData); setWorkflow('Action intercepted. Risk analysis completed. Human approval required.','warn');
+  renderRisk(previewData); setWorkflow('AI 실행행위 감지 및 위험 분석 완료. 관리자 승인 필요.','warn');
   await refreshAudit(); renderApproval();
 }
-async function approve(){ await fetch(`/actions/${req.action_id}/approve`,{method:'POST'}); setWorkflow('Approved by administrator. Execution can proceed.','good'); await refreshAudit(); renderApproval(); }
-async function deny(){ await fetch(`/actions/${req.action_id}/deny`,{method:'POST'}); setWorkflow('Execution denied. Blocked before browser submit.','bad'); await refreshAudit(); renderApproval(); }
+async function approve(){ await fetch(`/actions/${req.action_id}/approve`,{method:'POST'}); setWorkflow('관리자 승인 완료. 실행 허용됨.','good'); await refreshAudit(); renderApproval(); }
+async function deny(){ await fetch(`/actions/${req.action_id}/deny`,{method:'POST'}); setWorkflow('실행 전 차단됨. 브라우저 제출 이전에 종료됨.','bad'); await refreshAudit(); renderApproval(); }
 async function issueToken(){ const r=await fetch(`/actions/${req.action_id}/token`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)}); token=(await r.json()).token_id; await refreshAudit(); renderApproval(); }
 async function executeAction(){
   const r=await fetch('/actions/execute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action_request:req,execution_token:token})});
   const data = await r.json(); document.getElementById('exec').textContent = JSON.stringify(data,null,2);
-  if(data.executed) setWorkflow('Execution allowed after approval and token validation.','good'); else setWorkflow('Blocked before execution due to governance policy.','bad');
+  if(data.executed) setWorkflow('승인 및 토큰 검증 완료. 실행 허용됨.','good'); else setWorkflow('거버넌스 정책에 의해 실행 전 차단됨.','bad');
   await refreshAudit(); renderApproval();
 }
 
 function renderRisk(d){
   const ratio = (d?.risk_score ?? 0) >= 70 ? 'bad':'warn';
   document.getElementById('riskPanel').innerHTML = `
-    <div class="status ${ratio}">Risk Score: ${d.risk_score} (${d.risk_level})</div>
-    <p class="kv"><b>Interception flow:</b> 1) action intercepted before submit → 2) risk analysis executed → 3) abnormal budget increase detected → 4) human approval required or action blocked.</p>
-    <p class="kv"><b>Why this action is dangerous:</b></p>
+    <div class="status ${ratio}">위험 점수 (Risk Score): ${d.risk_score} (${riskLevelKo(d.risk_level)})</div>
+    <p class="kv"><b>정책 평가 흐름:</b> 1) 실행 요청 사전 가로채기 → 2) 위험 분석 수행 → 3) 비정상 예산 증액 탐지 → 4) 관리자 승인 또는 차단 결정.</p>
+    <p class="kv"><b>위험 판단 사유:</b></p>
     <ul>
-      <li>abnormal financial increase (500,000 KRW → 50,000,000 KRW)</li>
-      <li>outside normal operational pattern</li>
-      <li>high financial impact</li>
-      <li>automated browser execution detected</li>
+      <li>비정상적인 금액 증가 감지 (500,000 KRW → 50,000,000 KRW)</li>
+      <li>일반적인 운영 패턴과 다름</li>
+      <li>높은 재무적 영향 가능성</li>
+      <li>자동화된 브라우저 실행행위 감지</li>
     </ul>`;
+}
+function riskLevelKo(level){
+  const m = {CRITICAL:'치명적 위험', HIGH:'고위험', MEDIUM:'중간 위험', LOW:'낮은 위험'};
+  return m[level] || level;
 }
 
 function fmt(ts){ return new Date(ts).toISOString().slice(11,16); }
 function textFor(e){
   const m = {
-    action_requested:'AI browser action detected', policy_evaluated:'Policy evaluation completed',
-    risk_scored:'Risk analysis completed', approval_requested:'Human approval requested',
-    denied:'Execution denied', approved:'Approved by administrator', token_issued:'Execution token issued',
-    execution_blocked:'Blocked before execution', execution_completed:'Execution allowed'
+    action_requested:'AI 브라우저 실행행위 감지', policy_evaluated:'정책 평가 결과 산출',
+    risk_scored:'위험 분석 완료', approval_requested:'관리자 승인 요청',
+    denied:'실행 차단', approved:'관리자 승인 완료', token_issued:'실행 토큰 발급',
+    execution_blocked:'실행 전 차단됨', execution_completed:'실행 허용됨'
   }; return m[e.event] || e.event;
 }
 function renderTimeline(events){
   const rows = events.slice(-10).map(e=>`<div class="event"><div class="t">${fmt(e.timestamp)}</div><div>${textFor(e)}</div></div>`).join('');
-  document.getElementById('timeline').innerHTML = rows || '<div class="event">No events yet.</div>';
+  document.getElementById('timeline').innerHTML = rows || '<div class="event">아직 감사 이력이 없습니다.</div>';
 }
 function renderApproval(){
   const p = previewData;
-  let msg = 'pending approval'; let cls='warn';
-  if(!p) { msg='approval not requested'; cls='info'; }
-  document.getElementById('approvalPanel').innerHTML = `<div class="status ${cls}">${msg}</div><p class="kv">States: pending approval → approval requested → blocked before execution / execution allowed after approval.</p>`;
+  let msg = '관리자 승인 요청됨'; let cls='warn';
+  if(!p) { msg='승인 요청 전 상태'; cls='info'; }
+  document.getElementById('approvalPanel').innerHTML = `<div class="status ${cls}">${msg}</div><p class="kv">상태 흐름: 승인 대기 → 관리자 승인 요청 → 실행 전 차단 또는 실행 허용.</p>`;
 }
 async function refreshAudit(){ const r=await fetch('/audit'); const a=await r.json(); document.getElementById('audit').textContent=JSON.stringify(a,null,2); renderTimeline(a); }
 
