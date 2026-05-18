@@ -1,19 +1,30 @@
 # Demo Flow
 
-## 데모 실행 방법
+## 데모 목적
 
-1. 서버 실행
-2. 브라우저 접속
-3. 요청 입력 후 Preview 확인
-4. Execute 수행
+이 데모는 AgentGuard Action Proxy가 AI runtime action request를 실행 전에 통제하는 흐름을 보여준다.
 
-## Conditional Approval 시나리오
+## 흐름
 
-- 판정이 CONDITIONAL_APPROVAL이면 즉시 제출되지 않는다.
-- 화면에서 Confirm Execution 수행 후 XRPL submit이 진행된다.
-- 제출 성공 시 TX Hash를 확인한다.
+1. 요청 Preview 확인
+2. Execute 요청
+3. Policy Evaluation / Risk Evaluation 수행
+4. Decision 확인
+   - APPROVED
+   - CONDITIONAL_APPROVAL
+   - BLOCKED
+5. 조건부 승인인 경우 Confirm Execution 수행
+6. 승인된 요청만 Controlled Execution 진행
+7. 실행 결과와 감사 레코드 확인
 
-## BLOCKED 시나리오
+## 확인 포인트
 
-- blocked_conditions 또는 고위험 점수 구간이면 실행이 차단된다.
-- 이 경우 token 발급/submit이 진행되지 않아야 한다.
+- Agent가 직접 외부 시스템을 호출하지 않는다.
+- policy/risk decision이 실행 전에 만들어진다.
+- blocked request는 token과 실행 결과를 만들지 않는다.
+- conditional request는 사람 확인 전까지 실행되지 않는다.
+- audit receipt는 request, decision, result를 연결한다.
+
+## XRPL 데모의 의미
+
+XRPL submit이 활성화된 경우에도 데모의 핵심은 XRPL 자체가 아니라 **submit 이전에 AgentGuard runtime decision이 강제된다**는 점이다.

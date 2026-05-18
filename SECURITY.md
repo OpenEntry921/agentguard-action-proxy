@@ -2,7 +2,7 @@
 
 ## 프로젝트 상태
 
-AgentGuard MVP는 개념검증(Proof-of-Concept) 단계이며, **운영(Production) 준비가 완료된 상태가 아닙니다.**
+AgentGuard Action Proxy MVP는 개념검증(Proof-of-Concept) 단계이며, **운영(Production) 준비가 완료된 상태가 아닙니다.**
 
 실결제, 실제 API key, 실제 지갑, 규제 대상 금융 시스템 보호 용도로 사용하기 전에는 반드시 별도의 보안 검토를 수행해야 합니다.
 
@@ -41,19 +41,21 @@ security@example.com
 
 원칙:
 
-- 로컬 테스트는 테스트넷 자격증명만 사용
+- 로컬 테스트는 테스트넷 또는 mock 자격증명만 사용
 - `.env` 파일은 Git 추적 제외 유지
 - 로그/스크린샷/PR 본문에 민감값 마스킹
+- AI Agent에게 장기 실행 secret을 직접 노출하지 않음
 
 ## 보안 경계 (Security Boundaries)
 
 AgentGuard MVP는 아래 방식으로 피해 반경(blast radius) 축소를 목표로 합니다.
 
 - 액션 단위 정책 검증 강제
+- 위험 점수 기반 조건부 승인
 - 1회성 Action Token 발급
 - 토큰 재사용(replay) 방지
-- 실제 API key를 프록시 뒤에 격리
-- 검증 가능한 감사 루트 생성
+- 실제 API key 또는 signer secret을 프록시 뒤에 격리
+- 검증 가능한 감사 receipt 생성
 
 ## 알려진 한계 (Known Limitations)
 
@@ -63,14 +65,12 @@ AgentGuard MVP는 아래 방식으로 피해 반경(blast radius) 축소를 목�
 - 운영 등급 시크릿 저장소
 - 분산 환경 replay 방지
 - 실제 OPA/Rego 또는 Cedar 정책 실행
-- 실거래 XRPL 제출 보장
+- 모든 execution target에 대한 실거래 제출 보장
 - 형식 검증(formal verification)
 - 공식 보안 감사(formal security audit)
 - 정교한 rate limiting / anomaly detection
 - 멀티테넌트 격리
 
-## XRPL DID 상태
+## DID / XRPL Trust Adapter 상태
 
-XRPL DID resolver는 현재 stub 구현입니다. 아직 라이브 XRPL ledger를 직접 조회하지 않습니다.
-
-따라서 본 기능을 운영 신원검증 체계로 간주하면 안 됩니다.
+DID와 XRPL은 AgentGuard의 core security boundary가 아니라 선택적 trust/execution adapter입니다. 현재 DID resolver는 production-grade 신원검증 체계로 간주하면 안 되며, XRPL submit은 명시적으로 활성화한 경우에만 controlled execution target으로 사용해야 합니다.

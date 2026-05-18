@@ -25,7 +25,7 @@ Action Token은 고유 `jti`를 포함하며 1회만 소비됩니다.
 
 ### 5. 로그 변조 (Log tampering)
 원본 로그를 Merkle Root로 요약하고,  
-해당 루트를 XRPL에 앵커링하면 사후 변조를 탐지할 수 있습니다.
+해당 루트를 외부 ledger나 감사 저장소에 앵커링하면 사후 변조를 탐지할 수 있습니다.
 
 ## 아직 완전 대응되지 않은 위협 (Threats Not Fully Mitigated)
 
@@ -53,4 +53,4 @@ Stripe, ERP, SaaS, 은행 API 자체가 침해되면 AgentGuard만으로는 하�
 - Use HSM/KMS for gateway signing keys
 - Add rate limits and anomaly detection
 - Add user MFA or push approval for high-risk actions
-- Anchor Merkle Roots to XRPL testnet/mainnet
+- Optionally anchor Merkle Roots to XRPL testnet/mainnet or another integrity backend

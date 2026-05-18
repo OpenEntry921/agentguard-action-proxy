@@ -10,13 +10,13 @@
 - 조건부 승인 구간
 - 즉시 실행이 아니라 Confirm 후 실행
 - 웹에서 Confirm Execution 필요
-- Confirm 후 XRPL submit
-- TX Hash 생성
+- Confirm 후 controlled execution
+- 실행 결과 식별자 생성
 
 ### 70~100: BLOCKED
 - 실행 차단
 - token 발급 금지
-- XRPL submit 금지
+- 외부 시스템 submit/call 금지
 
 ## 우선순위 규칙
 
