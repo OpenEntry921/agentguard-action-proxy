@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AgentGuard | AI 실행행위 통제 보안 콘솔 데모</title>
+  <title>AgentGuard | AI Runtime Governance Security Console</title>
   <style>
     :root {
-      --bg:#f3f6fb; --panel:#ffffff; --line:#dbe3ef; --text:#0f172a; --muted:#64748b;
-      --good:#059669; --warn:#d97706; --bad:#dc2626; --accent:#2563eb;
+      --bg:#f2f5fa; --panel:#ffffff; --line:#d7dfeb; --text:#0f172a; --muted:#64748b;
+      --low:#059669; --medium:#ca8a04; --high:#ea580c; --critical:#dc2626; --info:#2563eb;
     }
     body { margin:0; font-family: Inter, Segoe UI, Arial, sans-serif; background:var(--bg); color:var(--text); }
-    .container { max-width: 1200px; margin: 20px auto; padding: 0 16px 24px; }
+    .container { max-width: 1260px; margin: 20px auto; padding: 0 16px 24px; }
     .hero, .panel, .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; }
     .hero { padding:20px; margin-bottom:14px; }
     .hero h1 { margin:0 0 8px; font-size: 24px; }
@@ -19,43 +19,58 @@
     .card { padding:14px; }
     .card .k { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
     .card .v { margin-top:8px; font-size:16px; font-weight:600; }
-    .main { display:grid; grid-template-columns: 1.5fr 1fr; gap:12px; }
+    .main { display:grid; grid-template-columns: 1.45fr 1fr; gap:12px; }
     .panel { padding:16px; }
     .panel h2 { margin:0 0 12px; font-size:18px; }
     .controls { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 14px; }
     button, select { border:1px solid var(--line); border-radius:10px; padding:9px 12px; background:#fff; }
-    button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    button.primary { background:var(--info); color:#fff; border-color:var(--info); }
     .status { padding:8px 10px; border-radius:10px; font-weight:600; display:inline-block; }
-    .good{ background:#ecfdf5; color:var(--good);} .warn{ background:#fffbeb; color:var(--warn);} .bad{ background:#fef2f2; color:var(--bad);} .info{background:#eff6ff;color:#1d4ed8;}
+    .badge { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; border:1px solid transparent; font-size:12px; font-weight:700; letter-spacing:.02em; }
+    .low{ background:#ecfdf5; color:var(--low); border-color:#a7f3d0; }
+    .medium{ background:#fefce8; color:var(--medium); border-color:#fef08a; }
+    .high{ background:#fff7ed; color:var(--high); border-color:#fed7aa; }
+    .critical{ background:#fef2f2; color:var(--critical); border-color:#fecaca; }
+    .info{ background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .muted{ color:var(--muted); }
     .kv { margin:4px 0; color:#1e293b; }
     ul { margin:8px 0 0 18px; color:#334155; }
     .timeline { border-left:2px solid var(--line); margin-top:10px; padding-left:14px; }
-    .event { margin:0 0 10px; }
-    .event .t { color:var(--muted); font-size:12px; }
+    .event { margin:0 0 12px; }
+    .event .t { color:var(--muted); font-size:12px; font-weight:600; }
+    .event .msg { margin-top:2px; }
     .raw { background:#0b1220; color:#d6e2ff; border-radius:10px; padding:10px; font-size:12px; overflow:auto; max-height:220px; }
+    .risk-grid { display:grid; grid-template-columns: repeat(2, minmax(190px, 1fr)); gap:10px; margin-top:10px; }
+    .risk-item { border:1px solid var(--line); border-radius:12px; padding:10px; }
+    .flow { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0; }
+    .flow-step { border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-size:13px; color:#334155; background:#f8fafc; }
+    .flow-step.active { border-color:#93c5fd; background:#eff6ff; color:#1d4ed8; font-weight:700; }
+    .result-box { margin-top:8px; border-radius:12px; border:1px solid var(--line); padding:14px; font-size:20px; font-weight:800; }
+    details { margin-top:8px; }
+    summary { cursor:pointer; color:var(--muted); }
   </style>
 </head>
 <body>
 <div class="container">
   <section class="hero">
-    <h1>AgentGuard AI 실행 거버넌스 보안 콘솔 (시뮬레이션)</h1>
-    <p><b>기존 브라우저 보안은 접속 채널을 보호합니다.</b> AgentGuard는 브라우저 세션 내부에서 AI가 수행하는 실행행위를 정책 기반으로 통제합니다.</p>
-    <p>Cloud RBI가 브라우저 환경을 격리하고, AgentGuard Runtime Governance가 AI 실행 리스크를 실시간으로 차단·승인합니다.</p>
+    <h1>AgentGuard AI 실행 거버넌스 보안 콘솔</h1>
+    <p><b>기존 IAM/RBI는 "접근"을 보호합니다.</b> AgentGuard는 AI가 실제로 수행하는 <b>실행행위(Runtime Execution)</b>를 정책 기반으로 통제합니다.</p>
+    <p>즉, "누가 로그인했는가"가 아니라 "AI가 실제로 무엇을 실행하려 하는가"를 실시간으로 평가하고 승인·차단합니다.</p>
   </section>
 
   <section class="grid">
-    <div class="card"><div class="k">실행 환경</div><div class="v">클라우드 격리 브라우저 세션 (시뮬레이션)</div></div>
+    <div class="card"><div class="k">실행 환경</div><div class="v">Cloud RBI Session</div></div>
     <div class="card"><div class="k">세션 격리 상태</div><div class="v">활성화</div></div>
-    <div class="card"><div class="k">AI 브라우저 에이전트</div><div class="v">연결됨</div></div>
-    <div class="card"><div class="k">AgentGuard 실행 거버넌스</div><div class="v">활성화</div></div>
+    <div class="card"><div class="k">AI 브라우저 에이전트</div><div class="v">AI Browser Agent 연결됨</div></div>
+    <div class="card"><div class="k">Runtime Governance</div><div class="v">정책 기반 통제 활성</div></div>
   </section>
 
   <section class="main">
     <div class="panel">
       <h2>시나리오 실행 화면</h2>
-      <p class="kv">시나리오: AI 브라우저 에이전트가 Meta Ads 캠페인 최적화 과정에서 비정상 예산 증액을 시도합니다.</p>
+      <p class="kv">시나리오: Meta Ads 최적화 과정에서 AI가 비정상적인 광고 예산 증액(500,000 → 50,000,000 KRW)을 시도합니다.</p>
       <div class="controls">
-        <select id="scenario"><option value="C">시나리오 C: 비정상 광고 예산 증액 시도 (500,000 → 50,000,000 KRW)</option></select>
+        <select id="scenario"><option value="C">시나리오 C: 비정상 광고 예산 증액 시도</option></select>
         <button onclick="loadScenario()">시나리오 불러오기</button>
         <button class="primary" onclick="preview()">1) 실행 가로채기 및 위험 분석</button>
         <button onclick="approve()">승인</button>
@@ -64,10 +79,19 @@
         <button class="primary" onclick="executeAction()">실행</button>
       </div>
       <div id="workflow" class="status info">워크플로우 상태: 실행 요청 대기 중</div>
+
+      <div id="workflowViz" class="flow"></div>
       <div id="riskPanel" style="margin-top:12px"></div>
-      <h3>실행 요청 정보</h3>
-      <pre id="req" class="raw"></pre>
+
+      <h3>보안 관제 데이터</h3>
+      <div id="securityData"></div>
+      <details>
+        <summary>원본 JSON 보기</summary>
+        <pre id="req" class="raw"></pre>
+      </details>
+
       <h3>실행 결과</h3>
+      <div id="resultBox" class="result-box info">실행 전</div>
       <pre id="exec" class="raw"></pre>
     </div>
 
@@ -82,71 +106,122 @@
 </div>
 
 <script>
-let req = null, token = null, previewData = null;
+let req = null, token = null, previewData = null, flowState = 'requested';
 
 function scenarioMetaAds(){
   return {
     action_id:'act-C', actor_type:'ai_agent', actor_id:'browser-agent-1',
-    action_type:'browser.update_ad_budget', target_system:'browser', target_resource:'meta-ads/campaign-42',
+    action_type:'browser.update_ad_budget', target_system:'Meta Ads', target_resource:'campaign-42',
     parameters:{current_budget:500000,new_budget:50000000,currency:'KRW'},
-    context:{environment:'cloud_rbi_simulated', flow:'ad_optimization'}, requested_at:new Date().toISOString()
+    context:{environment:'Cloud RBI Session', flow:'ad_optimization'}, requested_at:new Date().toISOString()
   };
 }
-function loadScenario(){ req = scenarioMetaAds(); document.getElementById('req').textContent = JSON.stringify(req,null,2); setWorkflow('관리자 승인 대기 상태로 진입','info'); renderApproval(); }
+function setResult(text, cls='info') {
+  const el = document.getElementById('resultBox');
+  el.className = `result-box ${cls}`;
+  el.textContent = text;
+}
+function loadScenario(){
+  req = scenarioMetaAds();
+  document.getElementById('req').textContent = JSON.stringify(req,null,2);
+  setWorkflow('실행 요청 수신','info');
+  setResult('실행 요청 분석 대기', 'info');
+  renderSecurityData();
+  renderApproval();
+  renderFlow();
+}
 function setWorkflow(text, cls){ document.getElementById('workflow').className='status '+cls; document.getElementById('workflow').textContent='워크플로우 상태: '+text; }
 
 async function preview(){
   const r = await fetch('/actions/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)});
   previewData = await r.json();
-  renderRisk(previewData); setWorkflow('AI 실행행위 감지 및 위험 분석 완료. 관리자 승인 필요.','warn');
+  flowState = 'analyzed';
+  renderRisk(previewData); renderFlow();
+  setWorkflow('위험 분석 완료. 관리자 승인 필요','medium');
+  setResult('관리자 승인 필요', 'high');
   await refreshAudit(); renderApproval();
 }
-async function approve(){ await fetch(`/actions/${req.action_id}/approve`,{method:'POST'}); setWorkflow('관리자 승인 완료. 실행 허용됨.','good'); await refreshAudit(); renderApproval(); }
-async function deny(){ await fetch(`/actions/${req.action_id}/deny`,{method:'POST'}); setWorkflow('실행 전 차단됨. 브라우저 제출 이전에 종료됨.','bad'); await refreshAudit(); renderApproval(); }
+async function approve(){ await fetch(`/actions/${req.action_id}/approve`,{method:'POST'}); flowState='approved'; setWorkflow('관리자 승인 완료. 실행 허용 상태','low'); setResult('관리자 승인 후 실행 허용', 'low'); await refreshAudit(); renderApproval(); renderFlow(); }
+async function deny(){ await fetch(`/actions/${req.action_id}/deny`,{method:'POST'}); flowState='denied'; setWorkflow('정책 위반으로 실행 차단','critical'); setResult('AI 실행 차단됨', 'critical'); await refreshAudit(); renderApproval(); renderFlow(); }
 async function issueToken(){ const r=await fetch(`/actions/${req.action_id}/token`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)}); token=(await r.json()).token_id; await refreshAudit(); renderApproval(); }
 async function executeAction(){
   const r=await fetch('/actions/execute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action_request:req,execution_token:token})});
   const data = await r.json(); document.getElementById('exec').textContent = JSON.stringify(data,null,2);
-  if(data.executed) setWorkflow('승인 및 토큰 검증 완료. 실행 허용됨.','good'); else setWorkflow('거버넌스 정책에 의해 실행 전 차단됨.','bad');
-  await refreshAudit(); renderApproval();
+  if(data.executed) { flowState='allowed'; setWorkflow('승인 및 토큰 검증 완료. 실행 허용','low'); setResult('정상 실행 완료', 'low'); }
+  else { flowState='blocked'; setWorkflow('거버넌스 정책에 의해 실행 전 차단','critical'); setResult('정책 위반으로 실행 거부', 'critical'); }
+  await refreshAudit(); renderApproval(); renderFlow();
 }
 
-function renderRisk(d){
-  const ratio = (d?.risk_score ?? 0) >= 70 ? 'bad':'warn';
-  document.getElementById('riskPanel').innerHTML = `
-    <div class="status ${ratio}">위험 점수 (Risk Score): ${d.risk_score} (${riskLevelKo(d.risk_level)})</div>
-    <p class="kv"><b>정책 평가 흐름:</b> 1) 실행 요청 사전 가로채기 → 2) 위험 분석 수행 → 3) 비정상 예산 증액 탐지 → 4) 관리자 승인 또는 차단 결정.</p>
-    <p class="kv"><b>위험 판단 사유:</b></p>
-    <ul>
-      <li>비정상적인 금액 증가 감지 (500,000 KRW → 50,000,000 KRW)</li>
-      <li>일반적인 운영 패턴과 다름</li>
-      <li>높은 재무적 영향 가능성</li>
-      <li>자동화된 브라우저 실행행위 감지</li>
-    </ul>`;
-}
 function riskLevelKo(level){
   const m = {CRITICAL:'치명적 위험', HIGH:'고위험', MEDIUM:'중간 위험', LOW:'낮은 위험'};
   return m[level] || level;
 }
+function mapRiskClass(level){ return ({LOW:'low',MEDIUM:'medium',HIGH:'high',CRITICAL:'critical'})[level] || 'info'; }
+
+function renderRisk(d){
+  const riskClass = mapRiskClass(d?.risk_level);
+  document.getElementById('riskPanel').innerHTML = `
+    <h3>위험 분석 결과</h3>
+    <div class="risk-grid">
+      <div class="risk-item"><div class="muted">위험 등급</div><div><span class="badge ${riskClass}">${riskLevelKo(d.risk_level)} (${d.risk_level})</span></div></div>
+      <div class="risk-item"><div class="muted">Risk Score</div><div><b>${d.risk_score} / 100</b></div></div>
+      <div class="risk-item"><div class="muted">정책 결정</div><div><span class="badge high">관리자 승인 필요</span></div></div>
+      <div class="risk-item"><div class="muted">예상 영향도</div><div>광고비 과다 지출 · 운영 비용 급증 · AI 자동화 오작동 위험</div></div>
+    </div>
+    <p class="kv"><b>위험 판단 사유</b></p>
+    <ul>
+      <li>비정상 광고 예산 증가 감지</li>
+      <li>자동화된 브라우저 실행행위 감지</li>
+      <li>일반 운영 패턴에서 이탈</li>
+      <li>높은 재무적 영향 가능성</li>
+    </ul>`;
+}
+function renderSecurityData(){
+  if(!req) return;
+  document.getElementById('securityData').innerHTML = `
+    <div class="risk-grid">
+      <div class="risk-item"><div class="muted">실행 주체</div><div>AI Browser Agent</div></div>
+      <div class="risk-item"><div class="muted">대상 시스템</div><div>${req.target_system}</div></div>
+      <div class="risk-item"><div class="muted">행동</div><div>광고 예산 변경</div></div>
+      <div class="risk-item"><div class="muted">기존 금액</div><div>${req.parameters.current_budget.toLocaleString()} ${req.parameters.currency}</div></div>
+      <div class="risk-item"><div class="muted">변경 금액</div><div>${req.parameters.new_budget.toLocaleString()} ${req.parameters.currency}</div></div>
+      <div class="risk-item"><div class="muted">실행 환경</div><div>${req.context.environment}</div></div>
+    </div>`;
+}
 
 function fmt(ts){ return new Date(ts).toISOString().slice(11,16); }
+function fallbackMessage(eventType) { return `이벤트 기록: ${eventType || '알 수 없는 이벤트'}`; }
 function textFor(e){
+  const type = e.event_type || e.event || 'unknown';
   const m = {
-    action_requested:'AI 브라우저 실행행위 감지', policy_evaluated:'정책 평가 결과 산출',
-    risk_scored:'위험 분석 완료', approval_requested:'관리자 승인 요청',
-    denied:'실행 차단', approved:'관리자 승인 완료', token_issued:'실행 토큰 발급',
-    execution_blocked:'실행 전 차단됨', execution_completed:'실행 허용됨'
-  }; return m[e.event] || e.event;
+    action_requested:'AI 브라우저 실행행위 감지', execution_attempted:'실행 시도 감지',
+    policy_evaluated:'정책 평가 완료', risk_scored:'위험 분석 완료', preview_generated:'실행 사전 분석 완료',
+    approval_requested:'관리자 승인 요청', denied:'실행 차단', approved:'관리자 승인 완료',
+    token_issued:'실행 토큰 발급', execution_blocked:'실행 차단됨', execution_completed:'실행 허용'
+  };
+  return e.message || m[type] || fallbackMessage(type);
 }
 function renderTimeline(events){
-  const rows = events.slice(-10).map(e=>`<div class="event"><div class="t">${fmt(e.timestamp)}</div><div>${textFor(e)}</div></div>`).join('');
+  const rows = events.slice(-12).map(e=>`<div class="event"><div class="t">${fmt(e.timestamp)}</div><div class="msg">${textFor(e)}</div></div>`).join('');
   document.getElementById('timeline').innerHTML = rows || '<div class="event">아직 감사 이력이 없습니다.</div>';
 }
 function renderApproval(){
-  const p = previewData;
-  let msg = '관리자 승인 요청됨'; let cls='warn';
-  if(!p) { msg='승인 요청 전 상태'; cls='info'; }
-  document.getElementById('approvalPanel').innerHTML = `<div class="status ${cls}">${msg}</div><p class="kv">상태 흐름: 승인 대기 → 관리자 승인 요청 → 실행 전 차단 또는 실행 허용.</p>`;
+  let msg = '승인 요청 전 상태', cls='info';
+  if(flowState === 'analyzed') { msg='관리자 승인 필요'; cls='high'; }
+  if(flowState === 'approved') { msg='관리자 승인 완료'; cls='low'; }
+  if(flowState === 'denied' || flowState === 'blocked') { msg='실행 차단됨'; cls='critical'; }
+  if(flowState === 'allowed') { msg='실행 허용'; cls='low'; }
+  document.getElementById('approvalPanel').innerHTML = `<span class="badge ${cls}">${msg}</span><p class="kv">상태 흐름: 승인 요청 → 승인/차단 → 실행 허용 또는 거부.</p>`;
+}
+function renderFlow(){
+  const steps = [
+    ['requested','AI 요청'], ['intercepted','실행 가로채기'], ['analyzed','위험 분석'],
+    ['evaluated','정책 평가'], ['approved','관리자 승인'], ['allowed','실행 허용 / 차단']
+  ];
+  const order = ['requested','intercepted','analyzed','evaluated','approved','allowed'];
+  let idx = order.indexOf(flowState);
+  if(flowState === 'denied' || flowState === 'blocked') idx = order.indexOf('allowed');
+  document.getElementById('workflowViz').innerHTML = steps.map((s,i)=>`<div class="flow-step ${i<=idx?'active':''}">${s[1]}</div>`).join('');
 }
 async function refreshAudit(){ const r=await fetch('/audit'); const a=await r.json(); document.getElementById('audit').textContent=JSON.stringify(a,null,2); renderTimeline(a); }
 
