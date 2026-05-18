@@ -36,3 +36,6 @@ class TokenService:
             return False, "target_mismatch"
         token.used = True
         return True, "token_valid"
+
+    def clear(self) -> None:
+        self._tokens.clear()

@@ -17,3 +17,6 @@ class AuditLog:
 
     def list(self) -> list[dict[str, Any]]:
         return self.events
+
+    def clear(self) -> None:
+        self.events.clear()

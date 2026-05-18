@@ -13,6 +13,7 @@
     .container { max-width: 1260px; margin: 20px auto; padding: 0 16px 24px; }
     .hero, .panel, .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; }
     .hero { padding:20px; margin-bottom:14px; }
+    .session-banner { margin-bottom:14px; padding:10px 12px; border-radius:12px; border:1px solid #bfdbfe; background:#eff6ff; color:#1d4ed8; font-weight:700; }
     .hero h1 { margin:0 0 8px; font-size: 24px; }
     .hero p { margin:6px 0; color:var(--muted); }
     .grid { display:grid; gap:12px; grid-template-columns: repeat(4, minmax(180px, 1fr)); margin-bottom:14px; }
@@ -57,6 +58,8 @@
     <p><b>기존 IAM/RBI는 "접근"을 보호합니다.</b> AgentGuard는 AI가 실제로 수행하는 <b>실행행위(Runtime Execution)</b>를 정책 기반으로 통제합니다.</p>
     <p>즉, "누가 로그인했는가"가 아니라 "AI가 실제로 무엇을 실행하려 하는가"를 실시간으로 평가하고 승인·차단합니다.</p>
   </section>
+
+  <div id="sessionStatus" class="session-banner">새 데모 세션을 준비하는 중...</div>
 
   <section class="grid">
     <div class="card"><div class="k">실행 환경</div><div class="v">Cloud RBI Session</div></div>
@@ -121,9 +124,31 @@ function setResult(text, cls='info') {
   el.className = `result-box ${cls}`;
   el.textContent = text;
 }
+function clearDemoUi(message='새 데모 세션 초기화됨') {
+  req = null;
+  token = null;
+  previewData = null;
+  flowState = 'requested';
+  document.getElementById('sessionStatus').textContent = message;
+  document.getElementById('riskPanel').innerHTML = '';
+  document.getElementById('securityData').innerHTML = '';
+  document.getElementById('req').textContent = '';
+  document.getElementById('exec').textContent = '';
+  document.getElementById('audit').textContent = '[]';
+  renderTimeline([]);
+  renderApproval();
+  renderFlow();
+  setWorkflow('새 데모 세션 준비 완료', 'info');
+  setResult('실행 전', 'info');
+}
 function loadScenario(){
   req = scenarioMetaAds();
+  token = null;
+  previewData = null;
+  flowState = 'requested';
   document.getElementById('req').textContent = JSON.stringify(req,null,2);
+  document.getElementById('exec').textContent = '';
+  document.getElementById('riskPanel').innerHTML = '';
   setWorkflow('실행 요청 수신','info');
   setResult('실행 요청 분석 대기', 'info');
   renderSecurityData();
@@ -224,8 +249,16 @@ function renderFlow(){
   document.getElementById('workflowViz').innerHTML = steps.map((s,i)=>`<div class="flow-step ${i<=idx?'active':''}">${s[1]}</div>`).join('');
 }
 async function refreshAudit(){ const r=await fetch('/audit'); const a=await r.json(); document.getElementById('audit').textContent=JSON.stringify(a,null,2); renderTimeline(a); }
+async function startNewDemoSession(){
+  clearDemoUi('새 데모 세션을 초기화하는 중...');
+  const r = await fetch('/demo/reset', {method:'POST'});
+  const data = await r.json();
+  clearDemoUi(data.message || '새 데모 세션 초기화됨');
+  loadScenario();
+  await refreshAudit();
+}
 
-loadScenario(); refreshAudit();
+startNewDemoSession();
 </script>
 </body>
 </html>
