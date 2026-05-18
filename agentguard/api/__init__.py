@@ -1,7 +1,7 @@
 import importlib.util
 import os
 from pathlib import Path
-from typing import Any
+from typing import Optional, Any
 
 from agentguard.gateway import AgentGuardGateway
 from agentguard.policy import Policy
@@ -68,7 +68,7 @@ def create_default_gateway() -> Any:
     return LegacyGatewayCompatibilityAdapter(gateway)
 
 
-def create_app(_gateway: Any | None = None):
+def create_app(_gateway: Optional[Any] = None):
     """Return the FastAPI app instance (legacy-compatible signature)."""
 
     return app
