@@ -5,7 +5,7 @@
 - `request_hash`: 요청 본문 무결성 식별
 - `policy_hash`: 어떤 정책 버전/내용으로 판정했는지 식별
 - `decision_id`: 판정 이벤트 식별자
-- `tx_hash`: XRPL 제출 결과 식별자
+- `execution_result_id` 또는 `tx_hash`: controlled execution 결과 식별자
 
 ## Audit Receipt
 

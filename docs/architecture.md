@@ -1,123 +1,100 @@
 # 아키텍처 (Architecture)
 
+## 포지셔닝
+
+AgentGuard Action Proxy는 AI Agent가 생성한 실행 요청을 외부 시스템에 전달하기 전에 정책적으로 평가하는 **AI Runtime Execution Governance** 계층이다. 이 아키텍처의 중심은 ledger, DID, wallet이 아니라 runtime decision path다.
+
+XRPL, DID, 감사 앵커는 신뢰와 추적성을 강화하는 선택적 구성요소다. AgentGuard는 특정 체인이나 DID method에 종속되지 않고, “AI가 실행하려는 액션을 누가 어떤 조건에서 허용할 것인가”를 다룬다.
+
 ## 시스템 구조 (System Structure)
 
 ```text
-XRPL DID Ledger
+AI Agent
    ↓
-XRPL DID Resolver
+Action Request
    ↓
-DID Document
-   ↓
-Policy Credential / VC
-   ↓
-AgentGuard Gateway
+AgentGuard API / Gateway
    ↓
 Policy Engine
    ↓
-Transient Action Token
+Risk Evaluation
+   ↓
+Decision Model
+   ↓
+Conditional Approval (optional)
+   ↓
+Transient Execution Token
    ↓
 Execution Proxy
    ↓
-External System
+External Execution Target
    ↓
-Verifiable Action Log
+Audit Receipt / Action Log
    ↓
-Merkle Root
-   ↓
-XRPL Anchor
+Optional Ledger or DID Anchor
 ```
-
----
 
 ## 역할 분리 (Role Separation)
 
-### XRPL
+### AI Agent
 
-XRPL은 신뢰 앵커(Trust Layer)로 사용됩니다.
+AI Agent는 실행 의도와 필요한 payload를 생성한다. 하지만 Agent는 직접 자산, API, 운영 시스템에 대한 최종 실행 권한을 갖지 않는다.
 
-- Agent DID 신뢰 기준점
-- 조직 DID 신뢰 기준점
-- DID Document 참조 무결성
-- 감사 Merkle Root 앵커
+### AgentGuard Runtime
 
-중요: XRPL 자체가 정책 엔진 역할을 하지는 않습니다.
+AgentGuard Runtime은 실행 전 판단을 담당한다.
 
-### AgentGuard
+- 요청 payload 정규화
+- 정책 파일 기반 허용/차단 판단
+- 위험 점수 계산
+- 조건부 승인 필요 여부 결정
+- transient execution token 발급
+- 감사 레코드 생성
 
-AgentGuard는 행위 통제 계층입니다.
+### Execution Proxy
 
-- 정책 검증
-- 액션 경계 강제
-- 1회성 Action Token 발급
-- 실행 프록시 제어
-- 감사 로그 생성
+Execution Proxy는 승인된 요청만 외부 시스템으로 전달한다. 외부 시스템은 XRPL, 결제 API, SaaS API, 내부 운영 API 등으로 확장될 수 있다.
 
----
+### XRPL / DID / Ledger Anchor
 
-## 핵심 원칙 (Core Principle)
+XRPL과 DID는 core runtime governance의 전제 조건이 아니라 선택적 신뢰 계층이다.
 
-```text
-Identity ≠ Authorization
-Authorization ≠ Execution
-Execution ≠ Proof
-```
+- XRPL은 데모 실행 대상 또는 감사 앵커 대상이 될 수 있다.
+- DID는 agent identity나 issuer trust를 표현하는 옵션으로 사용할 수 있다.
+- 어떤 경우에도 XRPL이나 DID가 policy engine 자체를 대체하지 않는다.
 
-AgentGuard는 이 책임들을 의도적으로 분리합니다.
-
----
-
-## DID 흐름 (DID Flow)
+## End-to-End Flow
 
 ```text
-Organization DID on XRPL
-    ↓ delegates / issues VC
-AI Agent DID on XRPL
-    ↓ presents Policy Credential
-Execution Gateway
-    ↓ verifies policy and challenge
-Action Token Issuer
-    ↓ issues one-time token
-Execution Proxy
-    ↓ performs external action
-Audit Log
-    ↓ creates Merkle Root
-XRPL Anchor
+1. AI Agent submits an action request
+2. AgentGuard evaluates policy and risk
+3. Decision is produced: APPROVED / CONDITIONAL_APPROVAL / BLOCKED
+4. Conditional requests wait for human confirmation
+5. Approved requests receive a one-time execution token
+6. Execution Proxy performs the controlled action
+7. Runtime records request, decision, and result evidence
+8. Optional anchoring can summarize audit evidence externally
 ```
 
----
+## 설계 원칙
 
-## 실행 흐름 (Execution Flow)
+- **Pre-execution over post-detection**: 실행 후 탐지보다 실행 전 통제를 우선한다.
+- **Policy as runtime boundary**: 정책은 문서가 아니라 runtime decision input이다.
+- **Agent does not hold final authority**: Agent는 의도를 만들고, Runtime이 실행 권한을 판단한다.
+- **Composable trust**: DID, ledger, signer, audit anchor는 필요에 따라 붙일 수 있는 trust adapter다.
+- **Auditable decisions**: 실행 여부뿐 아니라 판단 근거를 함께 기록한다.
 
-```text
-1. Agent requests action
-2. Gateway resolves Agent DID
-3. Gateway checks Policy Credential
-4. Policy Engine validates action context
-5. Token Issuer creates one-time Action Token
-6. Execution Proxy consumes token
-7. Proxy calls external API
-8. Audit Log records result
-9. Merkle Root is prepared for XRPL anchoring
-```
+## AgentGuard가 XRPL/DID 프로젝트가 아닌 이유
 
----
+기존 설명은 XRPL DID와 VC/VP 흐름을 중심으로 시스템을 설명했다. 현재 포지셔닝에서는 XRPL/DID를 다음처럼 재정의한다.
 
-## XRPL DID를 쓰는 이유 (Why XRPL DID)
+| 과거 중심 표현 | 현재 포지셔닝 |
+|---|---|
+| XRPL DID Ledger | Optional trust/anchor layer |
+| DID Resolver | Optional identity adapter |
+| Policy Credential / VC | Optional policy evidence format |
+| XRPL Payment | One possible execution target |
+| Merkle Root XRPL Anchor | Optional audit integrity anchor |
+| AgentGuard Gateway | Core runtime governance boundary |
 
-XRPL DID 없이도 로컬 MVP는 동작할 수 있습니다.  
-하지만 DID 레지스트리를 애플리케이션이 단독으로 통제하면, 기업/기관 관점에서 신뢰성이 약해집니다.
-
-XRPL DID를 적용하면 다음이 가능해집니다.
-
-- Agent 신원을 외부에서 검증 가능
-- 조직 신원을 외부에서 검증 가능
-- DID Document 참조를 독립적으로 검증 가능
-- 앱 DB를 신뢰하지 않아도 감사 앵커 검증 가능
-
----
-
-## 핵심 인사이트 (Key Insight)
-
-> XRPL은 “누가(Who)”인지를 증명하고,  
-> AgentGuard는 “무엇을(What)” 할 수 있는지를 통제합니다.
+핵심은 AgentGuard가 “ledger 위의 DID 앱”이 아니라 **AI action execution을 통제하는 runtime proxy**라는 점이다.

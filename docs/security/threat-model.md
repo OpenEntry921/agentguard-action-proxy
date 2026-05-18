@@ -2,7 +2,7 @@
 
 ## 주요 위협
 
-- unknown DID 공격
+- unknown agent 또는 신뢰되지 않은 identity context 공격
 - 정책 우회 시도
 - AI Agent runaway execution(비정상 자동 반복 실행)
 - replay attack
@@ -11,7 +11,7 @@
 
 ## 대응 방향
 
-- DID/Agent 정책 검증 선행
+- Agent context와 정책 검증 선행
 - blocked_conditions 우선 차단
 - 조건부 승인 + 사람 확인 경로
 - transient token + nonce + 만료시간 검증
