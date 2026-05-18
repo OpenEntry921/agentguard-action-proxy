@@ -1,0 +1,54 @@
+services:
+  agentguard:
+    build: .
+    container_name: agentguard-mvp
+    command: python examples/demo.py
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  proxy-demo:
+    build: .
+    container_name: agentguard-proxy-demo
+    command: python examples/proxy_demo.py
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  xrpl-anchor-demo:
+    build: .
+    container_name: agentguard-xrpl-anchor-demo
+    command: python examples/xrpl_anchor_demo.py
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  did-demo:
+    build: .
+    container_name: agentguard-did-demo
+    command: python examples/did_demo.py
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  legacy-did-demo:
+    build: .
+    container_name: agentguard-legacy-did-demo
+    command: python examples/legacy_did_agentguard_demo.py
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  xrpl-did-demo:
+    build: .
+    container_name: agentguard-xrpl-did-demo
+    command: python examples/xrpl_did_demo.py
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1

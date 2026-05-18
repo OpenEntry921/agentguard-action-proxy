@@ -1,0 +1,10 @@
+trustline_policy:
+  mode: xrpl_lookup
+  require_trustline: false
+  block_if_no_trustline: false
+  allow_xrp_without_trustline: true
+  allowed_currencies:
+    - XRP
+    - RLUSD
+  allowed_issuers: []
+  require_authorized_trustline: false

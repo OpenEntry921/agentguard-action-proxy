@@ -1,0 +1,21 @@
+risk_rules:
+  review_conditions:
+    - new_destination
+    - after_hours_execution
+    - frequency_spike
+    - split_transaction_risk
+
+decision_thresholds:
+  approve_below: 30
+  conditional_approval_from: 31
+  block_from: 70
+
+blocked_conditions:
+  - blacklisted_wallet
+  - unknown_agent
+  - invalid_destination
+  - destination_not_allowed
+  - account_not_found
+  - trustline_missing
+  - issuer_not_allowed
+  - currency_not_allowed

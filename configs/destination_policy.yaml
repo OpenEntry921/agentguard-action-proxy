@@ -1,0 +1,5 @@
+destination_policy:
+  require_account_exists: true
+  allow_new_destination: true
+  new_destination_risk_score: 20
+  block_if_account_not_found: true

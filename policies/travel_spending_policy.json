@@ -1,0 +1,17 @@
+{
+  "name": "travel_spending_policy",
+  "description": "Business travel booking policy for an AI travel agent.",
+  "max_amount": 300,
+  "allowed_merchants": [
+    "HotelExpress",
+    "AirFlight"
+  ],
+  "allowed_purposes": [
+    "Business Trip",
+    "Flight"
+  ],
+  "allowed_actions": [
+    "book_hotel",
+    "book_flight"
+  ]
+}

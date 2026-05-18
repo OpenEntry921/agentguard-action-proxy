@@ -1,0 +1,6 @@
+history_policy:
+  enable_account_tx_lookup: false
+  detect_new_destination: true
+  daily_limit_source: local_cache
+  velocity_window_seconds: 60
+  max_transactions_per_window: 5

@@ -1,0 +1,8 @@
+did_binding_policy:
+  strict_binding_required: false
+
+did_bindings:
+  did:openentry:agent:treasury-01:
+    allowed_accounts:
+      - rGEB4qm9SKvuJVuA4Yh5VgEsV9vy9ofZY6
+      - rs72ZcAj6L8WwGpho4kHfNTgT6fY3CPc3A

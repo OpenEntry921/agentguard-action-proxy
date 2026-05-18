@@ -1,0 +1,8 @@
+runtime:
+  default_mode: LIVE
+  pytest_force_mode: TEST
+  live_lookup_default: true
+  submit_default: true
+  conditional_confirmation_required: true
+  enable_runtime_cache: true
+  enable_replay_protection: true

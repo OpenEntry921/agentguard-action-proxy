@@ -1,0 +1,71 @@
+policy_id: XRPL-AgentGuard-Policy-v1
+policy_version: 0.2
+
+agent:
+  id: did:openentry:agent:treasury-01
+  allowed_actions:
+    - xrpl_payment
+  allowed_purposes:
+    - treasury
+    - ops
+
+limits:
+  max_amount_drops: 3000000
+  daily_limit_drops: 10000000
+  weekly_limit_drops: 50000000
+  monthly_limit_drops: 200000000
+
+xrpl:
+  network: testnet
+  node_url: https://s.altnet.rippletest.net:51234
+  currency: XRP
+
+trustline_policy:
+  mode: xrpl_lookup
+  require_trustline: false
+  block_if_no_trustline: false
+  allowed_currencies:
+    - XRP
+  allowed_issuers: []
+  require_authorized_trustline: false
+  allow_xrp_without_trustline: true
+
+destination_policy:
+  require_account_exists: true
+  allow_new_destination: true
+  new_destination_risk_score: 20
+  block_if_account_not_found: true
+
+history_policy:
+  enable_account_tx_lookup: false
+
+risk_rules:
+  review_conditions:
+    - new_destination
+    - after_hours_execution
+    - frequency_spike
+    - split_transaction_risk
+
+decision_thresholds:
+  approve_below: 30
+  conditional_approval_from: 31
+  block_from: 70
+
+blocked_conditions:
+  - blacklisted_wallet
+  - unknown_agent
+  - invalid_destination
+  - account_not_found
+  - trustline_missing
+  - issuer_not_allowed
+  - currency_not_allowed
+  - destination_not_allowed
+
+legacy_whitelist:
+  enabled: true
+  allowed_destinations:
+    - rnAo7npmjoMhAuYZtnGGjAffsJJPxs3sHk
+    - rDest1
+    - rs72ZcAj6L8WwGpho4kHfNTgT6fY3CPc3A
+    - r3xRr3mNgx5CcXXXaDqsbwDYjbw3LaysFe
+    - rGEB4qm9SKvuJVuA4Yh5VgEsV9vy9ofZY6

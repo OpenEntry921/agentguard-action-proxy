@@ -1,0 +1,21 @@
+policy_id: XRPL-AgentGuard-Policy-v1
+policy_version: 0.1
+
+agent:
+  id: did:openentry:agent:treasury-01
+  allowed_actions:
+    - xrpl_payment
+  max_amount_drops: 3000000
+  daily_limit_drops: 10000000
+  allowed_purposes:
+    - treasury
+    - ops
+
+trustline_whitelist:
+  allowed_destinations:
+    - rnAo7npmjoMhAuYZtnGGjAffsJJPxs3sHk
+
+legacy_whitelist:
+  enabled: true
+  allowed_destinations:
+    - rnAo7npmjoMhAuYZtnGGjAffsJJPxs3sHk
