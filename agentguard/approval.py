@@ -1,3 +1,6 @@
+from typing import Optional
+
+
 class ApprovalStore:
     def __init__(self) -> None:
         self._decisions: dict[str, str] = {}
@@ -8,5 +11,5 @@ class ApprovalStore:
     def deny(self, action_id: str) -> None:
         self._decisions[action_id] = "denied"
 
-    def get(self, action_id: str) -> str | None:
+    def get(self, action_id: str) -> Optional[str]:
         return self._decisions.get(action_id)
