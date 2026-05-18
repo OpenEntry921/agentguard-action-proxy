@@ -1,32 +1,152 @@
-<!doctype html><html><head><meta charset='utf-8'><title>AgentGuard Action Proxy Demo</title></head>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgentGuard | Cloud RBI Runtime Governance Demo</title>
+  <style>
+    :root {
+      --bg:#f3f6fb; --panel:#ffffff; --line:#dbe3ef; --text:#0f172a; --muted:#64748b;
+      --good:#059669; --warn:#d97706; --bad:#dc2626; --accent:#2563eb;
+    }
+    body { margin:0; font-family: Inter, Segoe UI, Arial, sans-serif; background:var(--bg); color:var(--text); }
+    .container { max-width: 1200px; margin: 20px auto; padding: 0 16px 24px; }
+    .hero, .panel, .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; }
+    .hero { padding:20px; margin-bottom:14px; }
+    .hero h1 { margin:0 0 8px; font-size: 24px; }
+    .hero p { margin:6px 0; color:var(--muted); }
+    .grid { display:grid; gap:12px; grid-template-columns: repeat(4, minmax(180px, 1fr)); margin-bottom:14px; }
+    .card { padding:14px; }
+    .card .k { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
+    .card .v { margin-top:8px; font-size:16px; font-weight:600; }
+    .main { display:grid; grid-template-columns: 1.5fr 1fr; gap:12px; }
+    .panel { padding:16px; }
+    .panel h2 { margin:0 0 12px; font-size:18px; }
+    .controls { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 14px; }
+    button, select { border:1px solid var(--line); border-radius:10px; padding:9px 12px; background:#fff; }
+    button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .status { padding:8px 10px; border-radius:10px; font-weight:600; display:inline-block; }
+    .good{ background:#ecfdf5; color:var(--good);} .warn{ background:#fffbeb; color:var(--warn);} .bad{ background:#fef2f2; color:var(--bad);} .info{background:#eff6ff;color:#1d4ed8;}
+    .kv { margin:4px 0; color:#1e293b; }
+    ul { margin:8px 0 0 18px; color:#334155; }
+    .timeline { border-left:2px solid var(--line); margin-top:10px; padding-left:14px; }
+    .event { margin:0 0 10px; }
+    .event .t { color:var(--muted); font-size:12px; }
+    .raw { background:#0b1220; color:#d6e2ff; border-radius:10px; padding:10px; font-size:12px; overflow:auto; max-height:220px; }
+  </style>
+</head>
 <body>
-<h2>AgentGuard Action Proxy Demo</h2>
-<p>접근(access)만으로는 충분하지 않다. AgentGuard는 AI Agent가 실제로 무엇을 실행하는지 통제한다.</p>
-<select id='scenario'>
-<option value='A'>A: Delete production repo</option>
-<option value='B'>B: Repository status query</option>
-<option value='C'>C: Increase ad budget 100x</option>
-</select>
-<button onclick='loadScenario()'>Load</button>
-<button onclick='preview()'>Preview</button>
-<button onclick='approve()'>Approve</button>
-<button onclick='deny()'>Deny</button>
-<button onclick='issueToken()'>Issue Token</button>
-<button onclick='executeAction()'>Execute</button>
-<pre id='req'></pre><pre id='preview'></pre><pre id='exec'></pre><pre id='audit'></pre>
+<div class="container">
+  <section class="hero">
+    <h1>Cloud RBI Console + AI Action Governance Layer (Simulated)</h1>
+    <p><b>Traditional browser security verifies browser safety.</b> AgentGuard verifies AI execution safety inside the browser session.</p>
+    <p>RBI secures the browser environment. AgentGuard secures AI execution inside that environment.</p>
+  </section>
+
+  <section class="grid">
+    <div class="card"><div class="k">Environment</div><div class="v">Cloud Remote Browser Session (simulated)</div></div>
+    <div class="card"><div class="k">Session Isolation</div><div class="v">Active</div></div>
+    <div class="card"><div class="k">AI Browser Agent</div><div class="v">Connected</div></div>
+    <div class="card"><div class="k">AgentGuard Runtime Governance</div><div class="v">Enabled</div></div>
+  </section>
+
+  <section class="main">
+    <div class="panel">
+      <h2>Browser Scenario</h2>
+      <p class="kv">Scenario: AI Browser Agent attempts to optimize Meta Ads campaign and submit a budget increase.</p>
+      <div class="controls">
+        <select id="scenario"><option value="C">Meta Ads abnormal budget increase (500,000 → 50,000,000 KRW)</option></select>
+        <button onclick="loadScenario()">Load Scenario</button>
+        <button class="primary" onclick="preview()">1) Intercept & Analyze</button>
+        <button onclick="approve()">Approve</button>
+        <button onclick="deny()">Deny</button>
+        <button onclick="issueToken()">Issue Token</button>
+        <button class="primary" onclick="executeAction()">Execute</button>
+      </div>
+      <div id="workflow" class="status info">Workflow status: Waiting for interception.</div>
+      <div id="riskPanel" style="margin-top:12px"></div>
+      <h3>Action Payload</h3>
+      <pre id="req" class="raw"></pre>
+      <h3>Execution Result</h3>
+      <pre id="exec" class="raw"></pre>
+    </div>
+
+    <div class="panel">
+      <h2>Approval Workflow + Audit Timeline</h2>
+      <div id="approvalPanel"></div>
+      <div class="timeline" id="timeline"></div>
+      <h3>Raw Audit Events</h3>
+      <pre id="audit" class="raw"></pre>
+    </div>
+  </section>
+</div>
+
 <script>
-let req=null, token=null;
-function scenarios(k){
- if(k==='A') return {action_id:'act-A',actor_type:'ai_agent',actor_id:'agent-1',action_type:'github.delete_repository',target_system:'github',target_resource:'production/repo-core',parameters:{},context:{},requested_at:new Date().toISOString()};
- if(k==='B') return {action_id:'act-B',actor_type:'ai_agent',actor_id:'agent-1',action_type:'github.get_repository_status',target_system:'github',target_resource:'production/repo-core',parameters:{},context:{},requested_at:new Date().toISOString()};
- return {action_id:'act-C',actor_type:'ai_agent',actor_id:'browser-agent-1',action_type:'browser.update_ad_budget',target_system:'browser',target_resource:'meta-ads/campaign-42',parameters:{current_budget:500000,new_budget:50000000,currency:'KRW'},context:{},requested_at:new Date().toISOString()};
+let req = null, token = null, previewData = null;
+
+function scenarioMetaAds(){
+  return {
+    action_id:'act-C', actor_type:'ai_agent', actor_id:'browser-agent-1',
+    action_type:'browser.update_ad_budget', target_system:'browser', target_resource:'meta-ads/campaign-42',
+    parameters:{current_budget:500000,new_budget:50000000,currency:'KRW'},
+    context:{environment:'cloud_rbi_simulated', flow:'ad_optimization'}, requested_at:new Date().toISOString()
+  };
 }
-function loadScenario(){req=scenarios(document.getElementById('scenario').value);document.getElementById('req').textContent='Action Request\n'+JSON.stringify(req,null,2)}
-async function preview(){const r=await fetch('/actions/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)});document.getElementById('preview').textContent='Preview\n'+JSON.stringify(await r.json(),null,2);refreshAudit();}
-async function approve(){await fetch(`/actions/${req.action_id}/approve`,{method:'POST'});refreshAudit();}
-async function deny(){await fetch(`/actions/${req.action_id}/deny`,{method:'POST'});refreshAudit();}
-async function issueToken(){const r=await fetch(`/actions/${req.action_id}/token`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)});token=(await r.json()).token_id;refreshAudit();}
-async function executeAction(){const r=await fetch('/actions/execute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action_request:req,execution_token:token})});document.getElementById('exec').textContent='Execution\n'+JSON.stringify(await r.json(),null,2);refreshAudit();}
-async function refreshAudit(){const r=await fetch('/audit');document.getElementById('audit').textContent='Audit\n'+JSON.stringify(await r.json(),null,2)}
-loadScenario();
-</script></body></html>
+function loadScenario(){ req = scenarioMetaAds(); document.getElementById('req').textContent = JSON.stringify(req,null,2); setWorkflow('pending approval','info'); renderApproval(); }
+function setWorkflow(text, cls){ document.getElementById('workflow').className='status '+cls; document.getElementById('workflow').textContent='Workflow status: '+text; }
+
+async function preview(){
+  const r = await fetch('/actions/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)});
+  previewData = await r.json();
+  renderRisk(previewData); setWorkflow('Action intercepted. Risk analysis completed. Human approval required.','warn');
+  await refreshAudit(); renderApproval();
+}
+async function approve(){ await fetch(`/actions/${req.action_id}/approve`,{method:'POST'}); setWorkflow('Approved by administrator. Execution can proceed.','good'); await refreshAudit(); renderApproval(); }
+async function deny(){ await fetch(`/actions/${req.action_id}/deny`,{method:'POST'}); setWorkflow('Execution denied. Blocked before browser submit.','bad'); await refreshAudit(); renderApproval(); }
+async function issueToken(){ const r=await fetch(`/actions/${req.action_id}/token`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)}); token=(await r.json()).token_id; await refreshAudit(); renderApproval(); }
+async function executeAction(){
+  const r=await fetch('/actions/execute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action_request:req,execution_token:token})});
+  const data = await r.json(); document.getElementById('exec').textContent = JSON.stringify(data,null,2);
+  if(data.executed) setWorkflow('Execution allowed after approval and token validation.','good'); else setWorkflow('Blocked before execution due to governance policy.','bad');
+  await refreshAudit(); renderApproval();
+}
+
+function renderRisk(d){
+  const ratio = (d?.risk_score ?? 0) >= 70 ? 'bad':'warn';
+  document.getElementById('riskPanel').innerHTML = `
+    <div class="status ${ratio}">Risk Score: ${d.risk_score} (${d.risk_level})</div>
+    <p class="kv"><b>Interception flow:</b> 1) action intercepted before submit → 2) risk analysis executed → 3) abnormal budget increase detected → 4) human approval required or action blocked.</p>
+    <p class="kv"><b>Why this action is dangerous:</b></p>
+    <ul>
+      <li>abnormal financial increase (500,000 KRW → 50,000,000 KRW)</li>
+      <li>outside normal operational pattern</li>
+      <li>high financial impact</li>
+      <li>automated browser execution detected</li>
+    </ul>`;
+}
+
+function fmt(ts){ return new Date(ts).toISOString().slice(11,16); }
+function textFor(e){
+  const m = {
+    action_requested:'AI browser action detected', policy_evaluated:'Policy evaluation completed',
+    risk_scored:'Risk analysis completed', approval_requested:'Human approval requested',
+    denied:'Execution denied', approved:'Approved by administrator', token_issued:'Execution token issued',
+    execution_blocked:'Blocked before execution', execution_completed:'Execution allowed'
+  }; return m[e.event] || e.event;
+}
+function renderTimeline(events){
+  const rows = events.slice(-10).map(e=>`<div class="event"><div class="t">${fmt(e.timestamp)}</div><div>${textFor(e)}</div></div>`).join('');
+  document.getElementById('timeline').innerHTML = rows || '<div class="event">No events yet.</div>';
+}
+function renderApproval(){
+  const p = previewData;
+  let msg = 'pending approval'; let cls='warn';
+  if(!p) { msg='approval not requested'; cls='info'; }
+  document.getElementById('approvalPanel').innerHTML = `<div class="status ${cls}">${msg}</div><p class="kv">States: pending approval → approval requested → blocked before execution / execution allowed after approval.</p>`;
+}
+async function refreshAudit(){ const r=await fetch('/audit'); const a=await r.json(); document.getElementById('audit').textContent=JSON.stringify(a,null,2); renderTimeline(a); }
+
+loadScenario(); refreshAudit();
+</script>
+</body>
+</html>
