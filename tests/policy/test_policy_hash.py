@@ -1,4 +1,4 @@
-from agentguard.policy.policy_hash import compute_policy_hash
+from agentguard.policy import compute_policy_hash
 from agentguard.runtime.request_hash import compute_request_hash
 from agentguard.xrpl_payment import attach_agentguard_memo
 

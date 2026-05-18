@@ -1,7 +1,7 @@
 import os
 from typing import Any, Dict, Optional
 
-from agentguard.audit.receipt_builder import AuditReceiptBuilder
+from agentguard.audit import AuditReceiptBuilder
 from agentguard.runtime.transient_token_engine import TransientActionTokenEngine
 from agentguard.security.replay_protection import ReplayProtection
 from agentguard.xrpl_payment import submit_xrpl_transaction

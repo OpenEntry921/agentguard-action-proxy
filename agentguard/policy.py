@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Optional, Set, Tuple, Any
 
 from agentguard.action_policy import evaluate_policy
+from agentguard.policy_engine import PolicyEngine as RuntimePolicyEngine
 
 
 @dataclass
@@ -14,24 +15,7 @@ class Policy:
     daily_limit: Optional[float] = None
 
 
-class PolicyEngine:
-    def __init__(self, policy: Policy):
-        self.policy = policy
-
-    def evaluate(self, request):
-        amount=float(request.get("amount",0))
-        if amount>self.policy.max_amount:
-            return False, "amount_exceeds_limit"
-        action=request.get("action")
-        if self.policy.allowed_actions and action not in self.policy.allowed_actions:
-            return False, "action_not_allowed"
-        purpose=request.get("purpose")
-        if self.policy.allowed_purposes and purpose not in self.policy.allowed_purposes:
-            return False, "purpose_not_allowed"
-        merchant=request.get("merchant")
-        if self.policy.allowed_merchants and merchant and merchant not in self.policy.allowed_merchants:
-            return False, "merchant_not_allowed"
-        return True, "policy_ok"
+PolicyEngine = RuntimePolicyEngine
 
 
 def normalize_amount_for_policy(amount: Any, currency: str) -> Tuple[float, float]:
@@ -92,7 +76,6 @@ def _apply_deprecated_trustline_whitelist(policy):
     deprecated_cfg=policy.get("trustline_whitelist")
     if not isinstance(deprecated_cfg,dict):
         return policy
-    logger.warning("trustline_whitelist is deprecated. Use trustline_policy + legacy_whitelist instead.")
     legacy=policy.get("legacy_whitelist") if isinstance(policy.get("legacy_whitelist"),dict) else {}
     merged=list(dict.fromkeys((legacy.get("allowed_destinations",[]) if isinstance(legacy.get("allowed_destinations",[]),list) else []) + (deprecated_cfg.get("allowed_destinations",[]) if isinstance(deprecated_cfg.get("allowed_destinations",[]),list) else [])))
     legacy["allowed_destinations"]=merged; legacy.setdefault("enabled",True); policy["legacy_whitelist"]=legacy

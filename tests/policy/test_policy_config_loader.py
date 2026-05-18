@@ -1,4 +1,4 @@
-from agentguard.policy.parser.config_loader import load_policy_config
+from agentguard.policy import load_policy_config
 
 
 def test_load_policy_config_merges_split_files():
