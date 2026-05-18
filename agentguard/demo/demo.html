@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset='utf-8'><title>AgentGuard Action Proxy Demo</title></head>
+<body>
+<h2>AgentGuard Action Proxy Demo</h2>
+<p>접근(access)만으로는 충분하지 않다. AgentGuard는 AI Agent가 실제로 무엇을 실행하는지 통제한다.</p>
+<select id='scenario'>
+<option value='A'>A: Delete production repo</option>
+<option value='B'>B: Repository status query</option>
+<option value='C'>C: Increase ad budget 100x</option>
+</select>
+<button onclick='loadScenario()'>Load</button>
+<button onclick='preview()'>Preview</button>
+<button onclick='approve()'>Approve</button>
+<button onclick='deny()'>Deny</button>
+<button onclick='issueToken()'>Issue Token</button>
+<button onclick='executeAction()'>Execute</button>
+<pre id='req'></pre><pre id='preview'></pre><pre id='exec'></pre><pre id='audit'></pre>
+<script>
+let req=null, token=null;
+function scenarios(k){
+ if(k==='A') return {action_id:'act-A',actor_type:'ai_agent',actor_id:'agent-1',action_type:'github.delete_repository',target_system:'github',target_resource:'production/repo-core',parameters:{},context:{},requested_at:new Date().toISOString()};
+ if(k==='B') return {action_id:'act-B',actor_type:'ai_agent',actor_id:'agent-1',action_type:'github.get_repository_status',target_system:'github',target_resource:'production/repo-core',parameters:{},context:{},requested_at:new Date().toISOString()};
+ return {action_id:'act-C',actor_type:'ai_agent',actor_id:'browser-agent-1',action_type:'browser.update_ad_budget',target_system:'browser',target_resource:'meta-ads/campaign-42',parameters:{current_budget:500000,new_budget:50000000,currency:'KRW'},context:{},requested_at:new Date().toISOString()};
+}
+function loadScenario(){req=scenarios(document.getElementById('scenario').value);document.getElementById('req').textContent='Action Request\n'+JSON.stringify(req,null,2)}
+async function preview(){const r=await fetch('/actions/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)});document.getElementById('preview').textContent='Preview\n'+JSON.stringify(await r.json(),null,2);refreshAudit();}
+async function approve(){await fetch(`/actions/${req.action_id}/approve`,{method:'POST'});refreshAudit();}
+async function deny(){await fetch(`/actions/${req.action_id}/deny`,{method:'POST'});refreshAudit();}
+async function issueToken(){const r=await fetch(`/actions/${req.action_id}/token`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)});token=(await r.json()).token_id;refreshAudit();}
+async function executeAction(){const r=await fetch('/actions/execute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action_request:req,execution_token:token})});document.getElementById('exec').textContent='Execution\n'+JSON.stringify(await r.json(),null,2);refreshAudit();}
+async function refreshAudit(){const r=await fetch('/audit');document.getElementById('audit').textContent='Audit\n'+JSON.stringify(await r.json(),null,2)}
+loadScenario();
+</script></body></html>
