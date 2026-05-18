@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from agentguard.audit.append_only_log import append_audit_receipt
+from agentguard.audit import append_audit_receipt
 
 
 def test_append_only_log_appends_without_overwrite(tmp_path):

@@ -1,5 +1,5 @@
-from agentguard.audit.hash_utils import compute_audit_receipt_hash
-from agentguard.audit.receipt_builder import build_audit_receipt
+from agentguard.audit import compute_audit_receipt_hash
+from agentguard.audit import build_audit_receipt
 
 
 def test_receipt_builder_success():

@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from agentguard.policy.parser.config_loader import load_policy_config
+from agentguard.policy import load_policy_config
 from agentguard.xrpl.checks.destination_checker import check_account_exists, check_new_destination, validate_xrpl_address
 from agentguard.xrpl.ledger.ledger_client import XrplLedgerClient, get_ledger_client
 from agentguard.xrpl.trustline.trustline_checker import check_legacy_whitelist, check_trustline

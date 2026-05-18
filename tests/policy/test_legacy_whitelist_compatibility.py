@@ -1,6 +1,6 @@
 import logging
 
-from agentguard.policy.parser.config_loader import _apply_deprecated_trustline_whitelist
+from agentguard.policy import _apply_deprecated_trustline_whitelist
 
 
 def test_trustline_whitelist_deprecated_warning_logged(caplog):
