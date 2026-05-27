@@ -61,6 +61,8 @@
     <h1>AgentGuard AI 실행 거버넌스 보안 콘솔</h1>
     <p><b>기존 IAM/RBI는 "접근"을 보호합니다.</b> AgentGuard는 AI가 실제로 수행하는 <b>실행행위(Runtime Execution)</b>를 정책 기반으로 통제합니다.</p>
     <p>즉, "누가 로그인했는가"가 아니라 "AI가 실제로 무엇을 실행하려 하는가"를 실시간으로 평가하고 승인·차단합니다.</p>
+    <p><b>Cloud RBI는 격리 세션을 제공하고, AgentGuard는 그 위에서 AI 실행행위를 Runtime에서 Interception/Policy Evaluation 합니다.</b> 즉, <b>RBI 위 AI Runtime Governance Layer</b>입니다.</p>
+
   </section>
 
   <div id="sessionStatus" class="session-banner">새 데모 세션을 준비하는 중...</div>
@@ -75,12 +77,12 @@
   <section class="main">
     <div class="panel">
       <h2>시나리오 실행 화면</h2>
-      <p id="scenarioDesc" class="kv">시나리오: Meta Ads 최적화 과정에서 AI가 비정상적인 광고 예산 증액(500,000 → 50,000,000 KRW)을 시도합니다.</p>
+      <p id="scenarioDesc" class="kv">시나리오: External MCP Tool 응답 기반 GitHub privileged workflow modification 시도를 AgentGuard가 실행 전에 차단합니다.</p>
       <div class="controls">
         <select id="scenario">
-          <option value="C">시나리오 C: 비정상 광고 예산 증액 시도</option>
-                    <option value="cicd_attack">MCP: CI/CD Workflow Tampering</option>
+          <option value="cicd_attack">MCP: GitHub Privileged Workflow Modification</option>
           <option value="api_key_leak">MCP: API Secret Exfiltration</option>
+          <option value="C">(Optional) Meta Ads Budget Escalation</option>
         </select>
         <button class="primary" id="startBtn" onclick="startAttackSimulation()">공격 시뮬레이션 시작</button>
         <button onclick="approve()">관리자 승인</button>
@@ -118,7 +120,7 @@
 let req = null, token = null, previewData = null, flowState = 'requested', simulationRunning = false;
 const SCENARIO_META = {
   C: {
-    desc: '시나리오: Meta Ads 최적화 과정에서 AI가 비정상적인 광고 예산 증액(500,000 → 50,000,000 KRW)을 시도합니다.',
+    desc: '시나리오: Meta Ads 최적화 과정에서 AI가 비정상적인 광고 예산 증액(500,000 → 50,000,000 KRW)을 시도합니다. (Optional secondary demo)',
     thoughtStream: ['Campaign performance optimization 시작...','광고 성과 데이터 분석 중...','추천 예산 증가 전략 적용...','광고 예산 업데이트 요청 생성...','Automated campaign optimization 실행 중...'],
     timeline: ['AI Browser Agent connected','Campaign optimization workflow started','Large budget escalation detected','Runtime Interception triggered','Policy evaluation completed','Human approval required BEFORE EXECUTION'],
     riskFactors: ['비정상 광고 예산 증가 감지','자동화된 브라우저 실행행위 감지','운영 패턴 이탈','재무 영향 가능성 높음'],
@@ -126,10 +128,10 @@ const SCENARIO_META = {
     finalBlocked: 'REVIEW_REQUIRED / HUMAN APPROVAL REQUIRED BEFORE EXECUTION'
   },
   cicd_attack: {
-    desc: '시나리오: External MCP Tool 오염 응답으로 GitHub privileged workflow 변경을 유도하는 공격 흐름(모의).',
-    thoughtStream: ['Repository deployment optimization 시작...','External MCP Tool recommendation 적용...','GitHub privileged operation 요청 생성...','Executing automated workflow...'],
-    timeline: ['External MCP Tool Response Received','Prompt Injection Pattern Detected','Tool Integrity Verification Failed','Suspicious Instruction Escalation','Runtime Interception triggered','Execution blocked before submission'],
-    riskFactors: ['Prompt injection signal','Tool poisoning detected','Privileged GitHub operation','CI/CD tampering attempt'],
+    desc: 'PRIMARY: MCP 기반 GitHub privileged workflow modification 시도를 Runtime Interception으로 차단하는 AI Runtime Security Incident 데모(모의).',
+    thoughtStream: ['Repository deployment optimization 시작...','External MCP Tool recommendation 적용...','GitHub workflow update 요청 생성...','Executing automated deployment workflow...','Runtime Interception triggered...'],
+    timeline: ['AI Browser Agent connected','External MCP Tool Response Received','Prompt Injection Pattern Detected','Tool Integrity Verification Failed','Suspicious Instruction Escalation','Suspicious Workflow Modification Attempt','Runtime Interception Triggered','Policy Evaluation Completed','Execution Blocked Before Submission'],
+    riskFactors: ['Prompt injection signal','Tool poisoning detected','Privileged GitHub operation','CI/CD tampering attempt','Unauthorized workflow escalation'],
     impact: 'CI/CD 변조 위험 · 배포 체인 오염 · 조직 전체 공급망 영향',
     finalBlocked: 'DENY / BLOCKED BEFORE EXECUTION'
   },
@@ -174,7 +176,7 @@ function scenarioMcp(name){
   return {
     action_id:`mcp-attack-${Math.random().toString(16).slice(2,14)}`,
     actor_type:'ai_agent', actor_id:'agent-mcp-v1-malicious',
-    action_type:s.action_type, target_system:'github', target_resource:s.target_resource,
+    action_type:s.action_type, target_system:'GitHub', target_resource:s.target_resource,
     parameters:s.parameters,
     context:{
       simulated:true, no_real_credentials:true, mcp_session_id:`mcp-session-${Math.random().toString(16).slice(2,10)}`,
@@ -304,11 +306,11 @@ function renderRisk(d){
   const mcpDetails = mcp ? `
     <h3>MCP 공격 시뮬레이션 체인</h3>
     <div class="risk-grid">
-      <div class="risk-item"><div class="muted">AI Agent thought / intent</div><div>${mcp.thought}</div></div>
+      <div class="risk-item"><div class="muted">AI Agent thought / intent (simulated)</div><div>${mcp.thought}</div></div>
       <div class="risk-item"><div class="muted">MCP tool response received</div><div>${mcp.tool_response}</div></div>
       <div class="risk-item"><div class="muted">prompt injection / tool poisoning signal</div><div>${mcp.signal}</div></div>
       <div class="risk-item"><div class="muted">generated high-risk action</div><div>${req.action_type} → ${req.target_resource}</div></div>
-      <div class="risk-item"><div class="muted">AgentGuard runtime interception</div><div>실행 전 /actions/preview 가로채기</div></div>
+      <div class="risk-item"><div class="muted">AgentGuard runtime interception</div><div>Execution intercepted immediately before submission</div></div>
       <div class="risk-item"><div class="muted">final result</div><div><b>${scenario.finalBlocked}</b></div></div>
     </div>` : '';
   const riskClass = mapRiskClass(d?.risk_level);
@@ -332,7 +334,7 @@ function renderSecurityData(){
   const actionText = isMeta ? '광고 예산 변경' : (req.action_type === 'github.modify_ci_workflow' ? 'Workflow Modification Attempt' : 'Secret Export Attempt');
   const beforeValue = isMeta ? `${req.parameters.current_budget.toLocaleString()} ${req.parameters.currency}` : '-';
   const afterValue = isMeta ? `${req.parameters.new_budget.toLocaleString()} ${req.parameters.currency}` : req.target_resource;
-  const envValue = req.context.environment || 'MCP Tool Chain (simulated)';
+  const envValue = req.context.environment || 'Cloud RBI Session';
   document.getElementById('securityData').innerHTML = `
     <div class="risk-grid">
       <div class="risk-item"><div class="muted">실행 주체</div><div>AI Browser Agent</div></div>
@@ -390,6 +392,7 @@ async function startNewDemoSession(){
   const r = await fetch('/demo/reset', {method:'POST'});
   const data = await r.json();
   clearDemoUi(data.message || '새 데모 세션 초기화됨');
+  document.getElementById('scenario').value = 'cicd_attack';
   loadScenario();
   await refreshAudit();
 }
