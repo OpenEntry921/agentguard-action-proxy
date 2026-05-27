@@ -40,6 +40,8 @@
     .event { margin:0 0 12px; }
     .event .t { color:var(--muted); font-size:12px; font-weight:600; }
     .event .msg { margin-top:2px; }
+    .event.live { animation: pulse .6s ease; }
+    @keyframes pulse { 0%{transform:translateX(-3px);opacity:.3;}100%{transform:translateX(0);opacity:1;} }
     .raw { background:#0b1220; color:#d6e2ff; border-radius:10px; padding:10px; font-size:12px; overflow:auto; max-height:220px; }
     .risk-grid { display:grid; grid-template-columns: repeat(2, minmax(190px, 1fr)); gap:10px; margin-top:10px; }
     .risk-item { border:1px solid var(--line); border-radius:12px; padding:10px; }
@@ -47,6 +49,8 @@
     .flow-step { border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-size:13px; color:#334155; background:#f8fafc; }
     .flow-step.active { border-color:#93c5fd; background:#eff6ff; color:#1d4ed8; font-weight:700; }
     .result-box { margin-top:8px; border-radius:12px; border:1px solid var(--line); padding:14px; font-size:20px; font-weight:800; }
+    .thought-stream { background:#0b1220; color:#d6e2ff; border-radius:10px; padding:10px; min-height:96px; }
+    .thought-line { margin-bottom:6px; font-size:13px; }
     details { margin-top:8px; }
     summary { cursor:pointer; color:var(--muted); }
   </style>
@@ -80,12 +84,9 @@
           <option value="api_key_leak">MCP: API Key Exfiltration</option>
           <option value="automation_abuse">MCP: Automation Abuse</option>
         </select>
-        <button onclick="loadScenario()">시나리오 불러오기</button>
-        <button class="primary" onclick="preview()">1) 실행 가로채기 및 위험 분석</button>
-        <button onclick="approve()">승인</button>
-        <button onclick="deny()">차단</button>
-        <button onclick="issueToken()">실행 토큰 발급</button>
-        <button class="primary" onclick="executeAction()">실행</button>
+        <button class="primary" id="startBtn" onclick="startAttackSimulation()">공격 시뮬레이션 시작</button>
+        <button onclick="approve()">관리자 승인</button>
+        <button onclick="deny()">실행 차단</button>
       </div>
       <div id="workflow" class="status info">워크플로우 상태: 실행 요청 대기 중</div>
 
@@ -93,6 +94,7 @@
       <div id="riskPanel" style="margin-top:12px"></div>
 
       <h3>보안 관제 데이터</h3>
+      <div id="thoughtStream" class="thought-stream"></div>
       <div id="securityData"></div>
       <details>
         <summary>원본 JSON 보기</summary>
@@ -115,7 +117,7 @@
 </div>
 
 <script>
-let req = null, token = null, previewData = null, flowState = 'requested';
+let req = null, token = null, previewData = null, flowState = 'requested', simulationRunning = false;
 const SCENARIO_META = {
   C: { desc: '시나리오: Meta Ads 최적화 과정에서 AI가 비정상적인 광고 예산 증액(500,000 → 50,000,000 KRW)을 시도합니다.' },
   token_theft: { desc: 'MCP 오염 응답을 신뢰한 AI Agent가 GitHub token 접근을 시도합니다(모의).' },
@@ -193,6 +195,7 @@ function clearDemoUi(message='새 데모 세션 초기화됨') {
   document.getElementById('sessionStatus').textContent = message;
   document.getElementById('riskPanel').innerHTML = '';
   document.getElementById('securityData').innerHTML = '';
+  document.getElementById('thoughtStream').innerHTML = '';
   document.getElementById('req').textContent = '';
   document.getElementById('exec').textContent = '';
   document.getElementById('audit').textContent = '[]';
@@ -228,17 +231,71 @@ async function preview(){
   setWorkflow('위험 분석 완료. 관리자 승인 필요','medium');
   setResult('관리자 승인 필요', 'high');
   await refreshAudit(); renderApproval();
-  addMcpTimelineEvents(document.getElementById('scenario').value);
 }
 async function approve(){ await fetch(`/actions/${req.action_id}/approve`,{method:'POST'}); flowState='approved'; setWorkflow('관리자 승인 완료. 실행 허용 상태','low'); setResult('관리자 승인 후 실행 허용', 'low'); await refreshAudit(); renderApproval(); renderFlow(); }
 async function deny(){ await fetch(`/actions/${req.action_id}/deny`,{method:'POST'}); flowState='denied'; setWorkflow('정책 위반으로 실행 차단','critical'); setResult('AI 실행 차단됨', 'critical'); await refreshAudit(); renderApproval(); renderFlow(); }
-async function issueToken(){ const r=await fetch(`/actions/${req.action_id}/token`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)}); token=(await r.json()).token_id; await refreshAudit(); renderApproval(); }
 async function executeAction(){
   const r=await fetch('/actions/execute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action_request:req,execution_token:token})});
   const data = await r.json(); document.getElementById('exec').textContent = JSON.stringify(data,null,2);
   if(data.executed) { flowState='allowed'; setWorkflow('승인 및 토큰 검증 완료. 실행 허용','low'); setResult('정상 실행 완료', 'low'); }
   else { flowState='blocked'; setWorkflow('거버넌스 정책에 의해 실행 전 차단','critical'); setResult('정책 위반으로 실행 거부', 'critical'); }
   await refreshAudit(); renderApproval(); renderFlow();
+}
+function sleep(ms){ return new Promise((resolve)=>setTimeout(resolve, ms)); }
+function appendThought(text){
+  const now = new Date();
+  const hhmmss = now.toISOString().slice(11,19);
+  const line = `<div class="thought-line">[${hhmmss}] ${text}</div>`;
+  const box = document.getElementById('thoughtStream');
+  box.innerHTML += line;
+  box.scrollTop = box.scrollHeight;
+}
+function pushTimelineEvent(event){
+  const current = document.getElementById('audit').textContent || '[]';
+  let parsed = [];
+  try { parsed = JSON.parse(current); } catch(e) {}
+  const updated = [...parsed, event];
+  document.getElementById('audit').textContent = JSON.stringify(updated,null,2);
+  renderTimeline(updated, true);
+}
+async function startAttackSimulation(){
+  if(simulationRunning) return;
+  simulationRunning = true;
+  document.getElementById('startBtn').disabled = true;
+  loadScenario();
+  const selected = document.getElementById('scenario').value;
+  const isMcp = !!MCP_SIMULATION[selected];
+  const timelineBase = [
+    ['AI Browser Agent connected', 'info'],
+    ['External MCP Tool connected', 'info'],
+    ['External MCP Tool Response Received', 'medium'],
+    ['Prompt Injection Pattern Detected', 'high'],
+    ['Tool Integrity Verification Failed', 'high'],
+    ['AI Autonomous Execution Escalation', 'critical'],
+    ['AgentGuard Runtime Interception (BEFORE EXECUTION)', 'critical'],
+    ['Risk Analysis in progress...', 'high']
+  ];
+  setWorkflow('AI autonomous chain simulation running...', 'medium');
+  appendThought('AI Browser Agent: "Repository deployment optimization 시작..."');
+  for (const [msg, sev] of timelineBase){
+    pushTimelineEvent({timestamp:new Date().toISOString(), event_type:'simulated_incident', message:msg});
+    setWorkflow(msg, sev === 'critical' ? 'critical' : (sev === 'high' ? 'high' : 'info'));
+    if(msg.includes('MCP Tool Response')) appendThought('외부 MCP Tool recommendation 적용...');
+    if(msg.includes('Execution Escalation')) appendThought('GitHub privileged operation 요청 생성...');
+    await sleep(700);
+  }
+  await preview();
+  appendThought('Executing automated workflow...');
+  await sleep(500);
+  if(isMcp){
+    const finalText = previewData?.decision === 'DENY' ? 'BLOCKED BEFORE EXECUTION' : 'HUMAN REVIEW REQUIRED';
+    pushTimelineEvent({timestamp:new Date().toISOString(), event_type:'critical_risk', message:'CRITICAL RISK DETECTED'});
+    pushTimelineEvent({timestamp:new Date().toISOString(), event_type:'interception_result', message:finalText});
+    setResult(finalText, 'critical');
+    setWorkflow(`Runtime Interception 완료: ${finalText}`, 'critical');
+  }
+  simulationRunning = false;
+  document.getElementById('startBtn').disabled = false;
 }
 
 function riskLevelKo(level){
@@ -315,8 +372,8 @@ function textFor(e){
   };
   return e.message || m[type] || fallbackMessage(type);
 }
-function renderTimeline(events){
-  const rows = events.slice(-12).map(e=>`<div class="event"><div class="t">${fmt(e.timestamp)}</div><div class="msg">${textFor(e)}</div></div>`).join('');
+function renderTimeline(events, live=false){
+  const rows = events.slice(-20).map((e, idx, arr)=>`<div class="event ${(live && idx===arr.length-1)?'live':''}"><div class="t">${fmt(e.timestamp)}</div><div class="msg">${textFor(e)}</div></div>`).join('');
   document.getElementById('timeline').innerHTML = rows || '<div class="event">아직 감사 이력이 없습니다.</div>';
 }
 function renderApproval(){
@@ -338,22 +395,6 @@ function renderFlow(){
   document.getElementById('workflowViz').innerHTML = steps.map((s,i)=>`<div class="flow-step ${i<=idx?'active':''}">${s[1]}</div>`).join('');
 }
 async function refreshAudit(){ const r=await fetch('/audit'); const a=await r.json(); document.getElementById('audit').textContent=JSON.stringify(a,null,2); renderTimeline(a); }
-function addMcpTimelineEvents(selected){
-  if(!MCP_SIMULATION[selected]) return;
-  const now = new Date().toISOString();
-  const mcpEvents = [
-    {timestamp:now, event_type:'mcp_tool_response_received', message:'MCP tool response received'},
-    {timestamp:now, event_type:'suspicious_tool_instruction_detected', message:'suspicious tool instruction detected'},
-    {timestamp:now, event_type:'ai_generated_high_risk_action', message:'AI generated high-risk GitHub action'},
-    {timestamp:now, event_type:'agentguard_intercepted_execution', message:'AgentGuard intercepted execution request'},
-    {timestamp:now, event_type:'credential_access_attempt_detected', message:'credential access attempt detected'},
-    {timestamp:now, event_type:'execution_blocked_before_submission', message:'execution blocked before submission'}
-  ];
-  const current = document.getElementById('audit').textContent || '[]';
-  let parsed = [];
-  try { parsed = JSON.parse(current); } catch(e) {}
-  renderTimeline([...parsed, ...mcpEvents]);
-}
 async function startNewDemoSession(){
   clearDemoUi('새 데모 세션을 초기화하는 중...');
   const r = await fetch('/demo/reset', {method:'POST'});
