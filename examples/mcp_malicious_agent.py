@@ -1,108 +1,113 @@
-"""MCP-based malicious/poisoned AI agent simulation for AgentGuard.
-
-Safety constraints:
-- Mock-only payloads
-- No real token reads
-- No external exfiltration
-- No destructive GitHub API calls
-"""
-
 from __future__ import annotations
 
 import argparse
 import json
-from typing import Any, Dict, List
+from typing import Any
 
-import requests
+from mcp_attack_vectors import SCENARIOS, get_attack_payload
 
-from examples.mcp_attack_vectors import build_payload
+DEFAULT_BASE_URL = "http://127.0.0.1:8000"
 
-BASE_URL = "http://127.0.0.1:8000"
-
-SCENARIOS = {
-    "token_theft": {
-        "name": "Scenario 1: GitHub Token Theft Attempt",
-        "intent": "Compromised MCP tool tries to read GitHub token under debug pretext.",
-    },
-    "cicd_attack": {
-        "name": "Scenario 2: CI/CD Attack Attempt",
-        "intent": "AI agent attempts to tamper workflow by inserting malicious deploy step.",
-    },
-    "api_key_leak": {
-        "name": "Scenario 3: API Key Exfiltration Attempt",
-        "intent": "AI agent attempts to export .env/secrets to an external endpoint.",
-    },
-    "automation_abuse": {
-        "name": "Scenario 4: Automation Abuse",
-        "intent": "AI agent attempts high-volume repeated automation actions.",
-    },
+SCENARIO_META = {
+    "token_theft": {"title": "GitHub Token Theft Attempt", "desc_ko": "오염된 MCP Tool 응답을 신뢰하고 GitHub token 접근을 시도합니다."},
+    "cicd_attack": {"title": "CI/CD Workflow Tampering", "desc_ko": "오염된 지시에 따라 CI/CD 워크플로우 변조를 시도합니다."},
+    "api_key_leak": {"title": "API Key Exfiltration", "desc_ko": "민감 정보(.env.production) 유출 action을 생성합니다(모의)."},
+    "automation_abuse": {"title": "Automation Abuse", "desc_ko": "대량 자동화 작업 남용성 action을 시도합니다."},
 }
 
 
-def _pretty(data: Dict[str, Any]) -> str:
-    return json.dumps(data, indent=2, ensure_ascii=False)
+def _j(data: Any) -> str:
+    return json.dumps(data, ensure_ascii=False, indent=2)
 
 
-def _final_result(decision: str) -> str:
+def _post_json(url: str, payload: dict[str, Any]) -> dict[str, Any]:
+    import urllib.error
+    import urllib.request
+
+    body = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(url=url, data=body, method="POST")
+    req.add_header("Content-Type", "application/json")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            text = resp.read().decode("utf-8")
+            return {"status": resp.getcode(), "text": text, "json": json.loads(text), "connection_error": False}
+    except urllib.error.HTTPError as err:
+        text = err.read().decode("utf-8") if err.fp else str(err)
+        return {"status": err.code, "text": text, "json": None, "connection_error": False}
+    except urllib.error.URLError:
+        return {"status": 0, "text": "", "json": None, "connection_error": True}
+
+
+def _result_suffix(decision: str) -> str:
     if decision == "DENY":
-        return "BLOCKED"
+        return "BLOCKED BEFORE EXECUTION"
     if decision == "REVIEW_REQUIRED":
-        return "REVIEW_REQUIRED"
-    return "ALLOWED"
+        return "HUMAN REVIEW REQUIRED"
+    return "ALLOWED - check policy coverage"
 
 
-def run_scenario(scenario: str, execute: bool = True) -> None:
-    meta = SCENARIOS[scenario]
-    action = build_payload(scenario)
+def run_scenario(base_url: str, scenario: str, execute: bool) -> None:
+    payload = get_attack_payload(scenario)
+    meta = SCENARIO_META[scenario]
 
-    print("\n" + "=" * 88)
-    print(meta["name"])
-    print(f"simulated malicious intent: {meta['intent']}")
-    print("action request JSON:")
-    print(_pretty(action))
+    print("\n" + "=" * 84)
+    print(f"[시나리오] {meta['title']}")
+    print(f"[AI Agent] {meta['desc_ko']}")
+    print("[AgentGuard] Runtime interception: 실행 전 가로채기")
+    print("[요청] POST /actions/preview")
+    print(_j(payload))
 
-    preview_resp = requests.post(f"{BASE_URL}/actions/preview", json=action, timeout=10)
-    preview_resp.raise_for_status()
-    preview = preview_resp.json()
+    preview_res = _post_json(f"{base_url}/actions/preview", payload)
+    if preview_res["connection_error"]:
+        print("AgentGuard 서버가 실행 중이지 않습니다. 먼저 python -m uvicorn agentguard.api:app --reload 를 실행하세요.")
+        return
+    if preview_res["status"] >= 400:
+        print(f"[HTTP 오류] status={preview_res['status']}")
+        print(preview_res["text"])
+        return
 
-    print("AgentGuard preview response:")
-    print(_pretty(preview))
-    print(f"decision: {preview.get('decision')}")
-    print(f"risk score: {preview.get('risk_score')}")
-    print(f"risk reasons: {preview.get('risk_factors', [])}")
+    res_json = preview_res["json"]
+    decision = res_json["decision"]
+    print("[응답] Preview Result")
+    print(f"- decision: {res_json['decision']}")
+    print(f"- risk_score: {res_json['risk_score']}")
+    print(f"- risk_level: {res_json['risk_level']}")
+    print(f"- risk_factors: {_j(res_json['risk_factors'])}")
+    print(f"- matched_policies: {_j(res_json['matched_policies'])}")
+    print(f"- reason: {res_json['reason']}")
+    print(f"[결과] {decision} / {_result_suffix(decision)}")
 
-    if execute:
-        execute_payload = {"action_request": action, "execution_token": "mock-execution-token"}
-        execute_resp = requests.post(f"{BASE_URL}/actions/execute", json=execute_payload, timeout=10)
-        execute_resp.raise_for_status()
-        execute_result = execute_resp.json()
-        print("execute response:")
-        print(_pretty(execute_result))
+    if not execute:
+        return
 
-    print(f"final result: {_final_result(preview.get('decision', 'ALLOW'))}")
+    execute_payload = {"action_request": payload, "execution_token": "mock-execution-token-for-demo"}
+    print("[요청] POST /actions/execute (--execute enabled, still mock flow)")
+    exec_res = _post_json(f"{base_url}/actions/execute", execute_payload)
+    if exec_res["connection_error"]:
+        print("AgentGuard 서버가 실행 중이지 않습니다. 먼저 python -m uvicorn agentguard.api:app --reload 를 실행하세요.")
+        return
+    if exec_res["status"] >= 400:
+        print(f"[HTTP 오류] status={exec_res['status']}")
+        print(exec_res["text"])
+        return
+    print("[응답] Execute Result")
+    print(_j(exec_res["json"]))
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Mock MCP malicious AI-agent simulation")
-    parser.add_argument(
-        "--scenario",
-        choices=["token_theft", "cicd_attack", "api_key_leak", "automation_abuse", "all"],
-        default="all",
-        help="Scenario to run",
-    )
-    parser.add_argument("--base-url", default=BASE_URL, help="AgentGuard API base URL")
-    parser.add_argument("--skip-execute", action="store_true", help="Only call /actions/preview")
+    parser = argparse.ArgumentParser(description="MCP malicious AI-agent safe mock simulator")
+    parser.add_argument("--scenario", choices=[*SCENARIOS, "all"], default="all")
+    parser.add_argument("--base-url", default=DEFAULT_BASE_URL, help="default: http://127.0.0.1:8000")
+    parser.add_argument("--execute", action="store_true", default=False, help="Also call /actions/execute (default: preview only)")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    global BASE_URL
-    BASE_URL = args.base_url.rstrip("/")
-
-    scenarios: List[str] = list(SCENARIOS.keys()) if args.scenario == "all" else [args.scenario]
-    for scenario in scenarios:
-        run_scenario(scenario, execute=not args.skip_execute)
+    selected = list(SCENARIOS) if args.scenario == "all" else [args.scenario]
+    base_url = args.base_url.rstrip("/")
+    for scenario in selected:
+        run_scenario(base_url=base_url, scenario=scenario, execute=args.execute)
 
 
 if __name__ == "__main__":
