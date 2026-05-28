@@ -20,8 +20,10 @@ class GitHubClient:
         return cls(token=token, repo=repo)
 
     def _enforce_sandbox_repo(self) -> None:
-        if "sandbox" not in self.repo.lower() and "mock" not in self.repo.lower():
-            raise ValueError("GITHUB_REPO must be a sandbox/mock repository")
+        lowered = self.repo.lower()
+        allowed_markers = ("sandbox", "demo", "test", "agentguard-runtime-lab", "mock")
+        if not any(marker in lowered for marker in allowed_markers):
+            raise ValueError("GITHUB_REPO must be a sandbox/test/demo repository")
 
     def _headers(self) -> Dict[str, str]:
         if not self.token:

@@ -27,6 +27,9 @@ ACTION_DECISION_MAP: Dict[str, PolicyDecision] = {
     "delete_repo": PolicyDecision.DENY,
     "disable_branch_protection": PolicyDecision.DENY,
     "export_secrets": PolicyDecision.DENY,
+    "secret_access_attempt": PolicyDecision.DENY,
+    "force_push": PolicyDecision.DENY,
+    "production_file_modify": PolicyDecision.DENY,
 }
 
 
