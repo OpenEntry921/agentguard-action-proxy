@@ -25,7 +25,7 @@ SCENARIOS = {
             "branch": "agentguard-sandbox-branch",
         },
     },
-    "secret_access_attempt": {"action": "export_secrets", "params": {"target": "env"}},
+    "secret_access_attempt": {"action": "secret_access_attempt", "params": {"target": "env"}},
 }
 
 
@@ -39,20 +39,39 @@ def main() -> None:
     executor = GitHubRuntimeExecutor(client)
     intent = SCENARIOS[args.scenario]
 
-    print("[1] AI Agent Intent")
-    print(json.dumps(intent, indent=2))
+    print(f"[Scenario] {args.scenario}")
+    print(f"[Intent] AI Agent requests GitHub action: {intent['action']}")
 
     evaluation = executor.evaluate_and_mint_token(args.agent_id, intent["action"])
-    print("\n[2] AgentGuard Interception / Policy")
-    print(json.dumps(evaluation, indent=2))
+    policy = evaluation["policy"]
+    decision = policy["decision"]
+    if isinstance(decision, str) and "." in decision:
+        decision = decision.split(".")[-1]
+    print(f"[Policy] {decision}")
+    print(f"[Matched Policy] {policy['reason']} ({policy['policy_version']})")
 
     if not evaluation.get("allowed"):
-        print("\n[3] BLOCKED BEFORE EXECUTION")
+        print("[Token] not issued")
+        print("[Token Validation] not_run")
+        print("[GitHub API] called: no")
+        print("[Final Result] BLOCKED BEFORE EXECUTION")
+        print("\n[Audit]")
+        print(json.dumps(executor.audit_log[-1], indent=2))
         return
 
+    print("[Token] issued")
     result = executor.execute(intent, evaluation["execution_token"])
-    print("\n[3] Execution Result")
+    token_validation = result.get("token_validation", {"ok": False})
+    print(f"[Token Validation] {'passed' if token_validation.get('ok') else 'failed'}")
+    print(f"[GitHub API] called: {'yes' if result.get('github_api_called') else 'no'}")
+    final_result = "EXECUTED IN SANDBOX" if result.get("executed") else "SAFE MOCK EXECUTED"
+    if result.get("blocked_before_execution"):
+        final_result = "HUMAN REVIEW REQUIRED" if result.get("reason") == "review_required_blocked" else "BLOCKED BEFORE EXECUTION"
+    print(f"[Final Result] {final_result}")
+    print("\n[Execution Result]")
     print(json.dumps(result, indent=2))
+    print("\n[Audit]")
+    print(json.dumps(executor.audit_log[-1], indent=2))
 
 
 if __name__ == "__main__":

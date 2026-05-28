@@ -4,7 +4,7 @@ import json
 import os
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from agentguard.integrations.github.client import GitHubClient
 from agentguard.integrations.github.policies import PolicyDecision, evaluate_github_action
@@ -25,11 +25,26 @@ class GitHubRuntimeExecutor:
         self.client = client
         self.ttl_seconds = ttl_seconds
         self.signing_key = os.getenv("AGENTGUARD_EXECUTION_SECRET", "agentguard-dev-secret")
+        self.audit_log: List[Dict[str, Any]] = []
 
     def evaluate_and_mint_token(self, agent_id: str, action: str) -> Dict[str, Any]:
         policy = evaluate_github_action(action)
         if policy.decision != PolicyDecision.ALLOW:
-            return {"allowed": False, "policy": asdict(policy), "blocked_before_execution": True}
+            event = {
+                "stage": "policy",
+                "action": action,
+                "policy": asdict(policy),
+                "final_result": "BLOCKED BEFORE EXECUTION",
+                "github_api_called": False,
+            }
+            self.audit_log.append(event)
+            return {
+                "allowed": False,
+                "policy": asdict(policy),
+                "blocked_before_execution": True,
+                "execution_token_issued": False,
+                "github_api_called": False,
+            }
 
         expires_at = (datetime.now(timezone.utc) + timedelta(seconds=self.ttl_seconds)).isoformat()
         token_payload = {
@@ -41,12 +56,26 @@ class GitHubRuntimeExecutor:
         }
         signature = self._sign_payload(token_payload)
         token = ExecutionToken(**token_payload, signature=signature)
-        return {"allowed": True, "policy": asdict(policy), "execution_token": asdict(token)}
+        return {"allowed": True, "policy": asdict(policy), "execution_token": asdict(token), "execution_token_issued": True}
 
     def execute(self, intent: Dict[str, Any], token: Dict[str, Any]) -> Dict[str, Any]:
         validation = self._validate_token(intent, token)
         if not validation["ok"]:
-            return {"executed": False, "reason": validation["reason"], "blocked_before_execution": True}
+            event = {
+                "stage": "token_validation",
+                "action": intent.get("action"),
+                "token_validation": validation,
+                "final_result": "BLOCKED",
+                "github_api_called": False,
+            }
+            self.audit_log.append(event)
+            return {
+                "executed": False,
+                "reason": validation["reason"],
+                "blocked_before_execution": True,
+                "github_api_called": False,
+                "token_validation": validation,
+            }
 
         action = intent["action"]
         params = intent.get("params", {})
@@ -55,10 +84,39 @@ class GitHubRuntimeExecutor:
         elif action == "create_pr":
             result = self.client.create_pull_request(params["title"], params["head"], params["base"], params.get("body", ""))
         elif action == "modify_workflow":
-            return {"executed": False, "reason": "review_required_blocked", "blocked_before_execution": True}
+            blocked = {
+                "executed": False,
+                "reason": "review_required_blocked",
+                "blocked_before_execution": True,
+                "github_api_called": False,
+                "token_validation": validation,
+            }
+            self.audit_log.append(
+                {"stage": "execution", "action": action, "final_result": "HUMAN REVIEW REQUIRED", "github_api_called": False}
+            )
+            return blocked
         else:
-            return {"executed": False, "reason": "unsupported_action", "blocked_before_execution": True}
-        return {"executed": bool(result.get("ok")), "action": action, "result": result}
+            blocked = {
+                "executed": False,
+                "reason": "unsupported_action",
+                "blocked_before_execution": True,
+                "github_api_called": False,
+                "token_validation": validation,
+            }
+            self.audit_log.append(
+                {"stage": "execution", "action": action, "final_result": "BLOCKED BEFORE EXECUTION", "github_api_called": False}
+            )
+            return blocked
+        out = {"executed": bool(result.get("ok")), "action": action, "result": result, "github_api_called": True, "token_validation": validation}
+        self.audit_log.append(
+            {
+                "stage": "execution",
+                "action": action,
+                "final_result": "EXECUTED IN SANDBOX" if out["executed"] else "SAFE MOCK EXECUTED",
+                "github_api_called": True,
+            }
+        )
+        return out
 
     def _validate_token(self, intent: Dict[str, Any], token: Dict[str, Any]) -> Dict[str, Any]:
         required = ["agent_id", "allowed_action", "repo", "expires_at", "policy_version", "signature"]
