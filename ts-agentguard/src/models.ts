@@ -19,8 +19,6 @@ export const RiskLevelSchema = z.nativeEnum(RiskLevel);
 export type Decision = (typeof Decision)[keyof typeof Decision];
 export type RiskLevel = (typeof RiskLevel)[keyof typeof RiskLevel];
 
-const JsonObjectSchema = z.record(z.string(), z.unknown());
-
 export const ActionRequestSchema = z.object({
   action_id: z.string(),
   actor_type: z.enum(["user", "ai_agent", "system"]),
@@ -28,8 +26,8 @@ export const ActionRequestSchema = z.object({
   action_type: z.string(),
   target_system: z.string(),
   target_resource: z.string(),
-  parameters: JsonObjectSchema.default({}),
-  context: JsonObjectSchema.default({}),
+  parameters: z.record(z.unknown()).default({}),
+  context: z.record(z.unknown()).default({}),
   requested_at: z.coerce.date().default(() => new Date()),
 });
 

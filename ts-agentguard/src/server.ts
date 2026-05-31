@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import Fastify, { FastifyInstance, FastifyReply } from "fastify";
-import { ZodSchema } from "zod";
+import { z, ZodTypeAny } from "zod";
 
 import { ApprovalStore } from "./approval";
 import { AuditLog } from "./audit";
@@ -25,7 +25,11 @@ export interface AgentGuardState {
   attemptCounter: Map<string, number>;
 }
 
-function validateBody<T>(schema: ZodSchema<T>, body: unknown, reply: FastifyReply): T | undefined {
+function validateBody<TSchema extends ZodTypeAny>(
+  schema: TSchema,
+  body: unknown,
+  reply: FastifyReply,
+): z.output<TSchema> | undefined {
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     reply.code(422).send({ detail: parsed.error.issues });
