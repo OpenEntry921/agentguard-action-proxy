@@ -216,7 +216,8 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
 
     const [valid, reason] = tokens.validateForExecution(req.execution_token, action);
     if (!valid) {
-      audit.log("execution_blocked", { action_id: action.action_id, reason, ...actionAuditFields(action) });
+      audit.log("execution_token_validation_failed", { action_id: action.action_id, reason, outcome: "blocked", ...actionAuditFields(action) });
+      audit.log("execution_blocked", { action_id: action.action_id, reason, outcome: "blocked", ...actionAuditFields(action) });
       return {
         action_id: action.action_id,
         decision: "BLOCKED",
@@ -242,6 +243,14 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
   });
 
   app.get("/audit", async () => audit.list());
+
+  app.post("/demo/audit-event", async (request) => {
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    const eventType = typeof body.event_type === "string" ? body.event_type : "demo_event";
+    const payload = typeof body.payload === "object" && body.payload !== null ? (body.payload as Record<string, unknown>) : {};
+    audit.log(eventType, payload);
+    return { status: "recorded", event_type: eventType };
+  });
 
   app.post("/demo/reset", async () => {
     audit.clear();
