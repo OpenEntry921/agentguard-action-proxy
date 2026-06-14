@@ -1,4 +1,10 @@
 import { ActionRequest, Decision } from "./models";
+import {
+  GOLD_ALLOWED_CURRENCY,
+  GOLD_TARGET_PREFIX,
+  getGoldActionDetails,
+  isBuyGoldAction,
+} from "./gold";
 
 export interface PolicyEvaluation {
   decision: Decision;
@@ -18,6 +24,48 @@ function numberParameter(value: unknown): number {
 
 export function evaluatePolicy(action: ActionRequest): PolicyEvaluation {
   const matchedPolicies: string[] = [];
+
+  if (isBuyGoldAction(action)) {
+    const { currency, goldAmountGrams } = getGoldActionDetails(action);
+    if (currency !== GOLD_ALLOWED_CURRENCY) {
+      matchedPolicies.push("deny_gold_currency_not_allowed");
+      return {
+        decision: Decision.DENY,
+        matchedPolicies,
+        reason: "Gold purchases are only allowed with XRP.",
+      };
+    }
+    if (!action.target_resource.startsWith(GOLD_TARGET_PREFIX)) {
+      matchedPolicies.push("deny_gold_target_not_allowed");
+      return {
+        decision: Decision.DENY,
+        matchedPolicies,
+        reason: "Gold purchases are only allowed for gold:vault_* targets.",
+      };
+    }
+    if (goldAmountGrams > 1000) {
+      matchedPolicies.push("deny_gold_amount_over_1000g");
+      return {
+        decision: Decision.DENY,
+        matchedPolicies,
+        reason: "Gold purchases over 1000g are denied.",
+      };
+    }
+    if (goldAmountGrams > 100) {
+      matchedPolicies.push("review_gold_amount_101_to_1000g");
+      return {
+        decision: Decision.REVIEW_REQUIRED,
+        matchedPolicies,
+        reason: "Gold purchases from 101g to 1000g require human review.",
+      };
+    }
+    matchedPolicies.push("allow_gold_amount_up_to_100g");
+    return {
+      decision: Decision.ALLOW,
+      matchedPolicies,
+      reason: "Gold purchases up to 100g are allowed.",
+    };
+  }
 
   if (action.action_type === "github.delete_repository" && action.target_resource.toLowerCase().includes("production")) {
     matchedPolicies.push("deny_production_repository_delete");
