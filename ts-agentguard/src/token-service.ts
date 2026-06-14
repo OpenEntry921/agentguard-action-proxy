@@ -19,7 +19,9 @@ function actionFingerprint(action: ActionRequest): string {
   return createHash("sha256")
     .update(stableStringify({
       action_id: action.action_id,
+      actor_id: action.actor_id,
       action_type: action.action_type,
+      target_system: action.target_system,
       target_resource: action.target_resource,
       parameters: action.parameters,
       context: action.context,
