@@ -27,6 +27,17 @@ export interface AgentGuardState {
   attemptCounter: Map<string, number>;
 }
 
+function createExecutor(action: ActionRequest) {
+  if (action.target_system === "settlement_orchestrator") {
+    return new SettlementOrchestratorExecutor();
+  }
+
+  if (action.target_system === "github") {
+    return new MockGitHubExecutor();
+  }
+
+  return new MockBrowserExecutor();
+}
 
 function loadLocalEnvFile(): void {
   const envPath = join(__dirname, "..", ".env");
@@ -196,13 +207,7 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
       };
     }
 
-    const targetSystem = action.target_system.toLowerCase();
-    const executor =
-      targetSystem === "github"
-        ? new MockGitHubExecutor()
-        : targetSystem === "settlement_orchestrator"
-          ? new SettlementOrchestratorExecutor()
-          : new MockBrowserExecutor();
+    const executor = createExecutor(action);
     audit.log("execution_attempted", {
       action_id: action.action_id,
       executor: executor.constructor.name,
