@@ -27,6 +27,32 @@ export interface AgentGuardState {
   attemptCounter: Map<string, number>;
 }
 
+
+function loadLocalEnvFile(): void {
+  const envPath = join(__dirname, "..", ".env");
+  if (!existsSync(envPath)) {
+    return;
+  }
+
+  for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) {
+      continue;
+    }
+
+    const separatorIndex = trimmed.indexOf("=");
+    if (separatorIndex === -1) {
+      continue;
+    }
+
+    const key = trimmed.slice(0, separatorIndex).trim();
+    const value = trimmed.slice(separatorIndex + 1).trim();
+    process.env[key] ??= value.replace(/^(["'])(.*)\1$/, "$2");
+  }
+}
+
+loadLocalEnvFile();
+
 function validateBody<TSchema extends ZodTypeAny>(
   schema: TSchema,
   body: unknown,
@@ -182,8 +208,12 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
       executor: executor.constructor.name,
       ...goldAuditFields(action),
     });
-    const result = executor.execute(action, req.execution_token);
-    const final = { action_id: action.action_id, decision: "ALLOW", ...result };
+    const result = await executor.execute(action, req.execution_token);
+    const final = {
+      ...result,
+      action_id: action.action_id,
+      decision: typeof result.decision === "string" ? result.decision : "ALLOW",
+    };
     audit.log("execution_completed", { ...final, ...goldAuditFields(action) });
     return final;
   });

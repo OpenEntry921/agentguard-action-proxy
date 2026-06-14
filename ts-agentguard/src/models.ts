@@ -74,4 +74,8 @@ export interface ExecutionResult {
   executed: boolean;
   message: string;
   executor?: string;
+  settlementId?: string;
+  txHash?: string;
+  ledgerIndex?: number;
+  network?: string;
 }
