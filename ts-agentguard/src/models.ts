@@ -78,4 +78,5 @@ export interface ExecutionResult {
   txHash?: string;
   ledgerIndex?: number;
   network?: string;
+  timestamp?: string;
 }
