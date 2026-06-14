@@ -216,13 +216,27 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
 
     const [valid, reason] = tokens.validateForExecution(req.execution_token, action);
     if (!valid) {
-      audit.log("execution_token_validation_failed", { action_id: action.action_id, reason, outcome: "blocked", ...actionAuditFields(action) });
-      audit.log("execution_blocked", { action_id: action.action_id, reason, outcome: "blocked", ...actionAuditFields(action) });
+      const isDrift = reason === "request_fingerprint_mismatch" || reason === "loan_amount_mismatch";
+      const validationPayload = {
+        action_id: action.action_id,
+        reason: isDrift ? "request_fingerprint_mismatch" : reason,
+        outcome: "blocked",
+        ...(isDrift ? {
+          threatType: "AI_AGENT_DRIFT",
+          approvedField: "loanAmountRLUSD",
+          approvedValue: 500,
+          executionValue: action.parameters.loanAmountRLUSD,
+        } : {}),
+        ...actionAuditFields(action),
+      };
+      audit.log("execution_token_validation_failed", validationPayload);
+      audit.log("execution_blocked", validationPayload);
       return {
         action_id: action.action_id,
         decision: "BLOCKED",
         executed: false,
-        message: reason,
+        message: isDrift ? "Execution request does not match approved request." : reason,
+        ...(isDrift ? { threatType: "AI_AGENT_DRIFT" } : {}),
       };
     }
 
