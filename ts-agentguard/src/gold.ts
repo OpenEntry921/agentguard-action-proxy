@@ -33,7 +33,7 @@ export function getGoldActionDetails(action: ActionRequest): GoldActionDetails {
   return {
     goldAmountGrams: numberParameter(action.parameters.goldAmountGrams ?? action.parameters.gold_amount_grams),
     vaultId: stringParameter(action.parameters.vaultId ?? action.parameters.vault_id) || targetVaultId,
-    currency: stringParameter(action.parameters.currency).toUpperCase(),
+    currency: String(action.parameters.settlementCurrency ?? action.parameters.currency ?? "").toUpperCase(),
   };
 }
 
