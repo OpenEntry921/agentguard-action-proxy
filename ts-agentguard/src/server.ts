@@ -10,6 +10,7 @@ import { MockBrowserExecutor } from "./executors/mock-browser";
 import { MockGitHubExecutor } from "./executors/mock-github";
 import { SettlementOrchestratorExecutor } from "./executors/settlement-orchestrator";
 import { goldAuditFields } from "./gold";
+import { kgldAuditFields } from "./kgld";
 import { ActionRequest, ActionRequestSchema, Decision, ExecuteRequestSchema, PreviewResponse } from "./models";
 import { evaluatePolicy } from "./policy";
 import { scoreRisk } from "./risk";
@@ -77,6 +78,10 @@ function validateBody<TSchema extends ZodTypeAny>(
   return parsed.data;
 }
 
+function actionAuditFields(action: ActionRequest): Record<string, unknown> {
+  return { ...goldAuditFields(action), ...kgldAuditFields(action) };
+}
+
 function demoHtml(): string {
   const candidates = [
     join(process.cwd(), "ts-agentguard", "src", "demo", "demo.html"),
@@ -86,6 +91,19 @@ function demoHtml(): string {
   const demoPath = candidates.find((candidate) => existsSync(candidate));
   if (!demoPath) {
     throw new Error("demo_html_not_found");
+  }
+  return readFileSync(demoPath, "utf-8");
+}
+
+function kgldDemoHtml(): string {
+  const candidates = [
+    join(process.cwd(), "ts-agentguard", "src", "demo", "kgld-vault-demo.html"),
+    join(process.cwd(), "src", "demo", "kgld-vault-demo.html"),
+    join(__dirname, "demo", "kgld-vault-demo.html"),
+  ];
+  const demoPath = candidates.find((candidate) => existsSync(candidate));
+  if (!demoPath) {
+    throw new Error("kgld_demo_html_not_found");
   }
   return readFileSync(demoPath, "utf-8");
 }
@@ -102,7 +120,7 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
       return reply;
     }
 
-    const goldFields = goldAuditFields(action);
+    const goldFields = actionAuditFields(action);
     audit.log("action_requested", { action_id: action.action_id, action_type: action.action_type, ...goldFields });
     const key = `${action.actor_id}:${action.action_type}:${action.target_resource}`;
     const attempts = attemptCounter.get(key) ?? 0;
@@ -177,7 +195,7 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
     const approval = approvals.get(action.action_id);
 
     if (preview.decision === Decision.DENY) {
-      audit.log("execution_blocked", { action_id: action.action_id, reason: "policy_denied", ...goldAuditFields(action) });
+      audit.log("execution_blocked", { action_id: action.action_id, reason: "policy_denied", ...actionAuditFields(action) });
       return {
         action_id: action.action_id,
         decision: "DENY",
@@ -187,7 +205,7 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
     }
 
     if (preview.decision === Decision.REVIEW_REQUIRED && approval !== "approved") {
-      audit.log("execution_blocked", { action_id: action.action_id, reason: "approval_not_granted", ...goldAuditFields(action) });
+      audit.log("execution_blocked", { action_id: action.action_id, reason: "approval_not_granted", ...actionAuditFields(action) });
       return {
         action_id: action.action_id,
         decision: "REVIEW_REQUIRED",
@@ -198,7 +216,7 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
 
     const [valid, reason] = tokens.validateForExecution(req.execution_token, action);
     if (!valid) {
-      audit.log("execution_blocked", { action_id: action.action_id, reason, ...goldAuditFields(action) });
+      audit.log("execution_blocked", { action_id: action.action_id, reason, ...actionAuditFields(action) });
       return {
         action_id: action.action_id,
         decision: "BLOCKED",
@@ -211,7 +229,7 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
     audit.log("execution_attempted", {
       action_id: action.action_id,
       executor: executor.constructor.name,
-      ...goldAuditFields(action),
+      ...actionAuditFields(action),
     });
     const result = await executor.execute(action, req.execution_token);
     const final = {
@@ -219,7 +237,7 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
       action_id: action.action_id,
       decision: typeof result.decision === "string" ? result.decision : "ALLOW",
     };
-    audit.log("execution_completed", { ...final, ...goldAuditFields(action) });
+    audit.log("execution_completed", { ...final, ...actionAuditFields(action) });
     return final;
   });
 
@@ -245,6 +263,8 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
     };
   });
 
+  app.get("/demo/kgld", async (_request, reply) => reply.type("text/html; charset=utf-8").send(kgldDemoHtml()));
+
   app.get("/demo", async (_request, reply) => reply.type("text/html; charset=utf-8").send(demoHtml()));
 
   app.post<{ Params: ActionIdParams }>("/actions/:actionId/token", async (request, reply) => {
@@ -263,7 +283,7 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
       action_id: action.action_id,
       token_id: token.token_id,
       expires_at: token.expires_at.toISOString(),
-      ...goldAuditFields(action),
+      ...actionAuditFields(action),
     });
     return { token_id: token.token_id };
   });

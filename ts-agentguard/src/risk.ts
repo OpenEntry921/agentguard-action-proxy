@@ -1,5 +1,6 @@
 import { ActionRequest, RiskLevel } from "./models";
 import { getGoldActionDetails, isBuyGoldAction } from "./gold";
+import { getKgldLendingDetails, isKgldLendingAction } from "./kgld";
 
 export interface RiskScore {
   score: number;
@@ -33,6 +34,17 @@ function numberParameter(value: unknown): number {
 export function scoreRisk(action: ActionRequest, repeatedAttempts = 0, hasHumanApproval = false): RiskScore {
   let score = 0;
   const factors: string[] = [];
+
+  if (isKgldLendingAction(action)) {
+    const { ltv } = getKgldLendingDetails(action);
+    if (ltv <= 60) {
+      return { score: 25, level: RiskLevel.LOW, factors: ["safe_ltv"] };
+    }
+    if (ltv <= 70) {
+      return { score: 55, level: RiskLevel.MEDIUM, factors: ["additional_collateral_required"] };
+    }
+    return { score: 90, level: RiskLevel.CRITICAL, factors: ["ltv_over_limit"] };
+  }
 
   if (isBuyGoldAction(action)) {
     const { goldAmountGrams } = getGoldActionDetails(action);
