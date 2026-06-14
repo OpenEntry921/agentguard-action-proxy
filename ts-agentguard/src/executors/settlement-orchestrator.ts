@@ -1,4 +1,5 @@
-import { getGoldActionDetails } from "../gold";
+import { getGoldActionDetails, isBuyGoldAction } from "../gold";
+import { getKgldLendingDetails, isKgldLendingAction } from "../kgld";
 import type { ActionRequest, ExecutionResult } from "../models";
 
 type JsonObject = Record<string, unknown>;
@@ -127,7 +128,10 @@ export class SettlementOrchestratorExecutor {
       action.parameters.settlementCurrency ?? action.parameters.currency,
       process.env.GOLD_DEMO_SETTLEMENT_CURRENCY ?? "XRP",
     );
-    const memo = `AgentGuard BUY_GOLD ${action.target_resource} ${goldAmountGrams}g`;
+    const kgld = isKgldLendingAction(action) ? getKgldLendingDetails(action) : undefined;
+    const memo = isBuyGoldAction(action)
+      ? `AgentGuard BUY_GOLD ${action.target_resource} ${goldAmountGrams}g`
+      : `AgentGuard KGLD_RLUSD_LOAN ${kgld?.vaultId ?? action.target_resource} ${kgld?.loanAmountRLUSD ?? ""} RLUSD LTV ${kgld?.ltv ?? ""}%`;
 
     try {
       const createResponse = await fetch(`${this.baseUrl}/settlements`, {

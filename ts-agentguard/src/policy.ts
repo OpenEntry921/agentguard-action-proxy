@@ -5,6 +5,7 @@ import {
   getGoldActionDetails,
   isBuyGoldAction,
 } from "./gold";
+import { getKgldLendingDetails, isKgldLendingAction } from "./kgld";
 
 export interface PolicyEvaluation {
   decision: Decision;
@@ -24,6 +25,32 @@ function numberParameter(value: unknown): number {
 
 export function evaluatePolicy(action: ActionRequest): PolicyEvaluation {
   const matchedPolicies: string[] = [];
+
+  if (isKgldLendingAction(action)) {
+    const { ltv } = getKgldLendingDetails(action);
+    if (ltv <= 60) {
+      matchedPolicies.push("allow_kgld_ltv_up_to_60");
+      return {
+        decision: Decision.ALLOW,
+        matchedPolicies,
+        reason: "KGLD collateralized RLUSD loan is within safe LTV limit.",
+      };
+    }
+    if (ltv <= 70) {
+      matchedPolicies.push("require_additional_kgld_collateral");
+      return {
+        decision: Decision.REVIEW_REQUIRED,
+        matchedPolicies,
+        reason: "Additional KGLD collateral is required before RLUSD loan settlement.",
+      };
+    }
+    matchedPolicies.push("deny_kgld_ltv_over_70");
+    return {
+      decision: Decision.DENY,
+      matchedPolicies,
+      reason: "LTV exceeds maximum risk threshold.",
+    };
+  }
 
   if (isBuyGoldAction(action)) {
     const { currency, goldAmountGrams } = getGoldActionDetails(action);
