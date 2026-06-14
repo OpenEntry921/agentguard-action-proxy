@@ -1,4 +1,5 @@
 import { ActionRequest, RiskLevel } from "./models";
+import { getGoldActionDetails, isBuyGoldAction } from "./gold";
 
 export interface RiskScore {
   score: number;
@@ -32,6 +33,17 @@ function numberParameter(value: unknown): number {
 export function scoreRisk(action: ActionRequest, repeatedAttempts = 0, hasHumanApproval = false): RiskScore {
   let score = 0;
   const factors: string[] = [];
+
+  if (isBuyGoldAction(action)) {
+    const { goldAmountGrams } = getGoldActionDetails(action);
+    if (goldAmountGrams > 1000) {
+      return { score: 95, level: RiskLevel.CRITICAL, factors: ["gold_amount_over_limit", "gold_trade_denied"] };
+    }
+    if (goldAmountGrams > 100) {
+      return { score: 60, level: RiskLevel.MEDIUM, factors: ["gold_amount_requires_review"] };
+    }
+    return { score: 20, level: RiskLevel.LOW, factors: ["gold_amount_low_risk"] };
+  }
 
   if (["github.delete_repository", "aws.open_security_group"].includes(action.action_type)) {
     score += 65;

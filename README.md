@@ -103,6 +103,55 @@ python3 -m uvicorn agentguard.api:app --reload
 - BLOCKED 시나리오에서 실행 차단 확인
 - 감사 레코드와 request/decision/result 식별자 확인
 
+### Gold Trading Governance Demo (`ts-agentguard`)
+
+TypeScript Fastify 구현체는 AI Agent의 금 매수 요청을 `BUY_GOLD` action으로 받아 Settlement Orchestrator 실행 경로를 거버넌스한다. 현재 데모는 실제 Settlement Orchestrator HTTP 호출, XRPL 직접 호출, seed/private key 저장을 하지 않으며 mock 실행 결과만 반환한다.
+
+Gold 정책:
+
+- 허용 통화: `XRP`
+- 허용 대상: `gold:vault_*`
+- `<=100g`: `ALLOW`, `LOW`
+- `101~1000g`: `REVIEW_REQUIRED`
+- `>1000g`: `DENY`
+
+예시 Preview 요청:
+
+```bash
+cd ts-agentguard
+npm run build
+node dist/server.js
+curl -s http://localhost:8000/actions/preview \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "action_id": "gold-demo-001",
+    "actor_type": "ai_agent",
+    "actor_id": "agent-gold-trader",
+    "action_type": "BUY_GOLD",
+    "target_system": "settlement_orchestrator",
+    "target_resource": "gold:vault_alpha",
+    "parameters": {
+      "goldAmountGrams": 50,
+      "vaultId": "vault_alpha",
+      "currency": "XRP"
+    },
+    "context": {},
+    "requested_at": "2026-06-14T00:00:00.000Z"
+  }'
+```
+
+허용된 `BUY_GOLD` 요청은 `/actions/{actionId}/token`에서 transient token을 발급받은 뒤 `/actions/execute`로 mock settlement executor를 실행할 수 있다. 실행 결과는 다음 형태를 포함한다.
+
+```json
+{
+  "executed": true,
+  "settlementId": "mock-settlement-...",
+  "network": "xrpl-testnet"
+}
+```
+
+Audit event에는 gold demo 추적을 위해 `goldAmountGrams`, `vaultId`가 함께 기록된다.
+
 ## 보안 원칙
 
 - 사전 정책 통제(Pre-execution control)

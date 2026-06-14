@@ -8,6 +8,8 @@ import { ApprovalStore } from "./approval";
 import { AuditLog } from "./audit";
 import { MockBrowserExecutor } from "./executors/mock-browser";
 import { MockGitHubExecutor } from "./executors/mock-github";
+import { SettlementOrchestratorExecutor } from "./executors/settlement-orchestrator";
+import { goldAuditFields } from "./gold";
 import { ActionRequest, ActionRequestSchema, Decision, ExecuteRequestSchema, PreviewResponse } from "./models";
 import { evaluatePolicy } from "./policy";
 import { scoreRisk } from "./risk";
@@ -63,7 +65,8 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
       return reply;
     }
 
-    audit.log("action_requested", { action_id: action.action_id, action_type: action.action_type });
+    const goldFields = goldAuditFields(action);
+    audit.log("action_requested", { action_id: action.action_id, action_type: action.action_type, ...goldFields });
     const key = `${action.actor_id}:${action.action_type}:${action.target_resource}`;
     const attempts = attemptCounter.get(key) ?? 0;
 
@@ -72,6 +75,7 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
       action_id: action.action_id,
       matched_policies: matchedPolicies,
       decision,
+      ...goldFields,
     });
 
     const risk = scoreRisk(action, attempts);
@@ -80,11 +84,12 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
       risk_score: risk.score,
       risk_level: risk.level,
       risk_factors: risk.factors,
+      ...goldFields,
     });
 
     const approvalRequired = decision === Decision.REVIEW_REQUIRED;
     if (approvalRequired) {
-      audit.log("approval_requested", { action_id: action.action_id });
+      audit.log("approval_requested", { action_id: action.action_id, ...goldFields });
     }
 
     const interpreted = `${action.actor_type}:${action.actor_id} requests ${action.action_type} on ${action.target_system}/${action.target_resource}`;
@@ -102,7 +107,7 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
 
     previews.set(action.action_id, preview);
     attemptCounter.set(key, attempts + 1);
-    audit.log("preview_generated", preview);
+    audit.log("preview_generated", { ...preview, ...goldFields });
     return preview;
   });
 
@@ -135,7 +140,7 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
     const approval = approvals.get(action.action_id);
 
     if (preview.decision === Decision.DENY) {
-      audit.log("execution_blocked", { action_id: action.action_id, reason: "policy_denied" });
+      audit.log("execution_blocked", { action_id: action.action_id, reason: "policy_denied", ...goldAuditFields(action) });
       return {
         action_id: action.action_id,
         decision: "DENY",
@@ -145,7 +150,7 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
     }
 
     if (preview.decision === Decision.REVIEW_REQUIRED && approval !== "approved") {
-      audit.log("execution_blocked", { action_id: action.action_id, reason: "approval_not_granted" });
+      audit.log("execution_blocked", { action_id: action.action_id, reason: "approval_not_granted", ...goldAuditFields(action) });
       return {
         action_id: action.action_id,
         decision: "REVIEW_REQUIRED",
@@ -156,7 +161,7 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
 
     const [valid, reason] = tokens.validateForExecution(req.execution_token, action);
     if (!valid) {
-      audit.log("execution_blocked", { action_id: action.action_id, reason });
+      audit.log("execution_blocked", { action_id: action.action_id, reason, ...goldAuditFields(action) });
       return {
         action_id: action.action_id,
         decision: "BLOCKED",
@@ -165,11 +170,21 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
       };
     }
 
-    const executor = action.target_system === "github" ? new MockGitHubExecutor() : new MockBrowserExecutor();
-    audit.log("execution_attempted", { action_id: action.action_id, executor: executor.constructor.name });
+    const targetSystem = action.target_system.toLowerCase();
+    const executor =
+      targetSystem === "github"
+        ? new MockGitHubExecutor()
+        : targetSystem === "settlement_orchestrator"
+          ? new SettlementOrchestratorExecutor()
+          : new MockBrowserExecutor();
+    audit.log("execution_attempted", {
+      action_id: action.action_id,
+      executor: executor.constructor.name,
+      ...goldAuditFields(action),
+    });
     const result = executor.execute(action, req.execution_token);
     const final = { action_id: action.action_id, decision: "ALLOW", ...result };
-    audit.log("execution_completed", final);
+    audit.log("execution_completed", { ...final, ...goldAuditFields(action) });
     return final;
   });
 
@@ -213,6 +228,7 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
       action_id: action.action_id,
       token_id: token.token_id,
       expires_at: token.expires_at.toISOString(),
+      ...goldAuditFields(action),
     });
     return { token_id: token.token_id };
   });
