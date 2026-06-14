@@ -59,6 +59,8 @@ export const EphemeralExecutionTokenSchema = z.object({
   allowed_action_type: z.string(),
   allowed_target: z.string(),
   expires_at: z.date(),
+  request_fingerprint: z.string().optional(),
+  approved_loan_amount: z.number().optional(),
   used: z.boolean().default(false),
 });
 
