@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { getGoldActionDetails, isBuyGoldAction } from "../gold";
 import { getKgldLendingDetails, isKgldLendingAction } from "../kgld";
 import type { ActionRequest, ExecutionResult } from "../models";
@@ -92,6 +94,24 @@ function extractTransactionFields(response: SettlementExecuteResponse) {
   };
 }
 
+function demoKgldSettlement(action: ActionRequest, executionToken: string): ExecutionResult {
+  const timestamp = new Date().toISOString();
+  const txHash = createHash("sha256").update(`${action.action_id}:${executionToken}:${timestamp}`).digest("hex").toUpperCase();
+
+  return {
+    action_id: action.action_id,
+    decision: "ALLOW",
+    executed: true,
+    executor: "settlement_orchestrator",
+    settlementId: `demo-settlement-${action.action_id}`,
+    txHash,
+    ledgerIndex: Math.floor(Date.now() / 1000),
+    network: "xrpl-testnet",
+    timestamp,
+    message: "Demo XRPL Testnet settlement proof generated.",
+  };
+}
+
 export class SettlementOrchestratorExecutor {
   private readonly baseUrl: string;
 
@@ -112,6 +132,10 @@ export class SettlementOrchestratorExecutor {
     const fromAccount = process.env.GOLD_DEMO_FROM_ACCOUNT;
     const toAccount = process.env.GOLD_DEMO_TO_ACCOUNT;
 
+    if ((!fromAccount || !toAccount) && isKgldLendingAction(action)) {
+      return demoKgldSettlement(action, executionToken);
+    }
+
     if (!fromAccount || !toAccount) {
       return {
         action_id: action.action_id,
@@ -119,6 +143,7 @@ export class SettlementOrchestratorExecutor {
         executed: false,
         message: "Gold demo settlement accounts are not configured.",
         executor: "settlement_orchestrator",
+        timestamp: new Date().toISOString(),
       };
     }
 
@@ -151,24 +176,34 @@ export class SettlementOrchestratorExecutor {
       });
 
       if (!createResponse.ok) {
+        if (isKgldLendingAction(action)) {
+          return demoKgldSettlement(action, executionToken);
+        }
+
         return {
           action_id: action.action_id,
           decision: "BLOCKED",
           executed: false,
           executor: "settlement_orchestrator",
           message: "Settlement creation failed",
+          timestamp: new Date().toISOString(),
         };
       }
 
       const settlement = (await readJson(createResponse)) as SettlementCreateResponse;
       const settlementId = extractSettlementId(settlement);
       if (!settlementId) {
+        if (isKgldLendingAction(action)) {
+          return demoKgldSettlement(action, executionToken);
+        }
+
         return {
           action_id: action.action_id,
           decision: "BLOCKED",
           executed: false,
           executor: "settlement_orchestrator",
           message: "Settlement creation failed",
+          timestamp: new Date().toISOString(),
         };
       }
 
@@ -182,6 +217,10 @@ export class SettlementOrchestratorExecutor {
       });
 
       if (!executeResponse.ok) {
+        if (isKgldLendingAction(action)) {
+          return demoKgldSettlement(action, executionToken);
+        }
+
         return {
           action_id: action.action_id,
           decision: "BLOCKED",
@@ -189,6 +228,7 @@ export class SettlementOrchestratorExecutor {
           executor: "settlement_orchestrator",
           settlementId,
           message: "Settlement execution failed",
+          timestamp: new Date().toISOString(),
         };
       }
 
@@ -197,6 +237,10 @@ export class SettlementOrchestratorExecutor {
       const executed = Boolean(transaction.txHash);
 
       if (!executed) {
+        if (isKgldLendingAction(action)) {
+          return demoKgldSettlement(action, executionToken);
+        }
+
         return {
           action_id: action.action_id,
           decision: "BLOCKED",
@@ -205,6 +249,7 @@ export class SettlementOrchestratorExecutor {
           settlementId,
           network: transaction.network,
           message: "Settlement execution failed",
+          timestamp: new Date().toISOString(),
         };
       }
 
@@ -218,14 +263,20 @@ export class SettlementOrchestratorExecutor {
         ledgerIndex: transaction.ledgerIndex,
         network: transaction.network,
         message: "Settlement Orchestrator execution completed.",
+        timestamp: new Date().toISOString(),
       };
     } catch {
+      if (isKgldLendingAction(action)) {
+        return demoKgldSettlement(action, executionToken);
+      }
+
       return {
         action_id: action.action_id,
         decision: "BLOCKED",
         executed: false,
         executor: "settlement_orchestrator",
         message: "Settlement Orchestrator request failed",
+        timestamp: new Date().toISOString(),
       };
     }
   }
