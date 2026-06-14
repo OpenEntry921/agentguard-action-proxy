@@ -1,17 +1,25 @@
 import { getGoldActionDetails } from "../gold";
 import type { ActionRequest, ExecutionResult } from "../models";
 
-interface SettlementCreateResponse {
-  id: string;
-  status: string;
+type JsonObject = Record<string, unknown>;
+
+interface SettlementCreateResponse extends JsonObject {
+  id?: string;
+  settlementId?: string;
 }
 
-interface SettlementExecuteResponse {
-  id: string;
-  status: string;
+interface SettlementExecuteResponse extends JsonObject {
+  id?: string;
+  settlementId?: string;
+  status?: string;
   txHash?: string;
+  hash?: string;
   ledgerIndex?: number;
+  ledger_index?: number;
   network?: string;
+  result?: JsonObject;
+  settlement?: JsonObject;
+  transaction?: JsonObject;
 }
 
 function readString(value: unknown, fallback = ""): string {
@@ -20,6 +28,67 @@ function readString(value: unknown, fallback = ""): string {
   }
 
   return String(value);
+}
+
+function readNumber(value: unknown): number | undefined {
+  if (typeof value === "number") {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  }
+
+  return undefined;
+}
+
+function firstString(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    if (typeof value === "string" && value.length > 0) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
+function objectValue(value: unknown): JsonObject | undefined {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? (value as JsonObject) : undefined;
+}
+
+async function readJson(response: Response): Promise<JsonObject> {
+  const value = (await response.json()) as unknown;
+  return objectValue(value) ?? {};
+}
+
+function extractSettlementId(response: SettlementCreateResponse | SettlementExecuteResponse): string | undefined {
+  const result = objectValue(response.result);
+  const settlement = objectValue(response.settlement);
+
+  return firstString(
+    response.settlementId,
+    response.id,
+    result?.settlementId,
+    result?.id,
+    settlement?.settlementId,
+    settlement?.id,
+  );
+}
+
+function extractTransactionFields(response: SettlementExecuteResponse) {
+  const result = objectValue(response.result);
+  const settlement = objectValue(response.settlement);
+  const transaction = objectValue(response.transaction) ?? objectValue(result?.transaction);
+
+  return {
+    status: firstString(response.status, result?.status, settlement?.status),
+    txHash: firstString(response.txHash, response.hash, result?.txHash, result?.hash, transaction?.txHash, transaction?.hash),
+    ledgerIndex: readNumber(
+      response.ledgerIndex ?? response.ledger_index ?? result?.ledgerIndex ?? result?.ledger_index ?? transaction?.ledgerIndex ?? transaction?.ledger_index,
+    ),
+    network: firstString(response.network, result?.network, settlement?.network, transaction?.network),
+  };
 }
 
 export class SettlementOrchestratorExecutor {
@@ -83,12 +152,23 @@ export class SettlementOrchestratorExecutor {
           decision: "BLOCKED",
           executed: false,
           executor: "settlement_orchestrator",
-          message: `Settlement creation failed: ${createResponse.status}`,
+          message: "Settlement creation failed",
         };
       }
 
-      const settlement = (await createResponse.json()) as SettlementCreateResponse;
-      const executeResponse = await fetch(`${this.baseUrl}/settlements/${settlement.id}/execute`, {
+      const settlement = (await readJson(createResponse)) as SettlementCreateResponse;
+      const settlementId = extractSettlementId(settlement);
+      if (!settlementId) {
+        return {
+          action_id: action.action_id,
+          decision: "BLOCKED",
+          executed: false,
+          executor: "settlement_orchestrator",
+          message: "Settlement creation failed",
+        };
+      }
+
+      const executeResponse = await fetch(`${this.baseUrl}/settlements/${settlementId}/execute`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -103,31 +183,45 @@ export class SettlementOrchestratorExecutor {
           decision: "BLOCKED",
           executed: false,
           executor: "settlement_orchestrator",
-          settlementId: settlement.id,
-          message: `Settlement execution failed: ${executeResponse.status}`,
+          settlementId,
+          message: "Settlement execution failed",
         };
       }
 
-      const result = (await executeResponse.json()) as SettlementExecuteResponse;
+      const result = (await readJson(executeResponse)) as SettlementExecuteResponse;
+      const transaction = extractTransactionFields(result);
+      const executed = Boolean(transaction.txHash);
+
+      if (!executed) {
+        return {
+          action_id: action.action_id,
+          decision: "BLOCKED",
+          executed: false,
+          executor: "settlement_orchestrator",
+          settlementId,
+          network: transaction.network,
+          message: "Settlement execution failed",
+        };
+      }
 
       return {
         action_id: action.action_id,
-        decision: result.status === "SETTLED" ? "ALLOW" : "BLOCKED",
-        executed: result.status === "SETTLED",
+        decision: "ALLOW",
+        executed: true,
         executor: "settlement_orchestrator",
-        settlementId: settlement.id,
-        txHash: result.txHash,
-        ledgerIndex: result.ledgerIndex,
-        network: result.network,
-        message: `Settlement Orchestrator execution completed. status=${result.status}, network=${result.network}, txHash=${result.txHash}`,
+        settlementId,
+        txHash: transaction.txHash,
+        ledgerIndex: transaction.ledgerIndex,
+        network: transaction.network,
+        message: "Settlement Orchestrator execution completed.",
       };
-    } catch (error) {
+    } catch {
       return {
         action_id: action.action_id,
         decision: "BLOCKED",
         executed: false,
         executor: "settlement_orchestrator",
-        message: `Settlement Orchestrator request failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        message: "Settlement Orchestrator request failed",
       };
     }
   }
