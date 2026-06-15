@@ -230,6 +230,10 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
         ...actionAuditFields(action),
       };
       audit.log("execution_token_validation_failed", validationPayload);
+      if (reason === "target_mismatch") {
+        audit.log("target_mismatch", validationPayload);
+        audit.log("unauthorized_vault_access", validationPayload);
+      }
       audit.log("execution_blocked", validationPayload);
       return {
         action_id: action.action_id,
