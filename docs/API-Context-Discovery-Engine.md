@@ -2,7 +2,16 @@
 
 ## 1. Core Concept
 
-APIs are the behavioral dictionary of an enterprise system.
+The API Context Discovery Engine is a submodule of Context Engineering.
+
+```text
+Context Engineering
+└── API Context Discovery Engine
+```
+
+API is the living action dictionary of modern enterprise systems.
+
+API는 현대 기업 시스템의 살아있는 행동 사전이다. API를 분석하면 AI Agent가 어떤 행동을 할 수 있는지, 어떤 자산에 접근하는지, 어떤 위험이 있는지 추론할 수 있다.
 
 An API endpoint is not only a URL. It often describes a business action, a target resource, a target system, and a security-relevant intent.
 
@@ -48,7 +57,7 @@ The engine extracts or proposes the following fields from API definitions, logs,
 ## 3. Design Principles
 
 1. **API analysis produces policy candidates, not final policy.**
-   The engine proposes likely controls, but does not make customer policy decisions by itself.
+   The engine proposes likely controls, but does not make customer policy decisions by itself. API analysis results are policy candidates, not final policy. Final confirmation is performed by the customer or consultant.
 
 2. **Final policy is owned by the customer.**
    Consultants, security teams, platform owners, or customer administrators confirm the final policy.
@@ -68,17 +77,16 @@ The engine extracts or proposes the following fields from API definitions, logs,
 ## 4. End-to-End Flow
 
 ```text
-API Source
+OpenAPI / Swagger / API Gateway Logs / Source Routes
 ↓
-API Parser
+API Context Discovery Engine
 ↓
-Semantic Extractor
-↓
-Context Mapper
-↓
-Risk Classifier
-↓
-Policy Candidate Generator
+Action Inventory
+Resource Inventory
+Risk Category
+Permission Candidate
+Policy Candidate
+AgentGuard Attachment Point
 ↓
 Human Review
 ↓

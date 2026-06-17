@@ -4,6 +4,19 @@
 
 이 프로젝트의 중심은 XRPL 또는 DID 자체가 아니라, **AI runtime에서 생성된 실행 요청을 안전하게 중개하는 Action Proxy**다. XRPL 결제/조회, DID 신원 기준, 감사 앵커링은 실행 대상 또는 신뢰 보강 수단으로 사용할 수 있지만, AgentGuard의 핵심 가치는 “AI가 무엇을 실행할 수 있는지”를 런타임에서 결정하고 통제하는 것이다.
 
+
+## AgentGuard Strategic Documentation
+
+- [AgentGuard Positioning](docs/AGENTGUARD_POSITIONING.md)
+- [Context Engineering](docs/CONTEXT_ENGINEERING.md)
+- [Harness Engineering](docs/HARNESS_ENGINEERING.md)
+- [Execution Integrity](docs/EXECUTION_INTEGRITY.md)
+- [Behavior Pattern Taxonomy](docs/BEHAVIOR_PATTERN_TAXONOMY.md)
+- [Policy Pattern Taxonomy](docs/POLICY_PATTERN_TAXONOMY.md)
+- [Agent Reputation Engine](docs/AGENT_REPUTATION_ENGINE.md)
+- [API Context Discovery Engine](docs/API-Context-Discovery-Engine.md)
+- [Roadmap](docs/ROADMAP.md)
+
 ## 한 줄 소개
 
 AgentGuard Action Proxy는 **AI Agent의 실행 요청을 정책 기반으로 사전 평가하고, 조건부 승인과 감사 가능한 실행 결과를 제공하는 Runtime Governance System**이다.
