@@ -291,6 +291,11 @@ Agent가 시스템, 배포, 설정, 네트워크, 운영환경에 영향을 주�
 - Exception handling
 - Override accountability
 - Compensating control
+- Human Review Trigger
+- Human Confirmation Trigger
+- Human Stop Authority
+- Human Recovery Authority
+- Human Escalation Trigger
 
 **Excluded**
 
@@ -319,6 +324,9 @@ Agent가 시스템, 배포, 설정, 네트워크, 운영환경에 영향을 주�
 - Break-Glass Policy
 - Exception Approval Policy
 - Compensating Control Policy
+- Human Review Policy
+- Human Stop Policy
+- Human Recovery Policy
 
 **Example Questions**
 
@@ -391,6 +399,12 @@ AI 사용으로 발생하는 위험을 식별, 평가, 우선순위화, 처리, 
 - Risk escalation
 - Residual risk
 - Risk ownership
+- Risk Register
+- Risk Classification
+- Residual Risk Scoring
+- High Impact AI Assessment
+- Risk Acceptance Authority
+- Risk Treatment Tracking
 
 **Excluded**
 
@@ -423,6 +437,9 @@ AI 사용으로 발생하는 위험을 식별, 평가, 우선순위화, 처리, 
 - Risk Acceptance Policy
 - Risk Escalation Policy
 - Residual Risk Policy
+- Risk Register Policy
+- Risk Classification Policy
+- High Impact AI Policy
 
 **Example Questions**
 
@@ -843,6 +860,12 @@ Prompt injection, instruction override, malicious context, jailbreak, tool-trigg
 - Model evaluation evidence
 - Model change control
 - Model retirement
+- Foundation Model Registry
+- Approved Model Registry
+- Shadow Model Detection
+- Fine-Tuning Governance
+- Model Risk Classification
+- Model Retirement Approval
 
 **Excluded**
 
@@ -872,6 +895,10 @@ Prompt injection, instruction override, malicious context, jailbreak, tool-trigg
 - Model Approval Policy
 - Model Change Policy
 - Model Evaluation Policy
+- Model Registry Policy
+- Approved Model Policy
+- Shadow Model Policy
+- Fine-Tuning Policy
 
 **Example Questions**
 
@@ -1249,6 +1276,12 @@ Agent 장애, 오작동, 의존성 중단, 데이터 또는 서비스 장애가 
 - Governance review
 - Organization-wide accountability
 - Strategic priority alignment
+- Board Oversight
+- AI Governance Committee
+- Management Accountability
+- Three Lines of Defense
+- Risk Governance Charter
+- Governance Reporting
 
 **Excluded**
 
@@ -1261,10 +1294,12 @@ Agent 장애, 오작동, 의존성 중단, 데이터 또는 서비스 장애가 
 
 - ISO/IEC 42001 A.5 AI Policy
 - ISO/IEC 42001 A.6 Internal Organization
+- ISO/IEC 42001 A.2 Governance
 - NIST AI RMF GOV
 - EU AI Act Risk Management
 - EU AI Act Technical Documentation
 - Korea Financial AI Guideline Governance
+- Korea Financial Services Commission Governance
 
 **Related Plane**
 
@@ -1277,6 +1312,10 @@ Agent 장애, 오작동, 의존성 중단, 데이터 또는 서비스 장애가 
 - AI Policy Ownership Policy
 - Risk Appetite Policy
 - Executive Oversight Policy
+- Board Oversight Policy
+- AI Governance Committee Policy
+- Management Accountability Policy
+- Risk Governance Charter Policy
 
 **Example Questions**
 
@@ -1301,6 +1340,20 @@ D08 AI Risk Management is independent because risk identification, assessment, t
 ### Why Q147 Belongs to D14
 
 Q147 belongs to D14 Knowledge Sources when the assessed issue is the origin, credibility, freshness, authorization, or traceability of knowledge used by an Agent. If the same scenario later produces an unsupported output, that output issue may relate to D15 Hallucination, but the source-governance question remains D14.
+
+## Additional Boundary Clarifications
+
+### D08 vs D23
+
+D08 AI Risk Management identifies, evaluates, accepts, and mitigates AI risk. D23 Compliance satisfies regulatory, legal, standards, and internal-policy obligations.
+
+### D17 vs D18
+
+D17 Model Governance governs the model itself, including model selection, approval, classification, lifecycle, and retirement. D18 Supply Chain governs the full supply chain around the model, including datasets, tools, libraries, services, infrastructure, suppliers, and other dependencies.
+
+### D06 vs D03
+
+D03 Runtime Decision Control governs system control over runtime decisions and action execution. D06 Human Override governs human control, including human review, confirmation, stop, recovery, and escalation authority.
 
 ## Completion Confirmation
 
