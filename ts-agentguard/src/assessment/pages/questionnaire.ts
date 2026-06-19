@@ -76,101 +76,58 @@ export function assessmentQuestionnaireHtml(): string {
     button:focus, button:hover { background: #1f6fd6; }
     a { border: 1px solid var(--border); color: var(--text); }
     a:focus, a:hover { border-color: var(--accent); }
-    .result-panel { display: none; margin-top: 30px; padding: 24px; border: 1px solid var(--accent); border-radius: 22px; background: rgba(102, 217, 239, .08); }
-    .result-panel.visible { display: block; }
-    .result-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 18px 0; }
-    .result-metric { padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: rgba(11, 23, 40, .86); }
-    .result-label { color: var(--muted); font-size: .9rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
-    .result-value { margin-top: 8px; color: var(--text); font-size: 1.35rem; font-weight: 900; }
-    pre { overflow-x: auto; margin: 16px 0 0; padding: 18px; border-radius: 16px; background: #050b14; color: var(--success); line-height: 1.5; }
-    @media (max-width: 840px) { .answers, .result-grid { grid-template-columns: 1fr; } }
+    .form-message { min-height: 28px; margin: 18px 0 0; color: var(--warn); font-weight: 800; }
+    @media (max-width: 840px) { .answers { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <main>
     <section class="card" aria-labelledby="questionnaire-title">
       <h1 id="questionnaire-title">OpenEntry AI Governance Assessment Framework v1</h1>
-      <p class="intro">20 Questions → Answer Collection → Score Engine. 답변을 선택한 뒤 Continue Assessment를 누르면 페이지 이동 없이 결과 JSON을 표시합니다.</p>
+      <p class="intro">20 Questions → Answer Collection → Scoring Engine → Dashboard. 답변을 선택한 뒤 Generate Dashboard를 누르면 AI Governance Readiness Dashboard로 이동합니다.</p>
       <form id="assessment-form">
         <div class="questions">${assessmentQuestions.map(renderQuestion).join("")}</div>
         <div class="actions">
           <a href="/demo/assessment">Back to Landing</a>
-          <button type="submit">Continue Assessment</button>
+          <button type="submit">Generate Dashboard</button>
         </div>
       </form>
-      <section id="assessment-result" class="result-panel" aria-live="polite" aria-labelledby="result-title">
-        <h2 id="result-title">Assessment Result</h2>
-        <div class="result-grid">
-          <div class="result-metric"><div class="result-label">Total Score</div><div id="result-total" class="result-value">0 / 100</div></div>
-          <div class="result-metric"><div class="result-label">Risk Level</div><div id="result-risk" class="result-value">-</div></div>
-          <div class="result-metric"><div class="result-label">Maturity</div><div id="result-maturity" class="result-value">-</div></div>
-        </div>
-        <pre id="result-json">{}</pre>
-      </section>
+      <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
     </section>
   </main>
   <script>
-    const domainQuestionIds = {
-      aiUsage: ["ai_usage_1", "ai_usage_2", "ai_usage_3", "ai_usage_4"],
-      dataProtection: ["data_protection_1", "data_protection_2", "data_protection_3", "data_protection_4"],
-      accessControl: ["access_control_1", "access_control_2", "access_control_3", "access_control_4"],
-      auditTraceability: ["audit_traceability_1", "audit_traceability_2", "audit_traceability_3", "audit_traceability_4"],
-      agentRisk: ["agent_risk_1", "agent_risk_2", "agent_risk_3", "agent_risk_4"],
-    };
+    const questionIds = ${JSON.stringify(assessmentQuestions.map((question) => question.id))};
 
-    function scoreFor(ids, answers) {
-      return ids.reduce((sum, id) => sum + (answers[id] || 0), 0);
-    }
-
-    function levelFor(totalScore, ranges) {
-      return ranges.find((range) => totalScore >= range.min && totalScore <= range.max).value;
-    }
-
-    function calculateAssessment(answers) {
-      const aiUsage = scoreFor(domainQuestionIds.aiUsage, answers);
-      const dataProtection = scoreFor(domainQuestionIds.dataProtection, answers);
-      const accessControl = scoreFor(domainQuestionIds.accessControl, answers);
-      const auditTraceability = scoreFor(domainQuestionIds.auditTraceability, answers);
-      const agentRisk = scoreFor(domainQuestionIds.agentRisk, answers);
-      const totalScore = aiUsage + dataProtection + accessControl + auditTraceability + agentRisk;
-
-      return {
-        totalScore,
-        aiUsage,
-        dataProtection,
-        accessControl,
-        auditTraceability,
-        agentRisk,
-        maturityLevel: levelFor(totalScore, [
-          { min: 0, max: 20, value: "Level 1 Ad-hoc" },
-          { min: 21, max: 40, value: "Level 2 Controlled" },
-          { min: 41, max: 60, value: "Level 3 Managed" },
-          { min: 61, max: 80, value: "Level 4 Governed" },
-          { min: 81, max: 100, value: "Level 5 Autonomous Governance" },
-        ]),
-        riskLevel: levelFor(totalScore, [
-          { min: 0, max: 20, value: "Critical Risk" },
-          { min: 21, max: 40, value: "High Risk" },
-          { min: 41, max: 60, value: "Medium Risk" },
-          { min: 61, max: 80, value: "Low Risk" },
-          { min: 81, max: 100, value: "Optimized" },
-        ]),
-      };
-    }
-
-    document.getElementById("assessment-form").addEventListener("submit", (event) => {
+    document.getElementById("assessment-form").addEventListener("submit", async (event) => {
       event.preventDefault();
-      const answers = {};
-      new FormData(event.currentTarget).forEach((value, key) => {
-        answers[key] = Number(value);
+      const form = event.currentTarget;
+      const formData = new FormData(form);
+      const message = document.getElementById("form-message");
+      const missingCount = questionIds.filter((id) => !formData.has(id)).length;
+
+      if (missingCount > 0) {
+        message.textContent = "모든 20개 질문에 답변한 뒤 Dashboard를 생성할 수 있습니다. 남은 문항: " + missingCount;
+        return;
+      }
+
+      const answers = questionIds.map((questionId) => ({ questionId, value: Number(formData.get(questionId)) }));
+      message.textContent = "Dashboard 생성 중...";
+
+      const response = await fetch("/assessment/dashboard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers }),
       });
-      const result = calculateAssessment(answers);
-      document.getElementById("result-total").textContent = result.totalScore + " / 100";
-      document.getElementById("result-risk").textContent = result.riskLevel;
-      document.getElementById("result-maturity").textContent = result.maturityLevel;
-      document.getElementById("result-json").textContent = JSON.stringify(result, null, 2);
-      document.getElementById("assessment-result").classList.add("visible");
-      document.getElementById("assessment-result").scrollIntoView({ behavior: "smooth", block: "start" });
+
+      if (!response.ok) {
+        message.textContent = "Dashboard 생성에 실패했습니다. 잠시 후 다시 시도해주세요.";
+        return;
+      }
+
+      const html = await response.text();
+      document.open();
+      document.write(html);
+      document.close();
     });
   </script>
 </body>

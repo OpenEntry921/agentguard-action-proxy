@@ -6,7 +6,8 @@ import { z, ZodTypeAny } from "zod";
 
 import { ApprovalStore } from "./approval";
 import { AuditLog } from "./audit";
-import { assessmentLandingHtml, assessmentQuestionnaireHtml } from "./assessment";
+import { assessmentDashboardHtml, assessmentLandingHtml, assessmentQuestionnaireHtml } from "./assessment";
+import { evaluateAssessment } from "./assessment/scoring";
 import { MockBrowserExecutor } from "./executors/mock-browser";
 import { MockGitHubExecutor } from "./executors/mock-github";
 import { SettlementOrchestratorExecutor } from "./executors/settlement-orchestrator";
@@ -108,6 +109,13 @@ function kgldDemoHtml(): string {
   }
   return readFileSync(demoPath, "utf-8");
 }
+
+const AssessmentDashboardBodySchema = z.object({
+  answers: z.array(z.object({
+    questionId: z.string(),
+    value: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3), z.literal(5)]),
+  })),
+});
 
 export function buildServer(state: AgentGuardState = createState()): FastifyInstance {
   const app = Fastify({ logger: false });
@@ -300,6 +308,16 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
   app.get("/assessment/start", async (_request, reply) =>
     reply.type("text/html; charset=utf-8").send(assessmentQuestionnaireHtml()),
   );
+
+  app.post("/assessment/dashboard", async (request, reply) => {
+    const body = validateBody(AssessmentDashboardBodySchema, request.body, reply);
+    if (!body) {
+      return reply;
+    }
+
+    const result = evaluateAssessment(body.answers);
+    return reply.type("text/html; charset=utf-8").send(assessmentDashboardHtml(result));
+  });
 
   app.get("/demo", async (_request, reply) => reply.type("text/html; charset=utf-8").send(demoHtml()));
 
