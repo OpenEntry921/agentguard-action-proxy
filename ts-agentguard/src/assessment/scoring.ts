@@ -31,7 +31,7 @@ export function evaluateAssessment(answers: AssessmentAnswer[]): AssessmentResul
 
   for (const question of assessmentQuestions) {
     if (!domainScores.some((score) => score.domain === question.domain)) {
-      domainScores.push({ domain: question.domain, label: question.domainLabel, score: 0, maxScore: 20 });
+      domainScores.push({ domain: question.domain, label: question.domain, score: 0, maxScore: 20 });
     }
 
     const domainScore = domainScores.find((score) => score.domain === question.domain);
