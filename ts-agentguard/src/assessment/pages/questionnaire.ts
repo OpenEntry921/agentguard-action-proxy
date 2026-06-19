@@ -52,7 +52,7 @@ export function assessmentQuestionnaireHtml(): string {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>OpenEntry AI Governance Assessment Framework v1</title>
   <style>
-    :root { color-scheme: dark; --bg: #07111f; --card: #0f1c2e; --panel: #0b1728; --border: #223555; --text: #eaf2ff; --muted: #b8c7dc; --accent: #66d9ef; --button: #2f80ed; }
+    :root { color-scheme: dark; --bg: #07111f; --card: #0f1c2e; --panel: #0b1728; --border: #223555; --text: #eaf2ff; --muted: #b8c7dc; --accent: #66d9ef; --button: #2f80ed; --success: #8fffcc; --warn: #ffbd59; }
     * { box-sizing: border-box; }
     body { margin: 0; min-height: 100vh; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: radial-gradient(circle at top left, #12345a 0, var(--bg) 34rem); color: var(--text); }
     main { width: min(980px, calc(100% - 40px)); margin: 0 auto; padding: 72px 0; }
@@ -76,23 +76,103 @@ export function assessmentQuestionnaireHtml(): string {
     button:focus, button:hover { background: #1f6fd6; }
     a { border: 1px solid var(--border); color: var(--text); }
     a:focus, a:hover { border-color: var(--accent); }
-    @media (max-width: 840px) { .answers { grid-template-columns: 1fr; } }
+    .result-panel { display: none; margin-top: 30px; padding: 24px; border: 1px solid var(--accent); border-radius: 22px; background: rgba(102, 217, 239, .08); }
+    .result-panel.visible { display: block; }
+    .result-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 18px 0; }
+    .result-metric { padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: rgba(11, 23, 40, .86); }
+    .result-label { color: var(--muted); font-size: .9rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+    .result-value { margin-top: 8px; color: var(--text); font-size: 1.35rem; font-weight: 900; }
+    pre { overflow-x: auto; margin: 16px 0 0; padding: 18px; border-radius: 16px; background: #050b14; color: var(--success); line-height: 1.5; }
+    @media (max-width: 840px) { .answers, .result-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <main>
     <section class="card" aria-labelledby="questionnaire-title">
       <h1 id="questionnaire-title">OpenEntry AI Governance Assessment Framework v1</h1>
-      <p class="intro">20 Questions → Answer Collection. 이번 Sprint에서는 질문 표시, 답변 선택, 다음 버튼만 제공합니다.</p>
-      <form onsubmit="event.preventDefault(); alert('Coming in Sprint 3: Scoring Engine');">
+      <p class="intro">20 Questions → Answer Collection → Score Engine. 답변을 선택한 뒤 Continue Assessment를 누르면 페이지 이동 없이 결과 JSON을 표시합니다.</p>
+      <form id="assessment-form">
         <div class="questions">${assessmentQuestions.map(renderQuestion).join("")}</div>
         <div class="actions">
-          <a href="/demo/assessment">Back to Assessment Dashboard</a>
+          <a href="/demo/assessment">Back to Landing</a>
           <button type="submit">Continue Assessment</button>
         </div>
       </form>
+      <section id="assessment-result" class="result-panel" aria-live="polite" aria-labelledby="result-title">
+        <h2 id="result-title">Assessment Result</h2>
+        <div class="result-grid">
+          <div class="result-metric"><div class="result-label">Total Score</div><div id="result-total" class="result-value">0 / 100</div></div>
+          <div class="result-metric"><div class="result-label">Risk Level</div><div id="result-risk" class="result-value">-</div></div>
+          <div class="result-metric"><div class="result-label">Maturity</div><div id="result-maturity" class="result-value">-</div></div>
+        </div>
+        <pre id="result-json">{}</pre>
+      </section>
     </section>
   </main>
+  <script>
+    const domainQuestionIds = {
+      aiUsage: ["ai_usage_1", "ai_usage_2", "ai_usage_3", "ai_usage_4"],
+      dataProtection: ["data_protection_1", "data_protection_2", "data_protection_3", "data_protection_4"],
+      accessControl: ["access_control_1", "access_control_2", "access_control_3", "access_control_4"],
+      auditTraceability: ["audit_traceability_1", "audit_traceability_2", "audit_traceability_3", "audit_traceability_4"],
+      agentRisk: ["agent_risk_1", "agent_risk_2", "agent_risk_3", "agent_risk_4"],
+    };
+
+    function scoreFor(ids, answers) {
+      return ids.reduce((sum, id) => sum + (answers[id] || 0), 0);
+    }
+
+    function levelFor(totalScore, ranges) {
+      return ranges.find((range) => totalScore >= range.min && totalScore <= range.max).value;
+    }
+
+    function calculateAssessment(answers) {
+      const aiUsage = scoreFor(domainQuestionIds.aiUsage, answers);
+      const dataProtection = scoreFor(domainQuestionIds.dataProtection, answers);
+      const accessControl = scoreFor(domainQuestionIds.accessControl, answers);
+      const auditTraceability = scoreFor(domainQuestionIds.auditTraceability, answers);
+      const agentRisk = scoreFor(domainQuestionIds.agentRisk, answers);
+      const totalScore = aiUsage + dataProtection + accessControl + auditTraceability + agentRisk;
+
+      return {
+        totalScore,
+        aiUsage,
+        dataProtection,
+        accessControl,
+        auditTraceability,
+        agentRisk,
+        maturityLevel: levelFor(totalScore, [
+          { min: 0, max: 20, value: "Level 1 Ad-hoc" },
+          { min: 21, max: 40, value: "Level 2 Controlled" },
+          { min: 41, max: 60, value: "Level 3 Managed" },
+          { min: 61, max: 80, value: "Level 4 Governed" },
+          { min: 81, max: 100, value: "Level 5 Autonomous Governance" },
+        ]),
+        riskLevel: levelFor(totalScore, [
+          { min: 0, max: 20, value: "Critical Risk" },
+          { min: 21, max: 40, value: "High Risk" },
+          { min: 41, max: 60, value: "Medium Risk" },
+          { min: 61, max: 80, value: "Low Risk" },
+          { min: 81, max: 100, value: "Optimized" },
+        ]),
+      };
+    }
+
+    document.getElementById("assessment-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const answers = {};
+      new FormData(event.currentTarget).forEach((value, key) => {
+        answers[key] = Number(value);
+      });
+      const result = calculateAssessment(answers);
+      document.getElementById("result-total").textContent = result.totalScore + " / 100";
+      document.getElementById("result-risk").textContent = result.riskLevel;
+      document.getElementById("result-maturity").textContent = result.maturityLevel;
+      document.getElementById("result-json").textContent = JSON.stringify(result, null, 2);
+      document.getElementById("assessment-result").classList.add("visible");
+      document.getElementById("assessment-result").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  </script>
 </body>
 </html>`;
 }
