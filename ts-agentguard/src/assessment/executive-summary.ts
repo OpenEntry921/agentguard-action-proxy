@@ -1,5 +1,6 @@
 import type { IndustryType } from "./industry-profiles";
 import { industryProfiles } from "./industry-profiles";
+import { businessScenarioFor } from "./scenario-engine";
 import { businessImpactFor, topWeaknesses } from "./recommendation-engine";
 import type { AssessmentGrade, AssessmentReadiness, AssessmentResult, DomainScore } from "./types";
 
@@ -46,8 +47,12 @@ export function executiveSummaryText(result: IndustryAwareResult): string {
   const industryContext = industryLabel
     ? `\n\n귀사는 ${industryLabel} 기준으로 평가되었습니다.\n\n${industryLabel} 산업에서는\n${coreAreas.join("와 ")}이\n핵심 통제 영역입니다.`
     : "";
+  const scenario = result.industry ? businessScenarioFor(result as AssessmentResult & { industry: IndustryType }) : undefined;
+  const scenarioContext = scenario
+    ? `\n\n현재 가장 현실적인 사고 시나리오:\n${scenario.executiveScenario}\n\n예상 영향:\n${scenario.executiveImpact.join("\n")}`
+    : "";
 
-  return `Executive Summary\n\n현재 수준:\n${result.maturityLevel.displayName}${industryContext}\n\n총점은 ${result.totalScore}/${result.maxScore}입니다.\n\n가장 취약한 영역:\n${priorityAreas}\n\n예상 우선 개선 기간:\n30~90일`;
+  return `Executive Summary\n\n현재 수준:\n${result.maturityLevel.displayName}${industryContext}\n\n총점은 ${result.totalScore}/${result.maxScore}입니다.\n\n가장 취약한 영역:\n${priorityAreas}\n\n예상 우선 개선 기간:\n30~90일${scenarioContext}`;
 }
 
 

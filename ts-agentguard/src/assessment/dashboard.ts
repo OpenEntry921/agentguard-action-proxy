@@ -1,6 +1,7 @@
 import { businessImpactForExecutiveSummary, executiveSummaryText } from "./executive-summary";
 import { generateRecommendations, quickWinsFor, roadmapFor, topWeaknesses } from "./recommendation-engine";
 import type { IndustryType } from "./industry-profiles";
+import { businessScenarioFor } from "./scenario-engine";
 import { AssessmentResult, DomainScore } from "./types";
 
 type IndustryAwareAssessmentResult = AssessmentResult & {
@@ -85,12 +86,29 @@ function renderExecutiveSummary(result: IndustryAwareAssessmentResult): string {
   </section>`;
 }
 
-function renderBusinessImpact(result: AssessmentResult): string {
+function renderBusinessScenarios(result: IndustryAwareAssessmentResult): string {
+  const scenario = businessScenarioFor(result);
+  return `<section class="business-scenarios" aria-labelledby="business-scenarios-title">
+    <div class="section-kicker">Potential Business Scenarios</div>
+    <h2 id="business-scenarios-title">실제 발생 가능한 비즈니스 사고 시나리오</h2>
+    <div class="scenario-grid">
+      <article><span>Scenario</span><strong>${escapeHtml(scenario.scenario)}</strong></article>
+      <article><span>영향</span><strong>${escapeHtml(scenario.impacts.join(" · "))}</strong></article>
+      <article><span>가능성</span><strong>${escapeHtml(scenario.likelihood)}</strong></article>
+      <article><span>심각도</span><strong>${escapeHtml(scenario.severity)}</strong></article>
+      <article><span>Impact Score</span><strong>${escapeHtml(scenario.impactScore)}</strong></article>
+    </div>
+  </section>`;
+}
+
+function renderBusinessImpact(result: IndustryAwareAssessmentResult): string {
+  const scenario = businessScenarioFor(result);
+  const impacts = [...scenario.potentialImpact, ...businessImpactForExecutiveSummary(result)];
   return `<section class="impact" aria-labelledby="impact-title">
-    <div class="section-kicker">Business Impact</div>
-    <h2 id="impact-title">현재 상태 유지 시 위험</h2>
-    <p>현재 상태를 유지할 경우 다음 위험이 존재합니다.</p>
-    ${renderBulletList(businessImpactForExecutiveSummary(result))}
+    <div class="section-kicker">Estimated Business Impact</div>
+    <h2 id="impact-title">현재 상태 유지 시 예상 영향</h2>
+    <p>현재 상태를 유지할 경우 점수 하락 영역이 다음 비즈니스 영향으로 이어질 수 있습니다.</p>
+    ${renderBulletList([...new Set(impacts)])}
   </section>`;
 }
 
@@ -172,7 +190,11 @@ export function assessmentDashboardHtml(result: IndustryAwareAssessmentResult): 
     ol { margin: 0; padding-left: 24px; color: var(--text); }
     li { margin: 0 0 14px; color: var(--muted); line-height: 1.55; }
     li::marker { color: var(--accent); font-weight: 900; }
-    .executive, .impact, .recommendation, .industry-recommendation, .quick-wins, .framework { grid-column: 1 / -1; }
+    .executive, .business-scenarios, .impact, .recommendation, .industry-recommendation, .quick-wins, .framework { grid-column: 1 / -1; }
+    .scenario-grid { display: grid; grid-template-columns: 2fr 2fr repeat(3, 1fr); gap: 14px; }
+    .scenario-grid article { padding: 18px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); }
+    .scenario-grid span { display: block; margin-bottom: 10px; color: var(--muted); font-weight: 900; text-transform: uppercase; letter-spacing: .1em; }
+    .scenario-grid strong { color: var(--accent2); font-size: 1.05rem; line-height: 1.45; }
     .executive strong { color: var(--accent2); }
     details { margin-top: 18px; color: var(--muted); }
     summary { cursor: pointer; font-weight: 900; color: var(--accent); }
@@ -193,7 +215,7 @@ export function assessmentDashboardHtml(result: IndustryAwareAssessmentResult): 
     .arrow { color: var(--accent); font-size: 1.45rem; }
     .stage { margin: 0; color: var(--accent2); font-weight: 900; }
     .back { color: var(--text); text-decoration: none; border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; font-weight: 900; }
-    @media (max-width: 860px) { .summary-cards, .dashboard-grid, .phase-grid, .industry-grid { grid-template-columns: 1fr; } .domains, .insights, .summary, .executive, .impact, .recommendation, .framework { grid-column: 1; } .flow { flex-direction: column; } .arrow { transform: rotate(90deg); } }
+    @media (max-width: 860px) { .summary-cards, .dashboard-grid, .phase-grid, .industry-grid, .scenario-grid { grid-template-columns: 1fr; } .domains, .insights, .summary, .executive, .impact, .recommendation, .framework { grid-column: 1; } .flow { flex-direction: column; } .arrow { transform: rotate(90deg); } }
   </style>
 </head>
 <body>
@@ -223,13 +245,14 @@ export function assessmentDashboardHtml(result: IndustryAwareAssessmentResult): 
         <section aria-labelledby="recommendations-title"><h2 id="recommendations-title">Recommendations</h2>${renderNumberedList(recommendations)}</section>
       </div>
       ${renderExecutiveSummary(result)}
+      ${renderBusinessScenarios(result)}
       ${renderBusinessImpact(result)}
       ${renderRecommendationEngine(result)}
       ${renderQuickWins(result)}
       ${renderRoadmap(result)}
       <section class="framework" aria-labelledby="framework-title">
         <h2 id="framework-title">OpenEntry Framework</h2>
-        <div class="flow"><span class="step">Landing</span><span class="arrow">↓</span><span class="step">Industry Selection</span><span class="arrow">↓</span><span class="step">Questionnaire</span><span class="arrow">↓</span><span class="step">Scoring</span><span class="arrow">↓</span><span class="step current">Dashboard</span><span class="arrow">↓</span><span class="step">Weakness Analysis</span><span class="arrow">↓</span><span class="step">Recommendations</span><span class="arrow">↓</span><span class="step">Quick Wins</span><span class="arrow">↓</span><span class="step">90-Day Roadmap</span></div>
+        <div class="flow"><span class="step">Landing</span><span class="arrow">↓</span><span class="step">Industry Selection</span><span class="arrow">↓</span><span class="step">Questionnaire</span><span class="arrow">↓</span><span class="step">Scoring</span><span class="arrow">↓</span><span class="step current">Business Scenario Analysis</span><span class="arrow">↓</span><span class="step">Impact Analysis</span><span class="arrow">↓</span><span class="step">Recommendations</span><span class="arrow">↓</span><span class="step">Quick Wins</span><span class="arrow">↓</span><span class="step">90-Day Roadmap</span></div>
         <p class="stage">Current Stage: Assessment</p>
       </section>
     </div>
