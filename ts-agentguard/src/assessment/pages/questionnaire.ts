@@ -1,4 +1,5 @@
 import { assessmentQuestions } from "../questions";
+import { defaultIndustry, industryProfiles, IndustryType } from "../industry-profiles";
 import { AssessmentQuestion } from "../types";
 
 const domainLabels: Record<AssessmentQuestion["domain"], string> = {
@@ -8,6 +9,8 @@ const domainLabels: Record<AssessmentQuestion["domain"], string> = {
   AUDIT_TRACEABILITY: "Audit & Traceability",
   AGENT_RISK: "Agent Risk",
 };
+
+const industryOptions: IndustryType[] = ["FINANCIAL", "MANUFACTURING", "HEALTHCARE", "PUBLIC", "TECHNOLOGY"];
 
 const answerOptions = [
   { value: 0, label: "없음" },
@@ -24,6 +27,23 @@ function escapeHtml(value: string): string {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+
+function renderIndustrySelection(): string {
+  return `<section class="industry-selection" aria-labelledby="industry-title">
+    <div class="section-kicker">Industry Selection</div>
+    <h2 id="industry-title">Industry Profile</h2>
+    <p>산업별 중요 위험도를 반영하기 위해 평가 대상 산업을 선택하세요. 기본값은 Technology입니다.</p>
+    <div class="industry-options" role="radiogroup" aria-label="Industry Selection">
+      ${industryOptions
+        .map((industry) => `<label class="industry-option">
+        <input type="radio" name="industry" value="${industry}" ${industry === defaultIndustry ? "checked" : ""} />
+        <span>${escapeHtml(industryProfiles[industry].label)}</span>
+      </label>`)
+        .join("")}
+    </div>
+  </section>`;
 }
 
 function renderQuestion(question: AssessmentQuestion, index: number): string {
@@ -61,6 +81,12 @@ export function assessmentQuestionnaireHtml(): string {
     p { color: var(--muted); font-size: 1.08rem; line-height: 1.7; }
     .intro { margin-bottom: 34px; }
     .questions { display: grid; gap: 18px; }
+    .industry-selection { margin-bottom: 22px; padding: 22px; border: 1px solid var(--border); border-radius: 22px; background: rgba(102, 217, 239, .08); }
+    .section-kicker { margin-bottom: 8px; color: var(--accent); font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+    h2 { margin: 0 0 10px; }
+    .industry-options { display: grid; grid-template-columns: repeat(5, minmax(120px, 1fr)); gap: 10px; margin-top: 16px; }
+    .industry-option { display: flex; gap: 10px; align-items: center; min-height: 52px; padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); color: var(--muted); font-weight: 800; cursor: pointer; }
+    .industry-option:focus-within, .industry-option:hover { border-color: var(--accent); color: var(--text); }
     .question-card { margin: 0; padding: 22px; border: 1px solid var(--border); border-radius: 20px; background: rgba(11, 23, 40, .72); }
     legend { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; padding: 0 8px; font-weight: 800; }
     .domain { color: var(--accent); }
@@ -77,7 +103,7 @@ export function assessmentQuestionnaireHtml(): string {
     a { border: 1px solid var(--border); color: var(--text); }
     a:focus, a:hover { border-color: var(--accent); }
     .form-message { min-height: 28px; margin: 18px 0 0; color: var(--warn); font-weight: 800; }
-    @media (max-width: 840px) { .answers { grid-template-columns: 1fr; } }
+    @media (max-width: 840px) { .answers, .industry-options { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -86,6 +112,7 @@ export function assessmentQuestionnaireHtml(): string {
       <h1 id="questionnaire-title">OpenEntry AI Governance Assessment Framework v1</h1>
       <p class="intro">20 Questions → Answer Collection → Scoring Engine → Dashboard. 답변을 선택한 뒤 Generate Dashboard를 누르면 AI Governance Readiness Dashboard로 이동합니다.</p>
       <form id="assessment-form">
+        ${renderIndustrySelection()}
         <div class="questions">${assessmentQuestions.map(renderQuestion).join("")}</div>
         <div class="actions">
           <a href="/demo/assessment">Back to Landing</a>
@@ -110,7 +137,11 @@ export function assessmentQuestionnaireHtml(): string {
         return;
       }
 
-      const answers = questionIds.map((questionId) => ({ questionId, value: Number(formData.get(questionId)) }));
+      const industry = String(formData.get("industry") || "TECHNOLOGY");
+      const answers = [
+        { questionId: "industry_" + industry, value: 0 },
+        ...questionIds.map((questionId) => ({ questionId, value: Number(formData.get(questionId)) })),
+      ];
       message.textContent = "Dashboard 생성 중...";
 
       const response = await fetch("/assessment/dashboard", {
