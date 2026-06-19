@@ -39,7 +39,7 @@ export const industryProfiles: Record<IndustryType, IndustryProfile> = {
     label: "Manufacturing",
     weights: { aiUsage: 15, dataProtection: 15, accessControl: 30, auditTraceability: 15, agentRisk: 25 },
     primaryRiskFocus: "Access Governance",
-    coreControlAreas: ["Access Control", "Operational Controls"],
+    coreControlAreas: ["Access Control", "Change Control"],
     recommendations: ["Access Governance", "Operational Controls", "Change Management"],
     phases: [
       { phase: "Phase 1", title: "AI Usage Policy" },
@@ -67,7 +67,7 @@ export const industryProfiles: Record<IndustryType, IndustryProfile> = {
     label: "Public Sector",
     weights: { aiUsage: 10, dataProtection: 20, accessControl: 15, auditTraceability: 35, agentRisk: 20 },
     primaryRiskFocus: "Audit & Traceability",
-    coreControlAreas: ["Audit & Traceability", "Approval Governance"],
+    coreControlAreas: ["Audit & Traceability", "Transparency"],
     recommendations: ["Audit Framework", "Transparency Controls", "Approval Governance"],
     phases: [
       { phase: "Phase 1", title: "AI Usage Policy" },
@@ -79,7 +79,7 @@ export const industryProfiles: Record<IndustryType, IndustryProfile> = {
   TECHNOLOGY: {
     industry: "TECHNOLOGY",
     label: "Technology",
-    weights: { aiUsage: 20, dataProtection: 20, accessControl: 20, auditTraceability: 20, agentRisk: 20 },
+    weights: { aiUsage: 25, dataProtection: 15, accessControl: 15, auditTraceability: 15, agentRisk: 30 },
     primaryRiskFocus: "Balanced AI Governance",
     coreControlAreas: ["AI Policy", "Agent Governance"],
     recommendations: ["AI Policy", "Agent Governance", "Secure Development"],

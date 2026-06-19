@@ -1,4 +1,5 @@
-import { businessImpactForExecutiveSummary, executiveSummaryText, openEntryPhaseRecommendations, priorityImprovementAreas } from "./executive-summary";
+import { businessImpactForExecutiveSummary, executiveSummaryText } from "./executive-summary";
+import { generateRecommendations, quickWinsFor, roadmapFor, topWeaknesses } from "./recommendation-engine";
 import type { IndustryType } from "./industry-profiles";
 import { AssessmentResult, DomainScore } from "./types";
 
@@ -30,32 +31,17 @@ const riskMessages: Record<DomainScore["domain"], string> = {
   AGENT_RISK: "No runtime control before agent execution",
 };
 
-const recommendationMessages: Record<DomainScore["domain"], string> = {
-  AI_USAGE: "Establish AI usage policy",
-  DATA_PROTECTION: "Define sensitive data handling rules",
-  ACCESS_CONTROL: "Implement approval workflow",
-  AUDIT_TRACEABILITY: "Prepare audit log retention and traceability model",
-  AGENT_RISK: "Prepare AgentGuard runtime control PoC",
-};
-
 function lowestDomainScores(result: AssessmentResult): DomainScore[] {
-  return [...result.domainScores].sort((left, right) => left.score - right.score || left.label.localeCompare(right.label));
+  return topWeaknesses(result);
 }
 
 export function topRisksForDashboard(result: AssessmentResult): string[] {
-  return lowestDomainScores(result).slice(0, 3).map((domainScore) => riskMessages[domainScore.domain]);
+  if (result.totalScore >= 90) return ["No Critical Risks Identified"];
+  return lowestDomainScores(result).map((domainScore) => riskMessages[domainScore.domain]);
 }
 
-export function recommendationsForDashboard(result: AssessmentResult): string[] {
-  const priorityRecommendations = lowestDomainScores(result).map((domainScore) => recommendationMessages[domainScore.domain]);
-  const baselineRecommendations = [
-    "Establish AI usage policy",
-    "Define sensitive data handling rules",
-    "Implement approval workflow",
-    "Prepare AgentGuard runtime control PoC",
-  ];
-
-  return [...new Set([...priorityRecommendations, ...baselineRecommendations])].slice(0, 4);
+export function recommendationsForDashboard(result: IndustryAwareAssessmentResult): string[] {
+  return generateRecommendations(result).map((recommendation) => `${recommendation.title}: ${recommendation.expectedOutcome}`);
 }
 
 function renderSummaryCard(label: string, value: string): string {
@@ -84,26 +70,27 @@ function renderBulletList(items: string[]): string {
 }
 
 function renderExecutiveSummary(result: IndustryAwareAssessmentResult): string {
-  const priorityAreas = priorityImprovementAreas(result);
+  const priorityAreas = topWeaknesses(result);
   return `<section class="executive" aria-labelledby="executive-title">
     <div class="section-kicker">Executive Summary</div>
     <h2 id="executive-title">경영진 보고서</h2>
-    <p>귀사의 AI Governance 수준은 <strong>${escapeHtml(result.maturityLevel.displayName)}</strong> 입니다.</p>
+    <p>현재 수준: <strong>${escapeHtml(result.maturityLevel.displayName)}</strong></p>
     <p>귀사는 <strong>${escapeHtml(result.industryLabel)}</strong> 기준으로 평가되었습니다.</p>
     <p>${escapeHtml(result.industryLabel)} 산업에서는 <strong>${escapeHtml(result.industryCoreControlAreas.join("와 "))}</strong>이 핵심 통제 영역입니다.</p>
     <p>총점은 <strong>${result.totalScore}/${result.maxScore}</strong>, 산업 가중 점수는 <strong>${result.weightedScore}/${result.maxScore}</strong>으로 현재 AI 사용은 이루어지고 있으나 통제 체계는 개선이 필요한 상태입니다.</p>
-    <p>우선 개선 영역은 다음 3개 영역입니다.</p>
+    <p>가장 취약한 영역은 다음 3개 영역입니다.</p>
     ${renderNumberedList(priorityAreas.map((area) => area.label))}
+    <p>예상 우선 개선 기간: <strong>30~90일</strong></p>
     <details><summary>보고서 원문 보기</summary><pre>${escapeHtml(executiveSummaryText(result))}</pre></details>
   </section>`;
 }
 
-function renderBusinessImpact(): string {
+function renderBusinessImpact(result: AssessmentResult): string {
   return `<section class="impact" aria-labelledby="impact-title">
     <div class="section-kicker">Business Impact</div>
     <h2 id="impact-title">현재 상태 유지 시 위험</h2>
     <p>현재 상태를 유지할 경우 다음 위험이 존재합니다.</p>
-    ${renderBulletList(businessImpactForExecutiveSummary())}
+    ${renderBulletList(businessImpactForExecutiveSummary(result))}
   </section>`;
 }
 
@@ -119,19 +106,24 @@ function renderIndustryProfile(result: IndustryAwareAssessmentResult): string {
   </section>`;
 }
 
-function renderIndustryRecommendation(result: IndustryAwareAssessmentResult): string {
+function renderRecommendationEngine(result: IndustryAwareAssessmentResult): string {
+  const recommendations = generateRecommendations(result);
   return `<section class="industry-recommendation" aria-labelledby="industry-recommendation-title">
-    <div class="section-kicker">Industry Recommendation</div>
-    <h2 id="industry-recommendation-title">우선순위</h2>
-    ${renderNumberedList(result.industryRecommendations)}
+    <div class="section-kicker">Recommendation Engine</div>
+    <h2 id="industry-recommendation-title">우선순위 실행계획</h2>
+    <div class="recommendation-list">${recommendations.map((item) => `<article class="recommendation-card"><span>Priority ${item.priority}</span><strong>${escapeHtml(item.title)}</strong><p><b>Reason:</b> ${escapeHtml(item.reason)}</p><p><b>Expected Outcome:</b> ${escapeHtml(item.expectedOutcome)}</p></article>`).join("")}</div>
   </section>`;
 }
 
-function renderOpenEntryRecommendation(result: IndustryAwareAssessmentResult): string {
-  return `<section class="recommendation" aria-labelledby="openentry-title">
-    <div class="section-kicker">OpenEntry Recommendation</div>
-    <h2 id="openentry-title">권장 실행 로드맵</h2>
-    <div class="phase-grid">${openEntryPhaseRecommendations(result.industry).map((item) => `<article class="phase"><span>${escapeHtml(item.phase)}</span><strong>${escapeHtml(item.title)}</strong></article>`).join("")}</div>
+function renderQuickWins(result: IndustryAwareAssessmentResult): string {
+  return `<section class="quick-wins" aria-labelledby="quick-wins-title"><div class="section-kicker">Quick Wins</div><h2 id="quick-wins-title">30일 이내 저비용 실행 항목</h2><ul>${quickWinsFor(result).map((item) => `<li>✓ ${escapeHtml(item)}</li>`).join("")}</ul></section>`;
+}
+
+function renderRoadmap(result: IndustryAwareAssessmentResult): string {
+  return `<section class="recommendation" aria-labelledby="roadmap-title">
+    <div class="section-kicker">90-Day Roadmap</div>
+    <h2 id="roadmap-title">산업군과 취약영역 기반 실행 순서</h2>
+    <div class="phase-grid">${roadmapFor(result).map((item) => `<article class="phase"><span>${escapeHtml(item.day)}</span><strong>${escapeHtml(item.title)}</strong></article>`).join("")}</div>
   </section>`;
 }
 
@@ -180,7 +172,7 @@ export function assessmentDashboardHtml(result: IndustryAwareAssessmentResult): 
     ol { margin: 0; padding-left: 24px; color: var(--text); }
     li { margin: 0 0 14px; color: var(--muted); line-height: 1.55; }
     li::marker { color: var(--accent); font-weight: 900; }
-    .executive, .impact, .recommendation, .industry-recommendation, .framework { grid-column: 1 / -1; }
+    .executive, .impact, .recommendation, .industry-recommendation, .quick-wins, .framework { grid-column: 1 / -1; }
     .executive strong { color: var(--accent2); }
     details { margin-top: 18px; color: var(--muted); }
     summary { cursor: pointer; font-weight: 900; color: var(--accent); }
@@ -190,6 +182,10 @@ export function assessmentDashboardHtml(result: IndustryAwareAssessmentResult): 
     .phase { padding: 18px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); }
     .phase span { display: block; margin-bottom: 10px; color: var(--accent); font-weight: 900; }
     .phase strong { font-size: 1.05rem; }
+    .recommendation-list { display: grid; gap: 14px; }
+    .recommendation-card { padding: 18px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); }
+    .recommendation-card span { display: block; margin-bottom: 8px; color: var(--accent); font-weight: 900; }
+    .recommendation-card strong { display: block; margin-bottom: 10px; color: var(--accent2); font-size: 1.15rem; }
     .framework { text-align: center; }
     .flow { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; margin: 20px 0; }
     .step { padding: 13px 18px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); font-weight: 900; }
@@ -227,12 +223,13 @@ export function assessmentDashboardHtml(result: IndustryAwareAssessmentResult): 
         <section aria-labelledby="recommendations-title"><h2 id="recommendations-title">Recommendations</h2>${renderNumberedList(recommendations)}</section>
       </div>
       ${renderExecutiveSummary(result)}
-      ${renderBusinessImpact()}
-      ${renderIndustryRecommendation(result)}
-      ${renderOpenEntryRecommendation(result)}
+      ${renderBusinessImpact(result)}
+      ${renderRecommendationEngine(result)}
+      ${renderQuickWins(result)}
+      ${renderRoadmap(result)}
       <section class="framework" aria-labelledby="framework-title">
         <h2 id="framework-title">OpenEntry Framework</h2>
-        <div class="flow"><span class="step">Landing</span><span class="arrow">↓</span><span class="step">Industry Selection</span><span class="arrow">↓</span><span class="step">Questionnaire</span><span class="arrow">↓</span><span class="step">Scoring</span><span class="arrow">↓</span><span class="step current">Dashboard</span><span class="arrow">↓</span><span class="step">Executive Summary</span><span class="arrow">↓</span><span class="step">Recommendation</span></div>
+        <div class="flow"><span class="step">Landing</span><span class="arrow">↓</span><span class="step">Industry Selection</span><span class="arrow">↓</span><span class="step">Questionnaire</span><span class="arrow">↓</span><span class="step">Scoring</span><span class="arrow">↓</span><span class="step current">Dashboard</span><span class="arrow">↓</span><span class="step">Weakness Analysis</span><span class="arrow">↓</span><span class="step">Recommendations</span><span class="arrow">↓</span><span class="step">Quick Wins</span><span class="arrow">↓</span><span class="step">90-Day Roadmap</span></div>
         <p class="stage">Current Stage: Assessment</p>
       </section>
     </div>
