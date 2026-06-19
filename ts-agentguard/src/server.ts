@@ -6,7 +6,7 @@ import { z, ZodTypeAny } from "zod";
 
 import { ApprovalStore } from "./approval";
 import { AuditLog } from "./audit";
-import { assessmentHtml } from "./assessment";
+import { assessmentLandingHtml, assessmentQuestionnaireHtml } from "./assessment";
 import { MockBrowserExecutor } from "./executors/mock-browser";
 import { MockGitHubExecutor } from "./executors/mock-github";
 import { SettlementOrchestratorExecutor } from "./executors/settlement-orchestrator";
@@ -294,7 +294,11 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
   app.get("/demo/kgld", async (_request, reply) => reply.type("text/html; charset=utf-8").send(kgldDemoHtml()));
 
   app.get("/demo/assessment", async (_request, reply) =>
-    reply.type("text/html; charset=utf-8").send(assessmentHtml()),
+    reply.type("text/html; charset=utf-8").send(assessmentLandingHtml()),
+  );
+
+  app.get("/assessment/start", async (_request, reply) =>
+    reply.type("text/html; charset=utf-8").send(assessmentQuestionnaireHtml()),
   );
 
   app.get("/demo", async (_request, reply) => reply.type("text/html; charset=utf-8").send(demoHtml()));
