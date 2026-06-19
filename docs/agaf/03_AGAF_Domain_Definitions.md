@@ -311,6 +311,7 @@ Agent가 시스템, 배포, 설정, 네트워크, 운영환경에 영향을 주�
 - NIST AI RMF MANAGE
 - EU AI Act Human Oversight
 - Korea Financial AI Guideline Human-in-Control
+- Korea Financial AI Guideline Human Oversight
 
 **Related Plane**
 
@@ -327,6 +328,9 @@ Agent가 시스템, 배포, 설정, 네트워크, 운영환경에 영향을 주�
 - Human Review Policy
 - Human Stop Policy
 - Human Recovery Policy
+- Human Confirmation Policy
+- Human Stop Authority Policy
+- Human Recovery Authority Policy
 
 **Example Questions**
 
@@ -423,6 +427,7 @@ AI 사용으로 발생하는 위험을 식별, 평가, 우선순위화, 처리, 
 - NIST AI RMF MANAGE
 - EU AI Act Risk Management
 - Korea Financial AI Guideline Financial Stability
+- Korea Financial Services Commission AI Risk Framework
 
 **Related Plane**
 
@@ -440,6 +445,7 @@ AI 사용으로 발생하는 위험을 식별, 평가, 우선순위화, 처리, 
 - Risk Register Policy
 - Risk Classification Policy
 - High Impact AI Policy
+- Risk Acceptance Authority Policy
 
 **Example Questions**
 
@@ -882,6 +888,7 @@ Prompt injection, instruction override, malicious context, jailbreak, tool-trigg
 - EU AI Act Technical Documentation
 - EU AI Act Accuracy & Robustness
 - Korea Financial AI Guideline Trustworthiness
+- Korea Financial Services Commission Model Governance
 
 **Related Plane**
 
@@ -899,6 +906,7 @@ Prompt injection, instruction override, malicious context, jailbreak, tool-trigg
 - Approved Model Policy
 - Shadow Model Policy
 - Fine-Tuning Policy
+- Foundation Model Registry Policy
 
 **Example Questions**
 
@@ -1300,6 +1308,7 @@ Agent 장애, 오작동, 의존성 중단, 데이터 또는 서비스 장애가 
 - EU AI Act Technical Documentation
 - Korea Financial AI Guideline Governance
 - Korea Financial Services Commission Governance
+- Korea Financial Services Commission AI Governance Framework
 
 **Related Plane**
 
@@ -1316,6 +1325,8 @@ Agent 장애, 오작동, 의존성 중단, 데이터 또는 서비스 장애가 
 - AI Governance Committee Policy
 - Management Accountability Policy
 - Risk Governance Charter Policy
+- Governance Reporting Policy
+- Three Lines of Defense Policy
 
 **Example Questions**
 
@@ -1354,6 +1365,10 @@ D17 Model Governance governs the model itself, including model selection, approv
 ### D06 vs D03
 
 D03 Runtime Decision Control governs system control over runtime decisions and action execution. D06 Human Override governs human control, including human review, confirmation, stop, recovery, and escalation authority.
+
+### D21 vs D23
+
+D21 Auditability governs whether Agent decisions, events, approvals, exceptions, and control outcomes can be traced and reviewed as evidence. D23 Compliance governs whether those activities satisfy applicable regulatory, legal, standards, and internal-policy obligations. Auditability is evidence and reviewability; Compliance is obligation interpretation and conformity.
 
 ## Completion Confirmation
 
