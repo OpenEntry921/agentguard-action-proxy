@@ -1,5 +1,17 @@
 import { businessImpactForExecutiveSummary, executiveSummaryText, openEntryPhaseRecommendations, priorityImprovementAreas } from "./executive-summary";
+import type { IndustryType } from "./industry-profiles";
 import { AssessmentResult, DomainScore } from "./types";
+
+type IndustryAwareAssessmentResult = AssessmentResult & {
+  industry: IndustryType;
+  industryLabel: string;
+  weightedScore: number;
+  industryRisk: string;
+  primaryRiskFocus: string;
+  industryRecommendations: string[];
+  industryCoreControlAreas: string[];
+  industryPhases: Array<{ phase: string; title: string }>;
+};
 
 function escapeHtml(value: string): string {
   return value
@@ -71,13 +83,15 @@ function renderBulletList(items: string[]): string {
   return `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 }
 
-function renderExecutiveSummary(result: AssessmentResult): string {
+function renderExecutiveSummary(result: IndustryAwareAssessmentResult): string {
   const priorityAreas = priorityImprovementAreas(result);
   return `<section class="executive" aria-labelledby="executive-title">
     <div class="section-kicker">Executive Summary</div>
     <h2 id="executive-title">경영진 보고서</h2>
     <p>귀사의 AI Governance 수준은 <strong>${escapeHtml(result.maturityLevel.displayName)}</strong> 입니다.</p>
-    <p>총점은 <strong>${result.totalScore}/${result.maxScore}</strong>으로 현재 AI 사용은 이루어지고 있으나 통제 체계는 개선이 필요한 상태입니다.</p>
+    <p>귀사는 <strong>${escapeHtml(result.industryLabel)}</strong> 기준으로 평가되었습니다.</p>
+    <p>${escapeHtml(result.industryLabel)} 산업에서는 <strong>${escapeHtml(result.industryCoreControlAreas.join("와 "))}</strong>이 핵심 통제 영역입니다.</p>
+    <p>총점은 <strong>${result.totalScore}/${result.maxScore}</strong>, 산업 가중 점수는 <strong>${result.weightedScore}/${result.maxScore}</strong>으로 현재 AI 사용은 이루어지고 있으나 통제 체계는 개선이 필요한 상태입니다.</p>
     <p>우선 개선 영역은 다음 3개 영역입니다.</p>
     ${renderNumberedList(priorityAreas.map((area) => area.label))}
     <details><summary>보고서 원문 보기</summary><pre>${escapeHtml(executiveSummaryText(result))}</pre></details>
@@ -93,15 +107,35 @@ function renderBusinessImpact(): string {
   </section>`;
 }
 
-function renderOpenEntryRecommendation(): string {
-  return `<section class="recommendation" aria-labelledby="openentry-title">
-    <div class="section-kicker">OpenEntry Recommendation</div>
-    <h2 id="openentry-title">권장 실행 로드맵</h2>
-    <div class="phase-grid">${openEntryPhaseRecommendations().map((item) => `<article class="phase"><span>${escapeHtml(item.phase)}</span><strong>${escapeHtml(item.title)}</strong></article>`).join("")}</div>
+function renderIndustryProfile(result: IndustryAwareAssessmentResult): string {
+  return `<section class="industry-profile" aria-labelledby="industry-profile-title">
+    <div class="section-kicker">Industry Profile</div>
+    <h2 id="industry-profile-title">${escapeHtml(result.industryLabel)}</h2>
+    <div class="industry-grid">
+      <article><span>Primary Risk Focus</span><strong>${escapeHtml(result.primaryRiskFocus)}</strong></article>
+      <article><span>Weighted Score</span><strong>${result.weightedScore} / ${result.maxScore}</strong></article>
+      <article><span>Industry Risk</span><strong>${escapeHtml(result.industryRisk)}</strong></article>
+    </div>
   </section>`;
 }
 
-export function assessmentDashboardHtml(result: AssessmentResult): string {
+function renderIndustryRecommendation(result: IndustryAwareAssessmentResult): string {
+  return `<section class="industry-recommendation" aria-labelledby="industry-recommendation-title">
+    <div class="section-kicker">Industry Recommendation</div>
+    <h2 id="industry-recommendation-title">우선순위</h2>
+    ${renderNumberedList(result.industryRecommendations)}
+  </section>`;
+}
+
+function renderOpenEntryRecommendation(result: IndustryAwareAssessmentResult): string {
+  return `<section class="recommendation" aria-labelledby="openentry-title">
+    <div class="section-kicker">OpenEntry Recommendation</div>
+    <h2 id="openentry-title">권장 실행 로드맵</h2>
+    <div class="phase-grid">${openEntryPhaseRecommendations(result.industry).map((item) => `<article class="phase"><span>${escapeHtml(item.phase)}</span><strong>${escapeHtml(item.title)}</strong></article>`).join("")}</div>
+  </section>`;
+}
+
+export function assessmentDashboardHtml(result: IndustryAwareAssessmentResult): string {
   const topRisks = topRisksForDashboard(result);
   const recommendations = recommendationsForDashboard(result);
 
@@ -125,6 +159,11 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
     section { border: 1px solid var(--border); border-radius: 26px; background: rgba(15, 28, 46, .9); box-shadow: 0 22px 60px rgba(0,0,0,.28); padding: 24px; }
     .summary { grid-column: 1 / -1; }
     .summary-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+    .industry-profile { grid-column: 1 / -1; }
+    .industry-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .industry-grid article { padding: 18px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); }
+    .industry-grid span { display: block; margin-bottom: 10px; color: var(--muted); font-weight: 900; text-transform: uppercase; letter-spacing: .1em; }
+    .industry-grid strong { color: var(--accent2); font-size: 1.35rem; }
     .summary-card { min-height: 132px; padding: 22px; border: 1px solid var(--border); border-radius: 22px; background: linear-gradient(145deg, rgba(102,217,239,.12), rgba(11,23,40,.88)); }
     .summary-card p { margin: 0 0 18px; font-size: .86rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
     .summary-card strong { display: block; font-size: clamp(1.7rem, 4vw, 3rem); line-height: 1; }
@@ -141,7 +180,7 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
     ol { margin: 0; padding-left: 24px; color: var(--text); }
     li { margin: 0 0 14px; color: var(--muted); line-height: 1.55; }
     li::marker { color: var(--accent); font-weight: 900; }
-    .executive, .impact, .recommendation, .framework { grid-column: 1 / -1; }
+    .executive, .impact, .recommendation, .industry-recommendation, .framework { grid-column: 1 / -1; }
     .executive strong { color: var(--accent2); }
     details { margin-top: 18px; color: var(--muted); }
     summary { cursor: pointer; font-weight: 900; color: var(--accent); }
@@ -158,7 +197,7 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
     .arrow { color: var(--accent); font-size: 1.45rem; }
     .stage { margin: 0; color: var(--accent2); font-weight: 900; }
     .back { color: var(--text); text-decoration: none; border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; font-weight: 900; }
-    @media (max-width: 860px) { .summary-cards, .dashboard-grid, .phase-grid { grid-template-columns: 1fr; } .domains, .insights, .summary, .executive, .impact, .recommendation, .framework { grid-column: 1; } .flow { flex-direction: column; } .arrow { transform: rotate(90deg); } }
+    @media (max-width: 860px) { .summary-cards, .dashboard-grid, .phase-grid, .industry-grid { grid-template-columns: 1fr; } .domains, .insights, .summary, .executive, .impact, .recommendation, .framework { grid-column: 1; } .flow { flex-direction: column; } .arrow { transform: rotate(90deg); } }
   </style>
 </head>
 <body>
@@ -178,6 +217,7 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
           ${renderSummaryCard("Maturity", result.maturityLevel.displayName)}
         </div>
       </section>
+      ${renderIndustryProfile(result)}
       <section class="domains" aria-labelledby="domain-title">
         <h2 id="domain-title">Domain Scores</h2>
         ${result.domainScores.map(renderDomainScore).join("")}
@@ -188,10 +228,11 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
       </div>
       ${renderExecutiveSummary(result)}
       ${renderBusinessImpact()}
-      ${renderOpenEntryRecommendation()}
+      ${renderIndustryRecommendation(result)}
+      ${renderOpenEntryRecommendation(result)}
       <section class="framework" aria-labelledby="framework-title">
         <h2 id="framework-title">OpenEntry Framework</h2>
-        <div class="flow"><span class="step">Landing</span><span class="arrow">↓</span><span class="step">Questionnaire</span><span class="arrow">↓</span><span class="step">Scoring</span><span class="arrow">↓</span><span class="step current">Dashboard</span><span class="arrow">↓</span><span class="step">Executive Summary</span><span class="arrow">↓</span><span class="step">Recommendation</span></div>
+        <div class="flow"><span class="step">Landing</span><span class="arrow">↓</span><span class="step">Industry Selection</span><span class="arrow">↓</span><span class="step">Questionnaire</span><span class="arrow">↓</span><span class="step">Scoring</span><span class="arrow">↓</span><span class="step current">Dashboard</span><span class="arrow">↓</span><span class="step">Executive Summary</span><span class="arrow">↓</span><span class="step">Recommendation</span></div>
         <p class="stage">Current Stage: Assessment</p>
       </section>
     </div>

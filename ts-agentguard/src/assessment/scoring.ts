@@ -1,4 +1,5 @@
 import { assessmentQuestions } from "./questions";
+import { defaultIndustry, industryProfiles, IndustryType } from "./industry-profiles";
 import { calculateAssessmentGrade, calculateReadinessIndicator } from "./executive-summary";
 import { AssessmentAnswer, AssessmentGrade, AssessmentReadiness, AssessmentRiskLevel, DomainScore, MaturityLevel } from "./types";
 
@@ -13,6 +14,9 @@ export interface AssessmentResult {
 
   maturityLevel: string;
   riskLevel: string;
+  industry: IndustryType;
+  weightedScore: number;
+  industryRisk: AssessmentRiskLevel;
 }
 
 const maturityLevels: Array<{ min: number; max: number; value: string }> = [
@@ -86,13 +90,31 @@ export function calculateAssessmentRiskLevel(totalScore: number): AssessmentRisk
   return riskLevels.find((entry) => totalScore >= entry.min && totalScore <= entry.max)?.value ?? "Critical Risk";
 }
 
-export function calculateAssessment(answers: Record<string, number>): AssessmentResult {
+function calculateWeightedScore(scores: Pick<AssessmentResult, "aiUsage" | "dataProtection" | "accessControl" | "auditTraceability" | "agentRisk">, industry: IndustryType): number {
+  const weights = industryProfiles[industry].weights;
+  return Math.round(
+    (scores.aiUsage / 20) * weights.aiUsage +
+      (scores.dataProtection / 20) * weights.dataProtection +
+      (scores.accessControl / 20) * weights.accessControl +
+      (scores.auditTraceability / 20) * weights.auditTraceability +
+      (scores.agentRisk / 20) * weights.agentRisk,
+  );
+}
+
+function industryFromAnswers(answers: AssessmentAnswer[]): IndustryType {
+  const marker = answers.find((answer) => answer.questionId.startsWith("industry_"));
+  const industry = marker?.questionId.replace("industry_", "") as IndustryType | undefined;
+  return industry && industry in industryProfiles ? industry : defaultIndustry;
+}
+
+export function calculateAssessment(answers: Record<string, number>, industry: IndustryType = defaultIndustry): AssessmentResult {
   const aiUsage = scoreFor(domainQuestionIds.aiUsage, answers);
   const dataProtection = scoreFor(domainQuestionIds.dataProtection, answers);
   const accessControl = scoreFor(domainQuestionIds.accessControl, answers);
   const auditTraceability = scoreFor(domainQuestionIds.auditTraceability, answers);
   const agentRisk = scoreFor(domainQuestionIds.agentRisk, answers);
   const totalScore = aiUsage + dataProtection + accessControl + auditTraceability + agentRisk;
+  const weightedScore = calculateWeightedScore({ aiUsage, dataProtection, accessControl, auditTraceability, agentRisk }, industry);
 
   return {
     totalScore,
@@ -103,6 +125,9 @@ export function calculateAssessment(answers: Record<string, number>): Assessment
     agentRisk,
     maturityLevel: calculateMaturityLabel(totalScore),
     riskLevel: calculateAssessmentRiskLevel(totalScore),
+    industry,
+    weightedScore,
+    industryRisk: calculateAssessmentRiskLevel(weightedScore),
   };
 }
 
@@ -114,11 +139,21 @@ interface DashboardAssessmentResult {
   governanceGrade: AssessmentGrade;
   aiReadiness: AssessmentReadiness;
   domainScores: DomainScore[];
+  industry: IndustryType;
+  industryLabel: string;
+  weightedScore: number;
+  industryRisk: AssessmentRiskLevel;
+  primaryRiskFocus: string;
+  industryRecommendations: string[];
+  industryCoreControlAreas: string[];
+  industryPhases: Array<{ phase: string; title: string }>;
 }
 
 export function evaluateAssessment(answers: AssessmentAnswer[]): DashboardAssessmentResult {
+  const industry = industryFromAnswers(answers);
+  const profile = industryProfiles[industry];
   const answerValues = Object.fromEntries(answers.map((answer) => [answer.questionId, answer.value]));
-  const calculated = calculateAssessment(answerValues);
+  const calculated = calculateAssessment(answerValues, industry);
   const domainScores: DomainScore[] = [
     { domain: "AI_USAGE", label: "AI Usage", score: calculated.aiUsage, maxScore: 20 },
     { domain: "DATA_PROTECTION", label: "Data Protection", score: calculated.dataProtection, maxScore: 20 },
@@ -135,6 +170,14 @@ export function evaluateAssessment(answers: AssessmentAnswer[]): DashboardAssess
     governanceGrade: calculateAssessmentGrade(calculated.totalScore),
     aiReadiness: calculateReadinessIndicator(calculated.totalScore),
     domainScores,
+    industry: calculated.industry,
+    industryLabel: profile.label,
+    weightedScore: calculated.weightedScore,
+    industryRisk: calculated.industryRisk,
+    primaryRiskFocus: profile.primaryRiskFocus,
+    industryRecommendations: profile.recommendations,
+    industryCoreControlAreas: profile.coreControlAreas,
+    industryPhases: profile.phases,
   };
 }
 
