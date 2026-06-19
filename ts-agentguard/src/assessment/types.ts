@@ -13,6 +13,8 @@ export interface AssessmentQuestion {
 export type AssessmentAnswerValue = 0 | 1 | 2 | 3 | 5;
 
 export type AssessmentRiskLevel = "Critical Risk" | "High Risk" | "Medium Risk" | "Low Risk" | "Optimized";
+export type AssessmentGrade = "D" | "C" | "B" | "A" | "A+";
+export type AssessmentReadiness = "Not Ready" | "Partially Ready" | "Ready" | "Advanced";
 
 export interface AssessmentAnswer {
   questionId: string;
@@ -37,5 +39,7 @@ export interface AssessmentResult {
   maxScore: 100;
   riskLevel: AssessmentRiskLevel;
   maturityLevel: MaturityLevel;
+  governanceGrade: AssessmentGrade;
+  aiReadiness: AssessmentReadiness;
   domainScores: DomainScore[];
 }

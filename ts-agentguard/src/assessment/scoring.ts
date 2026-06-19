@@ -1,5 +1,6 @@
 import { assessmentQuestions } from "./questions";
-import { AssessmentAnswer, AssessmentRiskLevel, DomainScore, MaturityLevel } from "./types";
+import { calculateAssessmentGrade, calculateReadinessIndicator } from "./executive-summary";
+import { AssessmentAnswer, AssessmentGrade, AssessmentReadiness, AssessmentRiskLevel, DomainScore, MaturityLevel } from "./types";
 
 export interface AssessmentResult {
   totalScore: number;
@@ -110,6 +111,8 @@ interface DashboardAssessmentResult {
   maxScore: 100;
   riskLevel: AssessmentRiskLevel;
   maturityLevel: MaturityLevel;
+  governanceGrade: AssessmentGrade;
+  aiReadiness: AssessmentReadiness;
   domainScores: DomainScore[];
 }
 
@@ -129,6 +132,8 @@ export function evaluateAssessment(answers: AssessmentAnswer[]): DashboardAssess
     maxScore: 100,
     riskLevel: calculateAssessmentRiskLevel(calculated.totalScore),
     maturityLevel: calculateMaturityLevel(calculated.totalScore),
+    governanceGrade: calculateAssessmentGrade(calculated.totalScore),
+    aiReadiness: calculateReadinessIndicator(calculated.totalScore),
     domainScores,
   };
 }
