@@ -84,7 +84,7 @@ export function assessmentHtml(): string {
 
       <article class="card full">
         <h2>Assessment Questionnaire</h2>
-        <div class="questions">${assessmentQuestions.map((question) => `<p class="question"><strong>${escapeHtml(question.domainLabel)}:</strong> ${escapeHtml(question.prompt)}</p>`).join("")}</div>
+        <div class="questions">${assessmentQuestions.map((question) => `<p class="question"><strong>${escapeHtml(question.domain)}:</strong> ${escapeHtml(question.title)}</p>`).join("")}</div>
       </article>
 
       <article class="card full">

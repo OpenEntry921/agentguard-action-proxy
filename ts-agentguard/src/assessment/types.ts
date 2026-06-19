@@ -1,20 +1,18 @@
-export type AssessmentDomain =
-  | "ai_usage"
-  | "data_protection"
-  | "access_control"
-  | "audit_traceability"
-  | "agent_risk";
-
-export type AssessmentAnswerValue = 0 | 1 | 3 | 5;
-
-export type AssessmentRiskLevel = "Critical Risk" | "High Risk" | "Medium Risk" | "Low Risk" | "Optimized";
-
 export interface AssessmentQuestion {
   id: string;
-  domain: AssessmentDomain;
-  domainLabel: string;
-  prompt: string;
+  domain:
+    | "AI_USAGE"
+    | "DATA_PROTECTION"
+    | "ACCESS_CONTROL"
+    | "AUDIT_TRACEABILITY"
+    | "AGENT_RISK";
+
+  title: string;
 }
+
+export type AssessmentAnswerValue = 0 | 1 | 2 | 3 | 5;
+
+export type AssessmentRiskLevel = "Critical Risk" | "High Risk" | "Medium Risk" | "Low Risk" | "Optimized";
 
 export interface AssessmentAnswer {
   questionId: string;
@@ -22,7 +20,7 @@ export interface AssessmentAnswer {
 }
 
 export interface DomainScore {
-  domain: AssessmentDomain;
+  domain: AssessmentQuestion["domain"];
   label: string;
   score: number;
   maxScore: 20;
