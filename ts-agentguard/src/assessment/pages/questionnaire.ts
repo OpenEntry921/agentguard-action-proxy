@@ -2,10 +2,10 @@ import { assessmentQuestions, domainLabels } from "../questions";
 import { AssessmentQuestion } from "../types";
 
 const answerOptions = [
-  { value: 4, label: "Yes" },
-  { value: 2, label: "Partially" },
-  { value: 0, label: "No" },
-  { value: 1, label: "Not Sure" },
+  { value: 4, label: "YES" },
+  { value: 2, label: "PARTIALLY" },
+  { value: 1, label: "NOT SURE" },
+  { value: 0, label: "NO" },
 ];
 
 function escapeHtml(value: string): string {
