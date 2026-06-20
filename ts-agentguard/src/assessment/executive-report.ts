@@ -9,40 +9,31 @@ function stripDomainCode(label: string): string {
 }
 
 function assessmentDate(): string {
-  return new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long", day: "numeric" }).format(new Date());
+  return new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric" }).format(new Date());
 }
 
-function executiveSummaryFor(result: AssessmentResult): string {
-  const riskAreas = result.priorityRisks.map((risk) => stripDomainCode(risk.label));
-  const primaryAreas = riskAreas.slice(0, 3);
-  const riskSentence = primaryAreas.length > 1
-    ? `${primaryAreas.slice(0, -1).join(", ")}, and ${primaryAreas.at(-1)}`
-    : primaryAreas[0] ?? "core AI governance";
+function renderRiskPriority(index: number): string {
+  if (index === 0) return "즉시 관리";
+  if (index === 1) return "우선 관리";
+  return "단기 관리";
+}
 
-  if (result.totalScore <= 49) {
-    return `Your organization is actively adopting AI, but the current governance posture shows material exposure in ${riskSentence}. Immediate executive action is recommended before expanding AI-enabled business processes. Prioritize clear ownership, human approval for high-impact actions, and stronger protection of sensitive information.`;
+function renderRiskList(risks: PriorityRisk[]): string {
+  if (risks.length === 0) {
+    return `<p class="empty-state">중대한 우선 관리 위험이 확인되지 않았습니다.</p>`;
   }
 
-  if (result.totalScore <= 69) {
-    return `Your organization has started building AI governance practices, but important control gaps remain in ${riskSentence}. Near-term improvements will reduce business, compliance, and reputational risk as AI usage scales. Focus on the recommended roadmap to convert partial practices into repeatable executive controls.`;
-  }
-
-  if (result.totalScore <= 84) {
-    return `Your organization has a managed AI governance foundation with selected improvement areas in ${riskSentence}. Continued executive attention will help standardize practices and reduce residual risk. The recommended roadmap focuses on strengthening consistency across teams and high-impact AI use cases.`;
-  }
-
-  return `Your organization demonstrates a strong AI governance posture. Remaining improvements should focus on maintaining executive visibility, consistent assurance, and continuous review as AI adoption expands. The recommended roadmap supports mature governance at enterprise scale.`;
+  return `<ol class="risk-list">${risks.map(renderRisk).join("")}</ol>`;
 }
 
 function renderRisk(risk: PriorityRisk, index: number): string {
-  const priority = index === 0 ? "Immediate" : index === 1 ? "High" : "Near-term";
   return `<li class="risk-item">
     <span class="risk-number">${index + 1}</span>
     <div>
       <strong>${escapeHtml(stripDomainCode(risk.label))}</strong>
       <p>${escapeHtml(risk.description)}</p>
     </div>
-    <span class="priority">${priority}</span>
+    <span class="priority">${renderRiskPriority(index)}</span>
   </li>`;
 }
 
@@ -54,9 +45,9 @@ function renderRoadmap(group: RecommendedActionGroup): string {
 }
 
 export function executiveAssessmentSummaryHtml(result: AssessmentResult): string {
-  const companyName = "Assessment Client";
+  const companyName = "평가 대상 조직";
   const version = "AGAF Assessment MVP v0.3";
-  const topRisks = result.priorityRisks.slice(0, 3);
+  const topRisks = result.priorityRisks;
 
   return `<!doctype html>
 <html lang="ko">
@@ -99,6 +90,7 @@ export function executiveAssessmentSummaryHtml(result: AssessmentResult): string
     .roadmap-card h3 { color: var(--good); margin-bottom: 12px; }
     ul { margin: 0; padding-left: 19px; }
     li { color: var(--muted); line-height: 1.48; margin-bottom: 8px; }
+    .empty-state { margin: 0; padding: 18px; border: 1px solid rgba(143,255,204,.26); border-radius: 18px; background: rgba(143,255,204,.08); color: var(--text); font-weight: 850; line-height: 1.55; }
     .message { margin-top: 14px; border: 1px solid rgba(143,255,204,.26); border-radius: 20px; padding: 18px; background: rgba(143,255,204,.08); color: var(--text); font-size: clamp(1.25rem, 2.6vw, 2rem); line-height: 1.35; font-weight: 900; text-align: center; }
     footer { grid-template-columns: 1fr auto; align-items: end; padding-top: 10px; border-top: 1px solid rgba(184,199,220,.16); color: var(--muted); font-weight: 750; }
     footer strong { display: block; color: var(--text); margin-top: 2px; }
@@ -113,12 +105,12 @@ export function executiveAssessmentSummaryHtml(result: AssessmentResult): string
       <header>
         <div>
           <div class="eyebrow">Executive Assessment Summary</div>
-          <h1 id="report-title">AGAF Executive Assessment Summary</h1>
+          <h1 id="report-title">AGAF 경영진 평가 요약</h1>
         </div>
         <div class="meta" aria-label="Assessment metadata">
-          <div><span>Company Name</span><strong>${escapeHtml(companyName)}</strong></div>
-          <div><span>Assessment Date</span><strong>${escapeHtml(assessmentDate())}</strong></div>
-          <div><span>Assessment Version</span><strong>${escapeHtml(version)}</strong></div>
+          <div><span>조직명</span><strong>${escapeHtml(companyName)}</strong></div>
+          <div><span>평가일</span><strong>${escapeHtml(assessmentDate())}</strong></div>
+          <div><span>평가 버전</span><strong>${escapeHtml(version)}</strong></div>
         </div>
       </header>
 
@@ -130,18 +122,18 @@ export function executiveAssessmentSummaryHtml(result: AssessmentResult): string
             <div class="risk-badge">${escapeHtml(result.riskLevel)}</div>
           </article>
           <article class="summary-card">
-            <h2>Executive Summary</h2>
-            <p>${escapeHtml(executiveSummaryFor(result))}</p>
+            <h2>경영진 요약</h2>
+            <p>${escapeHtml(result.executiveSummary)}</p>
           </article>
         </section>
 
         <section class="lower-grid" aria-label="Top risks and roadmap">
           <article class="panel">
-            <h2>Top 3 Risks</h2>
-            <ol class="risk-list">${topRisks.map(renderRisk).join("")}</ol>
+            <h2>우선 관리 위험</h2>
+            ${renderRiskList(topRisks)}
           </article>
           <article class="panel">
-            <h2>Recommended Roadmap</h2>
+            <h2>권장 실행 계획</h2>
             <div class="roadmap">${result.recommendedActions.map(renderRoadmap).join("")}</div>
           </article>
         </section>
@@ -150,10 +142,10 @@ export function executiveAssessmentSummaryHtml(result: AssessmentResult): string
       </div>
 
       <footer>
-        <div>Assessment generated using <strong>AGAF (AI Governance Assessment Framework)</strong>© OpenEntry</div>
+        <div>평가 결과는 <strong>AGAF</strong> 기준으로 생성되었습니다</div>
         <nav class="actions" aria-label="Report actions">
-          <a class="link" href="/assessment/start">Run Again</a>
-          <a class="link" href="/demo/assessment">Assessment Home</a>
+          <a class="link" href="/assessment/start">다시 평가하기</a>
+          <a class="link" href="/demo/assessment">평가 홈</a>
         </nav>
       </footer>
     </section>
