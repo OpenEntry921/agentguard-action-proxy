@@ -9,6 +9,7 @@ export interface AssessmentQuestion {
   id: string;
   domain: AssessmentDomain;
   title: string;
+  displayId: string;
 }
 
 export type AssessmentAnswerValue = 0 | 1 | 2 | 4;
@@ -19,6 +20,30 @@ export type AssessmentReadiness = "Not Ready" | "Partially Ready" | "Ready" | "A
 export interface AssessmentAnswer {
   questionId: string;
   value: AssessmentAnswerValue;
+}
+
+export type AssessmentAnswerLabel = "NO" | "NOT SURE" | "PARTIAL" | "YES";
+
+export interface QuestionExplanation {
+  questionId: string;
+  displayId: string;
+  title: string;
+  answer: AssessmentAnswerLabel;
+  points: AssessmentAnswerValue;
+  maxPoints: 4;
+  impact: string;
+}
+
+export interface DomainExplanation {
+  domain: AssessmentDomain;
+  label: string;
+  score: number;
+  maxScore: 100;
+  answeredPoints: number;
+  maxPoints: number;
+  answerBreakdown: QuestionExplanation[];
+  findings: string[];
+  narrative: string;
 }
 
 export interface DomainScore {
@@ -55,6 +80,7 @@ export interface AssessmentResult {
   aiReadiness: AssessmentReadiness;
   domainScores: DomainScore[];
   priorityRisks: PriorityRisk[];
+  explanations: DomainExplanation[];
   recommendedActions: RecommendedActionGroup[];
   executiveSummary: string;
   regulatoryReadiness: string;

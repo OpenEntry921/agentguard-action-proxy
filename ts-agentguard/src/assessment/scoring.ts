@@ -1,5 +1,5 @@
 import { assessmentQuestions, domainLabels } from "./questions";
-import { AssessmentAnswer, AssessmentGrade, AssessmentReadiness, AssessmentRiskLevel, AssessmentResult, DomainScore, MaturityLevel, RecommendedActionGroup, PriorityRisk } from "./types";
+import { AssessmentAnswer, AssessmentAnswerLabel, AssessmentGrade, AssessmentReadiness, AssessmentRiskLevel, AssessmentResult, DomainExplanation, DomainScore, MaturityLevel, RecommendedActionGroup, PriorityRisk } from "./types";
 export type { AssessmentResult } from "./types";
 
 export function calculateAssessmentRiskLevel(score: number): AssessmentRiskLevel {
@@ -48,6 +48,28 @@ const timeHorizonActions: Record<DomainScore["domain"], Record<RecommendedAction
   STRATEGIC_GOVERNANCE: { "30 Days": ["경영진 AI 위험 보고 기준 수립"], "90 Days": ["AI 정책 체계 구축"], "180 Days": ["AI Governance Committee 운영"] },
 };
 
+const explanationFindings: Record<DomainScore["domain"], string[]> = {
+  FINANCIAL_ACTIONS: ["금전 실행 사전 승인 부재", "거래 한도 및 예외 승인 기준 미흡", "금전 실행 감사 추적성 부족"],
+  AI_RISK_MANAGEMENT: ["AI Risk Register 부재", "위험등급 체계 미흡", "잔여위험 평가 부재"],
+  PRIVACY_DATA_PROTECTION: ["민감정보 입력 기준 미흡", "고객정보 외부 전송 통제 부족", "데이터 보호 사고 대응 준비 부족"],
+  MODEL_GOVERNANCE_HUMAN_OVERSIGHT: ["Human Review 절차 미흡", "고위험 AI 단독 의사결정 제한 부족", "AI 결과 품질 점검 루프 부족"],
+  STRATEGIC_GOVERNANCE: ["경영진 승인 원칙 부재", "AI 역할과 의사결정 권한 불명확", "AI 거버넌스 개선 일정 미흡"],
+};
+
+function answerLabel(value: AssessmentAnswer["value"]): AssessmentAnswerLabel {
+  if (value === 4) return "YES";
+  if (value === 2) return "PARTIAL";
+  if (value === 1) return "NOT SURE";
+  return "NO";
+}
+
+function answerImpact(label: AssessmentAnswerLabel): string {
+  if (label === "YES") return "통제가 확인되어 감점 영향이 낮습니다.";
+  if (label === "PARTIAL") return "부분 통제만 확인되어 보완 과제가 남습니다.";
+  if (label === "NOT SURE") return "증빙 여부가 불명확하여 낮은 신뢰도로 반영됩니다.";
+  return "통제가 확인되지 않아 주요 감점 요인입니다.";
+}
+
 function lowestDomainScores(domainScores: DomainScore[]): DomainScore[] {
   return [...domainScores].sort((left, right) => left.score - right.score || left.label.localeCompare(right.label)).slice(0, 3);
 }
@@ -73,6 +95,40 @@ function buildExecutiveSummary(domainScores: DomainScore[]): string {
   return `귀사는 AI를 적극 활용하고 있으나 ${weakestLabels.slice(0, 2).join(" 및 ")} 통제가 상대적으로 부족합니다.\n\n단기적으로 ${weakestLabels.join(", ")} 개선이 필요합니다.`;
 }
 
+function buildExplanations(answerValues: Record<string, AssessmentAnswer["value"]>, domainScores: DomainScore[]): DomainExplanation[] {
+  return domainScores.map((domainScore) => {
+    const questions = assessmentQuestions.filter((question) => question.domain === domainScore.domain);
+    const answeredPoints = questions.reduce((sum, question) => sum + (answerValues[question.id] ?? 0), 0);
+    const maxPoints = questions.length * 4;
+    const answerBreakdown = questions.map((question) => {
+      const points = answerValues[question.id] ?? 0;
+      const answer = answerLabel(points);
+      return {
+        questionId: question.id,
+        displayId: question.displayId,
+        title: question.title,
+        answer,
+        points,
+        maxPoints: 4 as const,
+        impact: answerImpact(answer),
+      };
+    });
+    const negativeAnswers = answerBreakdown.filter((item) => item.answer !== "YES").map((item) => `${item.displayId} ${item.answer}`).join(", ");
+
+    return {
+      domain: domainScore.domain,
+      label: domainScore.label,
+      score: domainScore.score,
+      maxScore: domainScore.maxScore,
+      answeredPoints,
+      maxPoints,
+      answerBreakdown,
+      findings: explanationFindings[domainScore.domain],
+      narrative: `${domainScore.label} 점수는 ${answeredPoints}/${maxPoints} 응답 포인트를 100점 기준으로 환산한 ${domainScore.score}점입니다. ${negativeAnswers || "모든 핵심 통제가 확인되었습니다."}`,
+    };
+  });
+}
+
 export function evaluateAssessment(answers: AssessmentAnswer[]): AssessmentResult {
   const answerValues = Object.fromEntries(answers.map((answer) => [answer.questionId, answer.value]));
   const domains = Object.keys(domainLabels) as DomainScore["domain"][];
@@ -82,6 +138,7 @@ export function evaluateAssessment(answers: AssessmentAnswer[]): AssessmentResul
     return { domain, label: domainLabels[domain], score: Math.round((total / (questions.length * 4)) * 100), maxScore: 100 as const };
   });
   const totalScore = Math.round(domainScores.reduce((sum, domainScore) => sum + domainScore.score, 0) / domainScores.length);
+  const explanations = buildExplanations(answerValues, domainScores);
   const scoreFor = (domain: DomainScore["domain"]) => domainScores.find((score) => score.domain === domain)?.score ?? totalScore;
 
   return {
@@ -93,6 +150,7 @@ export function evaluateAssessment(answers: AssessmentAnswer[]): AssessmentResul
     aiReadiness: calculateReadiness(totalScore),
     domainScores,
     priorityRisks: buildPriorityRisks(domainScores),
+    explanations,
     recommendedActions: buildRecommendedActions(domainScores),
     executiveSummary: buildExecutiveSummary(domainScores),
     regulatoryReadiness: percentage(totalScore),
