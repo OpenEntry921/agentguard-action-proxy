@@ -82,7 +82,8 @@ export function assessmentQuestionnaireHtml(): string {
         <div class="questions">${assessmentQuestions.map(renderQuestion).join("")}</div>
         <div class="actions">
           <a href="/demo/assessment">Back to Landing</a>
-          <button type="submit">Generate Dashboard</button>
+          <button type="submit" name="view" value="dashboard">Generate Dashboard</button>
+          <button type="submit" name="view" value="report">Executive Summary</button>
         </div>
       </form>
       <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
@@ -104,16 +105,18 @@ export function assessmentQuestionnaireHtml(): string {
       }
 
       const answers = questionIds.map((questionId) => ({ questionId, value: Number(formData.get(questionId)) }));
-      message.textContent = "Dashboard 생성 중...";
+      const submitter = event.submitter;
+      const reportRequested = submitter instanceof HTMLButtonElement && submitter.value === "report";
+      message.textContent = reportRequested ? "Executive Summary 생성 중..." : "Dashboard 생성 중...";
 
-      const response = await fetch("/assessment/dashboard", {
+      const response = await fetch(reportRequested ? "/assessment/report" : "/assessment/dashboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers }),
       });
 
       if (!response.ok) {
-        message.textContent = "Dashboard 생성에 실패했습니다. 잠시 후 다시 시도해주세요.";
+        message.textContent = reportRequested ? "Executive Summary 생성에 실패했습니다. 잠시 후 다시 시도해주세요." : "Dashboard 생성에 실패했습니다. 잠시 후 다시 시도해주세요.";
         return;
       }
 
