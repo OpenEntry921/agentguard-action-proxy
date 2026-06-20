@@ -1,64 +1,49 @@
-import { businessImpactForExecutiveSummary, executiveSummaryText } from "./executive-summary";
-import { generateRecommendations, quickWinsFor, roadmapFor, topWeaknesses } from "./recommendation-engine";
-import type { IndustryType } from "./industry-profiles";
-import { businessScenarioFor } from "./scenario-engine";
 import { AssessmentResult, DomainScore } from "./types";
 
-type IndustryAwareAssessmentResult = AssessmentResult & {
-  industry: IndustryType;
-  industryLabel: string;
-  weightedScore: number;
-  industryRisk: string;
-  primaryRiskFocus: string;
-  industryRecommendations: string[];
-  industryCoreControlAreas: string[];
-  industryPhases: Array<{ phase: string; title: string }>;
-};
-
 function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
 }
 
 const riskMessages: Record<DomainScore["domain"], string> = {
-  AI_USAGE: "No AI usage policy",
-  DATA_PROTECTION: "Sensitive data handling not defined",
-  ACCESS_CONTROL: "Approval and access control workflow is incomplete",
-  AUDIT_TRACEABILITY: "Audit trail and traceability are not ready",
-  AGENT_RISK: "No runtime control before agent execution",
+  FINANCIAL_ACTIONS: "AI가 승인 없이 금전 관련 행동을 할 위험",
+  AI_RISK_MANAGEMENT: "AI가 회사 정책을 위반하거나 잘못된 결정을 내릴 위험",
+  PRIVACY_DATA_PROTECTION: "AI가 고객정보나 회사 기밀을 외부로 보낼 위험",
+  MODEL_GOVERNANCE_HUMAN_OVERSIGHT: "중요한 AI 결과가 사람의 검토 없이 사용될 위험",
+  STRATEGIC_GOVERNANCE: "경영진 책임, 규제 대응, 개선 계획이 불명확할 위험",
 };
 
-function lowestDomainScores(result: AssessmentResult): DomainScore[] {
-  return topWeaknesses(result);
-}
+const actionPlans: Record<"30 Days" | "90 Days" | "180 Days", string[]> = {
+  "30 Days": [
+    "AI 사용 원칙과 금지 정보를 전 직원에게 안내합니다.",
+    "금전, 고객정보, 중요 의사결정에 대한 사전 승인 기준을 정합니다.",
+    "현재 사용 중인 주요 AI 업무를 목록화합니다.",
+  ],
+  "90 Days": [
+    "고위험 AI 업무에 사람 검토와 책임자 승인을 적용합니다.",
+    "고객정보 보호, 기록 보관, 사고 대응 절차를 정비합니다.",
+    "경영진 보고용 월간 AI 위험 점검 체계를 시작합니다.",
+  ],
+  "180 Days": [
+    "정기 감사와 규제 대응 증적을 관리합니다.",
+    "AI 거버넌스 성과 지표를 사업 운영 회의에 포함합니다.",
+    "부서별 개선 과제를 재평가하고 다음 반기 계획을 확정합니다.",
+  ],
+};
 
 export function topRisksForDashboard(result: AssessmentResult): string[] {
-  if (result.totalScore >= 90) return ["No Critical Risks Identified"];
-  return lowestDomainScores(result).map((domainScore) => riskMessages[domainScore.domain]);
+  const weakDomains = [...result.domainScores].sort((left, right) => left.score - right.score).slice(0, 3);
+  if (weakDomains.every((domain) => domain.score >= 85)) return ["현재 즉시 조치가 필요한 주요 위험은 낮습니다."];
+  return weakDomains.map((domain) => riskMessages[domain.domain]);
 }
 
-export function recommendationsForDashboard(result: IndustryAwareAssessmentResult): string[] {
-  return generateRecommendations(result).map((recommendation) => `${recommendation.title}: ${recommendation.expectedOutcome}`);
-}
-
-function renderSummaryCard(label: string, value: string): string {
-  return `<article class="summary-card"><p>${escapeHtml(label)}</p><strong>${escapeHtml(value)}</strong></article>`;
+function renderSummaryCard(label: string, value: string, className = ""): string {
+  return `<article class="summary-card ${className}"><p>${escapeHtml(label)}</p><strong>${escapeHtml(value)}</strong></article>`;
 }
 
 function renderDomainScore(domainScore: DomainScore): string {
-  const percent = Math.max(0, Math.min(100, Math.round((domainScore.score / domainScore.maxScore) * 100)));
   return `<div class="domain-row">
-    <div>
-      <strong>${escapeHtml(domainScore.label)}</strong>
-      <span>${domainScore.score} / ${domainScore.maxScore}</span>
-    </div>
-    <div class="progress" aria-label="${escapeHtml(domainScore.label)} score ${domainScore.score} out of ${domainScore.maxScore}">
-      <span style="width: ${percent}%"></span>
-    </div>
+    <div><strong>${escapeHtml(domainScore.label)}</strong><span>${domainScore.score} / ${domainScore.maxScore}</span></div>
+    <div class="progress" aria-label="${escapeHtml(domainScore.label)} score ${domainScore.score} out of ${domainScore.maxScore}"><span style="width: ${domainScore.score}%"></span></div>
   </div>`;
 }
 
@@ -66,195 +51,88 @@ function renderNumberedList(items: string[]): string {
   return `<ol>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>`;
 }
 
-function renderBulletList(items: string[]): string {
-  return `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
-}
-
-function renderExecutiveSummary(result: IndustryAwareAssessmentResult): string {
-  const priorityAreas = topWeaknesses(result);
-  return `<section class="executive" aria-labelledby="executive-title">
-    <div class="section-kicker">Executive Summary</div>
-    <h2 id="executive-title">경영진 보고서</h2>
-    <p>현재 수준: <strong>${escapeHtml(result.maturityLevel.displayName)}</strong></p>
-    <p>귀사는 <strong>${escapeHtml(result.industryLabel)}</strong> 기준으로 평가되었습니다.</p>
-    <p>${escapeHtml(result.industryLabel)} 산업에서는 <strong>${escapeHtml(result.industryCoreControlAreas.join("와 "))}</strong>이 핵심 통제 영역입니다.</p>
-    <p>총점은 <strong>${result.totalScore}/${result.maxScore}</strong>, 산업 가중 점수는 <strong>${result.weightedScore}/${result.maxScore}</strong>으로 현재 AI 사용은 이루어지고 있으나 통제 체계는 개선이 필요한 상태입니다.</p>
-    <p>가장 취약한 영역은 다음 3개 영역입니다.</p>
-    ${renderNumberedList(priorityAreas.map((area) => area.label))}
-    <p>예상 우선 개선 기간: <strong>30~90일</strong></p>
-    <details><summary>보고서 원문 보기</summary><pre>${escapeHtml(executiveSummaryText(result))}</pre></details>
+function renderActionPlans(): string {
+  return `<section class="actions" aria-labelledby="actions-title">
+    <div class="section-kicker">Recommended Actions</div>
+    <h2 id="actions-title">권장 실행 계획</h2>
+    <div class="action-grid">${Object.entries(actionPlans).map(([period, items]) => `<article><span>${escapeHtml(period)}</span>${renderNumberedList(items)}</article>`).join("")}</div>
   </section>`;
 }
 
-function renderBusinessScenarios(result: IndustryAwareAssessmentResult): string {
-  const scenario = businessScenarioFor(result);
-  return `<section class="business-scenarios" aria-labelledby="business-scenarios-title">
-    <div class="section-kicker">Potential Business Scenarios</div>
-    <h2 id="business-scenarios-title">실제 발생 가능한 비즈니스 사고 시나리오</h2>
-    <div class="scenario-grid">
-      <article><span>Scenario</span><strong>${escapeHtml(scenario.scenario)}</strong></article>
-      <article><span>영향</span><strong>${escapeHtml(scenario.impacts.join(" · "))}</strong></article>
-      <article><span>가능성</span><strong>${escapeHtml(scenario.likelihood)}</strong></article>
-      <article><span>심각도</span><strong>${escapeHtml(scenario.severity)}</strong></article>
-      <article><span>Impact Score</span><strong>${escapeHtml(scenario.impactScore)}</strong></article>
-    </div>
-  </section>`;
-}
-
-function renderBusinessImpact(result: IndustryAwareAssessmentResult): string {
-  const scenario = businessScenarioFor(result);
-  const impacts = [...scenario.potentialImpact, ...businessImpactForExecutiveSummary(result)];
-  return `<section class="impact" aria-labelledby="impact-title">
-    <div class="section-kicker">Estimated Business Impact</div>
-    <h2 id="impact-title">현재 상태 유지 시 예상 영향</h2>
-    <p>현재 상태를 유지할 경우 점수 하락 영역이 다음 비즈니스 영향으로 이어질 수 있습니다.</p>
-    ${renderBulletList([...new Set(impacts)])}
-  </section>`;
-}
-
-function renderIndustryProfile(result: IndustryAwareAssessmentResult): string {
-  return `<section class="industry-profile" aria-labelledby="industry-profile-title">
-    <div class="section-kicker">Industry Profile</div>
-    <h2 id="industry-profile-title">${escapeHtml(result.industryLabel)}</h2>
-    <div class="industry-grid">
-      <article><span>Primary Risk Focus</span><strong>${escapeHtml(result.primaryRiskFocus)}</strong></article>
-      <article><span>Weighted Score</span><strong>${result.weightedScore} / ${result.maxScore}</strong></article>
-      <article><span>Industry Risk</span><strong>${escapeHtml(result.industryRisk)}</strong></article>
-    </div>
-  </section>`;
-}
-
-function renderRecommendationEngine(result: IndustryAwareAssessmentResult): string {
-  const recommendations = generateRecommendations(result);
-  return `<section class="industry-recommendation" aria-labelledby="industry-recommendation-title">
-    <div class="section-kicker">Recommendation Engine</div>
-    <h2 id="industry-recommendation-title">우선순위 실행계획</h2>
-    <div class="recommendation-list">${recommendations.map((item) => `<article class="recommendation-card"><span>Priority ${item.priority}</span><strong>${escapeHtml(item.title)}</strong><p><b>Reason:</b> ${escapeHtml(item.reason)}</p><p><b>Expected Outcome:</b> ${escapeHtml(item.expectedOutcome)}</p></article>`).join("")}</div>
-  </section>`;
-}
-
-function renderQuickWins(result: IndustryAwareAssessmentResult): string {
-  return `<section class="quick-wins" aria-labelledby="quick-wins-title"><div class="section-kicker">Quick Wins</div><h2 id="quick-wins-title">30일 이내 저비용 실행 항목</h2><ul>${quickWinsFor(result).map((item) => `<li>✓ ${escapeHtml(item)}</li>`).join("")}</ul></section>`;
-}
-
-function renderRoadmap(result: IndustryAwareAssessmentResult): string {
-  return `<section class="recommendation" aria-labelledby="roadmap-title">
-    <div class="section-kicker">90-Day Roadmap</div>
-    <h2 id="roadmap-title">산업군과 취약영역 기반 실행 순서</h2>
-    <div class="phase-grid">${roadmapFor(result).map((item) => `<article class="phase"><span>${escapeHtml(item.day)}</span><strong>${escapeHtml(item.title)}</strong></article>`).join("")}</div>
-  </section>`;
-}
-
-export function assessmentDashboardHtml(result: IndustryAwareAssessmentResult): string {
+export function assessmentDashboardHtml(result: AssessmentResult): string {
   const topRisks = topRisksForDashboard(result);
-  const recommendations = recommendationsForDashboard(result);
 
   return `<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AI Governance Readiness Dashboard</title>
+  <title>AGAF Executive Dashboard</title>
   <style>
-    :root { color-scheme: dark; --bg: #07111f; --card: #0f1c2e; --panel: #0b1728; --border: #223555; --text: #eaf2ff; --muted: #b8c7dc; --accent: #66d9ef; --accent2: #8fffcc; --risk: #ff6b6b; --warn: #ffbd59; }
+    :root { color-scheme: dark; --bg: #07111f; --card: #0f1c2e; --panel: #0b1728; --border: #223555; --text: #eaf2ff; --muted: #b8c7dc; --accent: #66d9ef; --good: #8fffcc; --warn: #ffbd59; --risk: #ff6b6b; }
     * { box-sizing: border-box; }
     body { margin: 0; min-height: 100vh; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: radial-gradient(circle at top left, #12345a 0, var(--bg) 34rem); color: var(--text); }
-    main { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 56px 0 72px; }
+    main { width: min(1160px, calc(100% - 40px)); margin: 0 auto; padding: 52px 0 72px; }
     header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18px; align-items: end; margin-bottom: 24px; }
-    h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 4.8rem); line-height: .95; letter-spacing: -.05em; }
+    h1 { margin: 0; font-size: clamp(2.4rem, 6vw, 4.9rem); line-height: .95; letter-spacing: -.05em; }
     h2 { margin: 0 0 18px; font-size: 1.35rem; }
     p { color: var(--muted); line-height: 1.7; }
-    .eyebrow { color: var(--accent); font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+    .eyebrow, .section-kicker { color: var(--accent); font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
     .dashboard-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
     section { border: 1px solid var(--border); border-radius: 26px; background: rgba(15, 28, 46, .9); box-shadow: 0 22px 60px rgba(0,0,0,.28); padding: 24px; }
-    .summary { grid-column: 1 / -1; }
-    .summary-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
-    .industry-profile { grid-column: 1 / -1; }
-    .industry-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-    .industry-grid article { padding: 18px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); }
-    .industry-grid span { display: block; margin-bottom: 10px; color: var(--muted); font-weight: 900; text-transform: uppercase; letter-spacing: .1em; }
-    .industry-grid strong { color: var(--accent2); font-size: 1.35rem; }
+    .summary, .actions { grid-column: 1 / -1; }
+    .summary-cards { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
     .summary-card { min-height: 132px; padding: 22px; border: 1px solid var(--border); border-radius: 22px; background: linear-gradient(145deg, rgba(102,217,239,.12), rgba(11,23,40,.88)); }
-    .summary-card p { margin: 0 0 18px; font-size: .86rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
-    .summary-card strong { display: block; font-size: clamp(1.7rem, 4vw, 3rem); line-height: 1; }
-    .grade-card { border-color: var(--warn); background: linear-gradient(145deg, rgba(255,189,89,.18), rgba(11,23,40,.9)); }
-    .section-kicker { margin-bottom: 10px; color: var(--accent); font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+    .summary-card p { margin: 0 0 18px; font-size: .82rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+    .summary-card strong { display: block; font-size: clamp(1.35rem, 3vw, 2.7rem); line-height: 1.05; }
+    .score-card { border-color: var(--warn); background: linear-gradient(145deg, rgba(255,189,89,.2), rgba(11,23,40,.9)); }
     .domains { grid-column: span 7; }
-    .insights { grid-column: span 5; display: grid; gap: 18px; background: transparent; border: 0; box-shadow: none; padding: 0; }
+    .risks { grid-column: span 5; }
     .domain-row { display: grid; gap: 10px; padding: 16px 0; border-top: 1px solid rgba(184,199,220,.16); }
     .domain-row:first-of-type { border-top: 0; padding-top: 0; }
     .domain-row > div:first-child { display: flex; justify-content: space-between; gap: 16px; color: var(--muted); }
     .domain-row strong { color: var(--text); }
     .progress { height: 14px; overflow: hidden; border-radius: 999px; background: rgba(184,199,220,.16); }
-    .progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
-    ol { margin: 0; padding-left: 24px; color: var(--text); }
+    .progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--good)); }
+    ol { margin: 0; padding-left: 24px; }
     li { margin: 0 0 14px; color: var(--muted); line-height: 1.55; }
     li::marker { color: var(--accent); font-weight: 900; }
-    .executive, .business-scenarios, .impact, .recommendation, .industry-recommendation, .quick-wins, .framework { grid-column: 1 / -1; }
-    .scenario-grid { display: grid; grid-template-columns: 2fr 2fr repeat(3, 1fr); gap: 14px; }
-    .scenario-grid article { padding: 18px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); }
-    .scenario-grid span { display: block; margin-bottom: 10px; color: var(--muted); font-weight: 900; text-transform: uppercase; letter-spacing: .1em; }
-    .scenario-grid strong { color: var(--accent2); font-size: 1.05rem; line-height: 1.45; }
-    .executive strong { color: var(--accent2); }
-    details { margin-top: 18px; color: var(--muted); }
-    summary { cursor: pointer; font-weight: 900; color: var(--accent); }
-    pre { white-space: pre-wrap; border: 1px solid var(--border); border-radius: 18px; padding: 18px; background: var(--panel); color: var(--text); line-height: 1.7; }
-    ul { margin: 0; padding-left: 24px; }
-    .phase-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-    .phase { padding: 18px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); }
-    .phase span { display: block; margin-bottom: 10px; color: var(--accent); font-weight: 900; }
-    .phase strong { font-size: 1.05rem; }
-    .recommendation-list { display: grid; gap: 14px; }
-    .recommendation-card { padding: 18px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); }
-    .recommendation-card span { display: block; margin-bottom: 8px; color: var(--accent); font-weight: 900; }
-    .recommendation-card strong { display: block; margin-bottom: 10px; color: var(--accent2); font-size: 1.15rem; }
-    .framework { text-align: center; }
-    .flow { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; margin: 20px 0; }
-    .step { padding: 13px 18px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); font-weight: 900; }
-    .current { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(102,217,239,.12); }
-    .arrow { color: var(--accent); font-size: 1.45rem; }
-    .stage { margin: 0; color: var(--accent2); font-weight: 900; }
+    .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .action-grid article { padding: 18px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel); }
+    .action-grid span { display: block; margin-bottom: 14px; color: var(--good); font-size: 1.3rem; font-weight: 900; }
     .back { color: var(--text); text-decoration: none; border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; font-weight: 900; }
-    @media (max-width: 860px) { .summary-cards, .dashboard-grid, .phase-grid, .industry-grid, .scenario-grid { grid-template-columns: 1fr; } .domains, .insights, .summary, .executive, .impact, .recommendation, .framework { grid-column: 1; } .flow { flex-direction: column; } .arrow { transform: rotate(90deg); } }
+    @media (max-width: 920px) { .summary-cards, .dashboard-grid, .action-grid { grid-template-columns: 1fr; } .domains, .risks, .summary, .actions { grid-column: 1; } }
   </style>
 </head>
 <body>
   <main>
     <header>
-      <div><div class="eyebrow">OpenEntry Assessment</div><h1>AI Governance Readiness Dashboard</h1><p>20개 질문 응답을 기반으로 거버넌스 준비도, 주요 리스크, 다음 실행 과제를 보여줍니다.</p></div>
+      <div><div class="eyebrow">AGAF Assessment MVP v0.1</div><h1>Executive Dashboard</h1><p>25개 질문 응답을 기반으로 AI 거버넌스 점수, 주요 위험, 실행 우선순위를 보여줍니다.</p></div>
       <a class="back" href="/assessment/start">Run Again</a>
     </header>
     <div class="dashboard-grid">
       <section class="summary" aria-labelledby="summary-title">
-        <h2 id="summary-title">Summary Cards</h2>
+        <h2 id="summary-title">Executive Summary</h2>
         <div class="summary-cards">
-          <article class="summary-card grade-card"><p>Governance Grade</p><strong>${escapeHtml(result.governanceGrade)}</strong></article>
-          ${renderSummaryCard("AI Readiness", result.aiReadiness)}
-          ${renderSummaryCard("Total Score", `${result.totalScore} / ${result.maxScore}`)}
+          ${renderSummaryCard("AI Governance Score", `${result.totalScore} / ${result.maxScore}`, "score-card")}
           ${renderSummaryCard("Risk Level", result.riskLevel)}
-          ${renderSummaryCard("Maturity", result.maturityLevel.displayName)}
+          ${renderSummaryCard("Regulatory Readiness", result.regulatoryReadiness)}
+          ${renderSummaryCard("Control Maturity", result.controlMaturity)}
+          ${renderSummaryCard("Audit Readiness", result.auditReadiness)}
+          ${renderSummaryCard("Governance Grade", result.governanceGrade)}
         </div>
       </section>
-      ${renderIndustryProfile(result)}
       <section class="domains" aria-labelledby="domain-title">
-        <h2 id="domain-title">Domain Scores</h2>
+        <div class="section-kicker">5 Domain Risk Overview</div>
+        <h2 id="domain-title">영역별 위험 현황</h2>
         ${result.domainScores.map(renderDomainScore).join("")}
       </section>
-      <div class="insights">
-        <section aria-labelledby="risks-title"><h2 id="risks-title">Top Risks</h2>${renderNumberedList(topRisks)}</section>
-        <section aria-labelledby="recommendations-title"><h2 id="recommendations-title">Recommendations</h2>${renderNumberedList(recommendations)}</section>
-      </div>
-      ${renderExecutiveSummary(result)}
-      ${renderBusinessScenarios(result)}
-      ${renderBusinessImpact(result)}
-      ${renderRecommendationEngine(result)}
-      ${renderQuickWins(result)}
-      ${renderRoadmap(result)}
-      <section class="framework" aria-labelledby="framework-title">
-        <h2 id="framework-title">OpenEntry Framework</h2>
-        <div class="flow"><span class="step">Landing</span><span class="arrow">↓</span><span class="step">Industry Selection</span><span class="arrow">↓</span><span class="step">Questionnaire</span><span class="arrow">↓</span><span class="step">Scoring</span><span class="arrow">↓</span><span class="step current">Business Scenario Analysis</span><span class="arrow">↓</span><span class="step">Impact Analysis</span><span class="arrow">↓</span><span class="step">Recommendations</span><span class="arrow">↓</span><span class="step">Quick Wins</span><span class="arrow">↓</span><span class="step">90-Day Roadmap</span></div>
-        <p class="stage">Current Stage: Assessment</p>
+      <section class="risks" aria-labelledby="risks-title">
+        <div class="section-kicker">Highest Priority Risks</div>
+        <h2 id="risks-title">우선 관리 위험</h2>
+        ${renderNumberedList(topRisks)}
       </section>
+      ${renderActionPlans()}
     </div>
   </main>
 </body>
