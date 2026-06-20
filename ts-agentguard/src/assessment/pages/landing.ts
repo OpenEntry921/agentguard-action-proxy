@@ -27,11 +27,11 @@ export function assessmentLandingHtml(): string {
   <main>
     <section class="card" aria-labelledby="assessment-title">
       <div class="eyebrow">OpenEntry AI Risk Assessment</div>
-      <h1 id="assessment-title">AI Governance Readiness Dashboard</h1>
-      <p>기업의 AI 거버넌스 수준을 진단합니다.</p>
+      <h1 id="assessment-title">AGAF Executive Dashboard</h1>
+      <p>25개 문항으로 AI 거버넌스 위험과 실행 우선순위를 빠르게 진단합니다.</p>
       <div class="stats" aria-label="Assessment overview">
         <div class="stat"><strong>5</strong><span>5개 영역</span></div>
-        <div class="stat"><strong>20</strong><span>20개 질문</span></div>
+        <div class="stat"><strong>25</strong><span>25개 질문</span></div>
         <div class="stat"><strong>5분</strong><span>약 5분 소요</span></div>
       </div>
       <a class="button" href="/assessment/start">Start Assessment</a>

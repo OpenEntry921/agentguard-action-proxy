@@ -1,28 +1,41 @@
 import { AssessmentQuestion } from "./types";
 
+export const domainLabels: Record<AssessmentQuestion["domain"], string> = {
+  FINANCIAL_ACTIONS: "D04 Financial Actions",
+  AI_RISK_MANAGEMENT: "D08 AI Risk Management",
+  PRIVACY_DATA_PROTECTION: "D13 Privacy & Data Protection",
+  MODEL_GOVERNANCE_HUMAN_OVERSIGHT: "D17 Model Governance / Human Oversight",
+  STRATEGIC_GOVERNANCE: "D25 Strategic Governance",
+};
+
 export const assessmentQuestions: AssessmentQuestion[] = [
-  { id: "ai_usage_1", domain: "AI_USAGE", title: "회사는 AI 사용 현황을 파악하고 있는가?" },
-  { id: "ai_usage_2", domain: "AI_USAGE", title: "어떤 AI를 누가 사용하는지 관리하는가?" },
-  { id: "ai_usage_3", domain: "AI_USAGE", title: "AI 사용 목적이 정의되어 있는가?" },
-  { id: "ai_usage_4", domain: "AI_USAGE", title: "AI 사용 승인 절차가 있는가?" },
+  { id: "financial_actions_1", domain: "FINANCIAL_ACTIONS", title: "AI가 결제, 환불, 송금 등 금전 관련 행동을 하기 전에 승인 절차가 있습니까?" },
+  { id: "financial_actions_2", domain: "FINANCIAL_ACTIONS", title: "AI가 승인 없이 회사 비용을 발생시킬 위험을 관리하고 있습니까?" },
+  { id: "financial_actions_3", domain: "FINANCIAL_ACTIONS", title: "AI가 잘못된 금액이나 잘못된 거래처로 처리하지 않도록 확인 절차가 있습니까?" },
+  { id: "financial_actions_4", domain: "FINANCIAL_ACTIONS", title: "금전 관련 AI 행동의 책임자와 승인 기준이 명확합니까?" },
+  { id: "financial_actions_5", domain: "FINANCIAL_ACTIONS", title: "금전 관련 AI 사용 내역을 사후에 검토할 수 있습니까?" },
 
-  { id: "data_protection_1", domain: "DATA_PROTECTION", title: "민감정보 입력 정책이 있는가?" },
-  { id: "data_protection_2", domain: "DATA_PROTECTION", title: "데이터 분류 체계가 있는가?" },
-  { id: "data_protection_3", domain: "DATA_PROTECTION", title: "외부 AI 사용 가이드가 있는가?" },
-  { id: "data_protection_4", domain: "DATA_PROTECTION", title: "데이터 유출 방지 통제가 있는가?" },
+  { id: "ai_risk_management_1", domain: "AI_RISK_MANAGEMENT", title: "AI가 회사 정책을 위반할 위험을 정기적으로 점검합니까?" },
+  { id: "ai_risk_management_2", domain: "AI_RISK_MANAGEMENT", title: "AI가 승인 없이 행동할 위험을 줄이기 위한 기준이 있습니까?" },
+  { id: "ai_risk_management_3", domain: "AI_RISK_MANAGEMENT", title: "AI가 잘못된 결정을 내릴 경우 즉시 중단하거나 수정할 방법이 있습니까?" },
+  { id: "ai_risk_management_4", domain: "AI_RISK_MANAGEMENT", title: "AI 사용으로 생길 수 있는 고객, 재무, 평판 위험을 관리합니까?" },
+  { id: "ai_risk_management_5", domain: "AI_RISK_MANAGEMENT", title: "새로운 AI 사용 사례를 도입하기 전에 위험을 검토합니까?" },
 
-  { id: "access_control_1", domain: "ACCESS_CONTROL", title: "AI 접근 권한이 정의되어 있는가?" },
-  { id: "access_control_2", domain: "ACCESS_CONTROL", title: "고위험 작업 승인 절차가 있는가?" },
-  { id: "access_control_3", domain: "ACCESS_CONTROL", title: "권한 분리가 되어 있는가?" },
-  { id: "access_control_4", domain: "ACCESS_CONTROL", title: "시스템 접근이 통제되는가?" },
+  { id: "privacy_data_protection_1", domain: "PRIVACY_DATA_PROTECTION", title: "AI가 고객정보를 외부로 보낼 위험을 관리하고 있습니까?" },
+  { id: "privacy_data_protection_2", domain: "PRIVACY_DATA_PROTECTION", title: "직원들이 AI에 입력하면 안 되는 정보의 기준을 알고 있습니까?" },
+  { id: "privacy_data_protection_3", domain: "PRIVACY_DATA_PROTECTION", title: "개인정보나 영업비밀이 AI 사용 과정에서 노출되지 않도록 확인합니까?" },
+  { id: "privacy_data_protection_4", domain: "PRIVACY_DATA_PROTECTION", title: "AI 사용 시 고객정보 보호 책임자가 검토할 수 있는 절차가 있습니까?" },
+  { id: "privacy_data_protection_5", domain: "PRIVACY_DATA_PROTECTION", title: "데이터 보호 사고가 발생했을 때 대응 절차가 준비되어 있습니까?" },
 
-  { id: "audit_traceability_1", domain: "AUDIT_TRACEABILITY", title: "AI 사용 로그가 남는가?" },
-  { id: "audit_traceability_2", domain: "AUDIT_TRACEABILITY", title: "실행 이력이 기록되는가?" },
-  { id: "audit_traceability_3", domain: "AUDIT_TRACEABILITY", title: "결과 추적이 가능한가?" },
-  { id: "audit_traceability_4", domain: "AUDIT_TRACEABILITY", title: "감사 로그가 보관되는가?" },
+  { id: "model_governance_human_oversight_1", domain: "MODEL_GOVERNANCE_HUMAN_OVERSIGHT", title: "중요한 AI 결과를 사람이 검토하는 절차가 있습니까?" },
+  { id: "model_governance_human_oversight_2", domain: "MODEL_GOVERNANCE_HUMAN_OVERSIGHT", title: "AI가 잘못된 결정을 내렸을 때 책임자와 수정 절차가 명확합니까?" },
+  { id: "model_governance_human_oversight_3", domain: "MODEL_GOVERNANCE_HUMAN_OVERSIGHT", title: "AI 결과의 품질과 오류를 정기적으로 확인합니까?" },
+  { id: "model_governance_human_oversight_4", domain: "MODEL_GOVERNANCE_HUMAN_OVERSIGHT", title: "AI가 고객이나 직원에게 큰 영향을 주는 결정을 단독으로 하지 않도록 제한합니까?" },
+  { id: "model_governance_human_oversight_5", domain: "MODEL_GOVERNANCE_HUMAN_OVERSIGHT", title: "AI 사용 변경사항을 기록하고 승인합니까?" },
 
-  { id: "agent_risk_1", domain: "AGENT_RISK", title: "AI Agent가 GitHub 접근 가능한가?" },
-  { id: "agent_risk_2", domain: "AGENT_RISK", title: "AI Agent가 ERP 접근 가능한가?" },
-  { id: "agent_risk_3", domain: "AGENT_RISK", title: "AI Agent가 AWS 접근 가능한가?" },
-  { id: "agent_risk_4", domain: "AGENT_RISK", title: "AI Agent가 외부 API를 실행하는가?" },
+  { id: "strategic_governance_1", domain: "STRATEGIC_GOVERNANCE", title: "경영진이 AI 사용 원칙과 책임 기준을 승인했습니까?" },
+  { id: "strategic_governance_2", domain: "STRATEGIC_GOVERNANCE", title: "AI 거버넌스가 회사의 사업 목표와 위험 관리 계획에 포함되어 있습니까?" },
+  { id: "strategic_governance_3", domain: "STRATEGIC_GOVERNANCE", title: "AI 관련 역할과 의사결정 권한이 명확합니까?" },
+  { id: "strategic_governance_4", domain: "STRATEGIC_GOVERNANCE", title: "AI 관련 규제와 감사 요구사항을 정기적으로 확인합니까?" },
+  { id: "strategic_governance_5", domain: "STRATEGIC_GOVERNANCE", title: "AI 거버넌스 개선 계획과 실행 일정이 있습니까?" },
 ];

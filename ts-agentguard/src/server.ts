@@ -113,7 +113,7 @@ function kgldDemoHtml(): string {
 const AssessmentDashboardBodySchema = z.object({
   answers: z.array(z.object({
     questionId: z.string(),
-    value: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3), z.literal(5)]),
+    value: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(4)]),
   })),
 });
 

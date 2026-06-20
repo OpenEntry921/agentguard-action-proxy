@@ -1,187 +1,74 @@
-import { assessmentQuestions } from "./questions";
-import { defaultIndustry, industryProfiles, IndustryType } from "./industry-profiles";
-import { calculateAssessmentGrade, calculateReadinessIndicator } from "./executive-summary";
-import { AssessmentAnswer, AssessmentGrade, AssessmentReadiness, AssessmentRiskLevel, DomainScore, MaturityLevel } from "./types";
+import { assessmentQuestions, domainLabels } from "./questions";
+import { AssessmentAnswer, AssessmentGrade, AssessmentReadiness, AssessmentRiskLevel, AssessmentResult, DomainScore, MaturityLevel } from "./types";
+export type { AssessmentResult } from "./types";
 
-export interface AssessmentResult {
-  totalScore: number;
-
-  aiUsage: number;
-  dataProtection: number;
-  accessControl: number;
-  auditTraceability: number;
-  agentRisk: number;
-
-  maturityLevel: string;
-  riskLevel: string;
-  industry: IndustryType;
-  weightedScore: number;
-  industryRisk: AssessmentRiskLevel;
+export function calculateAssessmentRiskLevel(score: number): AssessmentRiskLevel {
+  if (score <= 49) return "Critical Risk";
+  if (score <= 69) return "High Risk";
+  if (score <= 84) return "Medium Risk";
+  return "Low Risk";
 }
 
-const maturityLevels: Array<{ min: number; max: number; value: string }> = [
-  { min: 0, max: 20, value: "Level 1 Ad-hoc" },
-  { min: 21, max: 40, value: "Level 2 Controlled" },
-  { min: 41, max: 60, value: "Level 3 Managed" },
-  { min: 61, max: 80, value: "Level 4 Governed" },
-  { min: 81, max: 100, value: "Level 5 Autonomous Governance" },
-];
-
-const riskLevels: Array<{ min: number; max: number; value: AssessmentRiskLevel }> = [
-  { min: 0, max: 20, value: "Critical Risk" },
-  { min: 21, max: 40, value: "High Risk" },
-  { min: 41, max: 60, value: "Medium Risk" },
-  { min: 61, max: 80, value: "Low Risk" },
-  { min: 81, max: 100, value: "Optimized" },
-];
-
-const domainQuestionIds = {
-  aiUsage: ["AIU-01", "AIU-02", "AIU-03", "AIU-04", "ai_usage_1", "ai_usage_2", "ai_usage_3", "ai_usage_4"],
-  dataProtection: [
-    "DP-01",
-    "DP-02",
-    "DP-03",
-    "DP-04",
-    "data_protection_1",
-    "data_protection_2",
-    "data_protection_3",
-    "data_protection_4",
-  ],
-  accessControl: [
-    "AC-01",
-    "AC-02",
-    "AC-03",
-    "AC-04",
-    "access_control_1",
-    "access_control_2",
-    "access_control_3",
-    "access_control_4",
-  ],
-  auditTraceability: [
-    "AT-01",
-    "AT-02",
-    "AT-03",
-    "AT-04",
-    "audit_traceability_1",
-    "audit_traceability_2",
-    "audit_traceability_3",
-    "audit_traceability_4",
-  ],
-  agentRisk: ["AR-01", "AR-02", "AR-03", "AR-04", "agent_risk_1", "agent_risk_2", "agent_risk_3", "agent_risk_4"],
-};
-
-function scoreFor(ids: string[], answers: Record<string, number>): number {
-  return ids.reduce((sum, id) => sum + (answers[id] ?? 0), 0);
+function calculateAssessmentGrade(score: number): AssessmentGrade {
+  if (score <= 49) return "D";
+  if (score <= 69) return "C";
+  if (score <= 84) return "B";
+  if (score <= 94) return "A";
+  return "A+";
 }
 
-function calculateMaturityLabel(totalScore: number): string {
-  return maturityLevels.find((entry) => totalScore >= entry.min && totalScore <= entry.max)?.value ?? maturityLevels[0].value;
+function calculateReadiness(score: number): AssessmentReadiness {
+  if (score <= 49) return "Not Ready";
+  if (score <= 69) return "Partially Ready";
+  if (score <= 84) return "Ready";
+  return "Advanced";
 }
 
-export function calculateMaturityLevel(totalScore: number): MaturityLevel {
-  const label = calculateMaturityLabel(totalScore);
-  const [levelText, ...nameParts] = label.replace("Level ", "").split(" ");
-  const level = Number(levelText) as MaturityLevel["level"];
-  const name = nameParts.join(" ") as MaturityLevel["label"];
-  return { level, label: name, displayName: label };
+function calculateMaturityLevel(score: number): MaturityLevel {
+  if (score <= 49) return { level: 1, label: "Initial", displayName: "Level 1 Initial" };
+  if (score <= 69) return { level: 2, label: "Developing", displayName: "Level 2 Developing" };
+  if (score <= 84) return { level: 3, label: "Managed", displayName: "Level 3 Managed" };
+  if (score <= 94) return { level: 4, label: "Governed", displayName: "Level 4 Governed" };
+  return { level: 5, label: "Optimized", displayName: "Level 5 Optimized" };
 }
 
-export function calculateAssessmentRiskLevel(totalScore: number): AssessmentRiskLevel {
-  return riskLevels.find((entry) => totalScore >= entry.min && totalScore <= entry.max)?.value ?? "Critical Risk";
+function statusLabel(score: number): string {
+  if (score <= 49) return "Needs Immediate Attention";
+  if (score <= 69) return "Developing";
+  if (score <= 84) return "Mostly Ready";
+  return "Ready";
 }
 
-function calculateWeightedScore(scores: Pick<AssessmentResult, "aiUsage" | "dataProtection" | "accessControl" | "auditTraceability" | "agentRisk">, industry: IndustryType): number {
-  const weights = industryProfiles[industry].weights;
-  return Math.round(
-    (scores.aiUsage / 20) * weights.aiUsage +
-      (scores.dataProtection / 20) * weights.dataProtection +
-      (scores.accessControl / 20) * weights.accessControl +
-      (scores.auditTraceability / 20) * weights.auditTraceability +
-      (scores.agentRisk / 20) * weights.agentRisk,
-  );
-}
-
-function industryFromAnswers(answers: AssessmentAnswer[]): IndustryType {
-  const marker = answers.find((answer) => answer.questionId.startsWith("industry_"));
-  const industry = marker?.questionId.replace("industry_", "") as IndustryType | undefined;
-  return industry && industry in industryProfiles ? industry : defaultIndustry;
-}
-
-export function calculateAssessment(answers: Record<string, number>, industry: IndustryType = defaultIndustry): AssessmentResult {
-  const aiUsage = scoreFor(domainQuestionIds.aiUsage, answers);
-  const dataProtection = scoreFor(domainQuestionIds.dataProtection, answers);
-  const accessControl = scoreFor(domainQuestionIds.accessControl, answers);
-  const auditTraceability = scoreFor(domainQuestionIds.auditTraceability, answers);
-  const agentRisk = scoreFor(domainQuestionIds.agentRisk, answers);
-  const totalScore = aiUsage + dataProtection + accessControl + auditTraceability + agentRisk;
-  const weightedScore = calculateWeightedScore({ aiUsage, dataProtection, accessControl, auditTraceability, agentRisk }, industry);
+export function evaluateAssessment(answers: AssessmentAnswer[]): AssessmentResult {
+  const answerValues = Object.fromEntries(answers.map((answer) => [answer.questionId, answer.value]));
+  const domains = Object.keys(domainLabels) as DomainScore["domain"][];
+  const domainScores = domains.map((domain) => {
+    const questions = assessmentQuestions.filter((question) => question.domain === domain);
+    const total = questions.reduce((sum, question) => sum + (answerValues[question.id] ?? 0), 0);
+    return {
+      domain,
+      label: domainLabels[domain],
+      score: Math.round((total / (questions.length * 4)) * 100),
+      maxScore: 100 as const,
+    };
+  });
+  const totalScore = Math.round(domainScores.reduce((sum, domainScore) => sum + domainScore.score, 0) / domainScores.length);
 
   return {
     totalScore,
-    aiUsage,
-    dataProtection,
-    accessControl,
-    auditTraceability,
-    agentRisk,
-    maturityLevel: calculateMaturityLabel(totalScore),
-    riskLevel: calculateAssessmentRiskLevel(totalScore),
-    industry,
-    weightedScore,
-    industryRisk: calculateAssessmentRiskLevel(weightedScore),
-  };
-}
-
-interface DashboardAssessmentResult {
-  totalScore: number;
-  maxScore: 100;
-  riskLevel: AssessmentRiskLevel;
-  maturityLevel: MaturityLevel;
-  governanceGrade: AssessmentGrade;
-  aiReadiness: AssessmentReadiness;
-  domainScores: DomainScore[];
-  industry: IndustryType;
-  industryLabel: string;
-  weightedScore: number;
-  industryRisk: AssessmentRiskLevel;
-  primaryRiskFocus: string;
-  industryRecommendations: string[];
-  industryCoreControlAreas: string[];
-  industryPhases: Array<{ phase: string; title: string }>;
-}
-
-export function evaluateAssessment(answers: AssessmentAnswer[]): DashboardAssessmentResult {
-  const industry = industryFromAnswers(answers);
-  const profile = industryProfiles[industry];
-  const answerValues = Object.fromEntries(answers.map((answer) => [answer.questionId, answer.value]));
-  const calculated = calculateAssessment(answerValues, industry);
-  const domainScores: DomainScore[] = [
-    { domain: "AI_USAGE", label: "AI Usage", score: calculated.aiUsage, maxScore: 20 },
-    { domain: "DATA_PROTECTION", label: "Data Protection", score: calculated.dataProtection, maxScore: 20 },
-    { domain: "ACCESS_CONTROL", label: "Access Control", score: calculated.accessControl, maxScore: 20 },
-    { domain: "AUDIT_TRACEABILITY", label: "Audit & Traceability", score: calculated.auditTraceability, maxScore: 20 },
-    { domain: "AGENT_RISK", label: "Agent Risk", score: calculated.agentRisk, maxScore: 20 },
-  ];
-
-  return {
-    totalScore: calculated.totalScore,
     maxScore: 100,
-    riskLevel: calculateAssessmentRiskLevel(calculated.totalScore),
-    maturityLevel: calculateMaturityLevel(calculated.totalScore),
-    governanceGrade: calculateAssessmentGrade(calculated.totalScore),
-    aiReadiness: calculateReadinessIndicator(calculated.totalScore),
+    riskLevel: calculateAssessmentRiskLevel(totalScore),
+    maturityLevel: calculateMaturityLevel(totalScore),
+    governanceGrade: calculateAssessmentGrade(totalScore),
+    aiReadiness: calculateReadiness(totalScore),
     domainScores,
-    industry: calculated.industry,
-    industryLabel: profile.label,
-    weightedScore: calculated.weightedScore,
-    industryRisk: calculated.industryRisk,
-    primaryRiskFocus: profile.primaryRiskFocus,
-    industryRecommendations: profile.recommendations,
-    industryCoreControlAreas: profile.coreControlAreas,
-    industryPhases: profile.phases,
+    regulatoryReadiness: statusLabel(Math.round((domainScores[2].score + domainScores[4].score) / 2)),
+    controlMaturity: statusLabel(Math.round((domainScores[0].score + domainScores[1].score + domainScores[3].score) / 3)),
+    auditReadiness: statusLabel(Math.round((domainScores[3].score + domainScores[4].score) / 2)),
   };
 }
 
 export const demoAssessmentAnswers: AssessmentAnswer[] = assessmentQuestions.map((question) => ({
   questionId: question.id,
-  value: 3,
+  value: 2,
 }));
