@@ -1,4 +1,4 @@
-import { AssessmentResult, DomainScore, RecommendedActionGroup, PriorityRisk } from "./types";
+import { AssessmentResult, DomainExplanation, DomainScore, RecommendedActionGroup, PriorityRisk, QuestionExplanation } from "./types";
 
 function escapeHtml(value: string): string {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
@@ -27,6 +27,29 @@ function renderActionGroup(group: RecommendedActionGroup): string {
   return `<article>
     <h3>${escapeHtml(group.label)}</h3>
     <ul>${group.actions.map((action) => `<li>${escapeHtml(action)}</li>`).join("")}</ul>
+  </article>`;
+}
+
+function renderQuestionExplanation(question: QuestionExplanation): string {
+  return `<tr>
+    <td>${escapeHtml(question.displayId)}</td>
+    <td>${escapeHtml(question.answer)}</td>
+    <td>${question.points}/${question.maxPoints}</td>
+    <td>${escapeHtml(question.impact)}</td>
+  </tr>`;
+}
+
+function renderExplanation(explanation: DomainExplanation): string {
+  return `<article class="explanation-card">
+    <div class="explanation-head">
+      <div><h3>${escapeHtml(explanation.label)}</h3><p>${escapeHtml(explanation.narrative)}</p></div>
+      <strong>${explanation.score}<small>/100</small></strong>
+    </div>
+    <table>
+      <thead><tr><th>Question</th><th>Answer</th><th>Points</th><th>Score Impact</th></tr></thead>
+      <tbody>${explanation.answerBreakdown.map(renderQuestionExplanation).join("")}</tbody>
+    </table>
+    <div class="findings"><span>결과</span><ul>${explanation.findings.map((finding) => `<li>${escapeHtml(finding)}</li>`).join("")}</ul></div>
   </article>`;
 }
 
@@ -86,6 +109,19 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
     .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
     .action-grid article { padding: 20px; border: 1px solid var(--border); border-radius: 20px; background: var(--panel); }
     .action-grid h3 { margin-bottom: 16px; color: var(--good); font-size: 1.35rem; }
+    .explainability { grid-column: 1 / -1; }
+    .explanation-grid { display: grid; gap: 16px; margin-top: 18px; }
+    .explanation-card { padding: 20px; border: 1px solid var(--border); border-radius: 22px; background: var(--panel); }
+    .explanation-head { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; margin-bottom: 16px; }
+    .explanation-head strong { color: var(--warn); font-size: 2.3rem; line-height: 1; white-space: nowrap; }
+    .explanation-head small { color: var(--muted); font-size: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; overflow: hidden; border-radius: 16px; }
+    th, td { padding: 12px; border-bottom: 1px solid rgba(184,199,220,.14); text-align: left; color: var(--muted); }
+    th { color: var(--text); background: rgba(102,217,239,.08); font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; }
+    td:first-child, td:nth-child(2), td:nth-child(3) { color: var(--text); font-weight: 900; white-space: nowrap; }
+    .findings { display: grid; gap: 10px; padding: 16px; border: 1px solid rgba(255,189,89,.36); border-radius: 18px; background: rgba(255,189,89,.08); }
+    .findings span { color: var(--warn); font-weight: 950; }
+    .findings li { margin-bottom: 6px; }
     @media (max-width: 920px) { .hero, .metrics, .dashboard-grid, .action-grid { grid-template-columns: 1fr; } .domains, .risks, .actions, .hero, .metrics { grid-column: 1; } }
   </style>
 </head>
@@ -127,6 +163,12 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
         <div class="section-kicker">Recommended Actions</div>
         <h2 id="actions-title">30 / 90 / 180 실행 계획</h2>
         <div class="action-grid">${result.recommendedActions.map(renderActionGroup).join("")}</div>
+      </section>
+      <section class="explainability" aria-labelledby="explainability-title">
+        <div class="section-kicker">Explainability Layer</div>
+        <h2 id="explainability-title">왜 이런 점수가 나왔는가?</h2>
+        <p>각 Domain 점수는 질문별 답변 포인트를 기준으로 산출되며, NO / NOT SURE / PARTIAL 응답은 주요 감점 근거와 개선 과제로 연결됩니다.</p>
+        <div class="explanation-grid">${result.explanations.map(renderExplanation).join("")}</div>
       </section>
     </div>
   </main>

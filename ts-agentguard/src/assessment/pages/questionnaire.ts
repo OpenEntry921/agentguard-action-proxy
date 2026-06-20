@@ -20,7 +20,7 @@ function escapeHtml(value: string): string {
 
 function renderQuestion(question: AssessmentQuestion, index: number): string {
   return `<fieldset class="question-card">
-    <legend><span class="domain">[${escapeHtml(domainLabels[question.domain])}]</span><span class="question-number">Question ${index + 1}</span></legend>
+    <legend><span class="domain">[${escapeHtml(domainLabels[question.domain])}]</span><span class="question-number">${escapeHtml(question.displayId)} · Question ${index + 1}</span></legend>
     <p class="question-title">${escapeHtml(question.title)}</p>
     <div class="answers" role="radiogroup" aria-label="${escapeHtml(question.title)}">
       ${answerOptions
