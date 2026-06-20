@@ -57,7 +57,18 @@ function renderStandardsAlignment(item: StandardsAlignment): string {
       </div>
     </div>
     <div class="impact-badge">표준 영향도 ${escapeHtml(item.impact)}</div>
-    <ul class="standard-list">${item.standards.map((standard) => `<li><span aria-hidden="true">✓</span><strong>${escapeHtml(standard.framework)}</strong> ${escapeHtml(standard.reference)}</li>`).join("")}</ul>
+    <div class="standard-list">${item.standards
+      .map(
+        (standard) => `<details class="standard-card">
+          <summary><strong>${escapeHtml(standard.framework)}</strong><span>${escapeHtml(standard.reference)}</span></summary>
+          <dl>
+            <div><dt>Meaning</dt><dd>${escapeHtml(standard.meaning)}</dd></div>
+            <div><dt>Current Implication</dt><dd>${escapeHtml(standard.currentImplication)}</dd></div>
+            <div><dt>Recommended Improvement</dt><dd>${escapeHtml(standard.recommendedImprovement)}</dd></div>
+          </dl>
+        </details>`,
+      )
+      .join("")}</div>
   </article>`;
 }
 
@@ -172,9 +183,14 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
     .alignment-score span, .impact-badge { display: inline-flex; margin-top: 8px; padding: 7px 10px; border-radius: 999px; color: var(--text); border: 1px solid rgba(184,199,220,.24); background: rgba(184,199,220,.08); font-weight: 900; text-transform: uppercase; letter-spacing: .05em; font-size: .74rem; }
     .impact-badge { color: var(--warn); text-transform: none; letter-spacing: 0; }
     .standard-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 16px 0 0; }
-    .standard-list li { list-style: none; margin: 0; padding: 12px; border: 1px solid rgba(184,199,220,.14); border-radius: 14px; background: rgba(102,217,239,.06); color: var(--muted); }
-    .standard-list li span { color: var(--good); margin-right: 8px; font-weight: 950; }
-    .standard-list li strong { display: block; color: var(--text); margin: 0 0 3px 22px; }
+    .standard-card { border: 1px solid rgba(184,199,220,.14); border-radius: 14px; background: rgba(102,217,239,.06); color: var(--muted); overflow: hidden; }
+    .standard-card summary { cursor: pointer; list-style-position: inside; padding: 12px; color: var(--text); }
+    .standard-card summary strong { display: block; margin: 0 0 5px 20px; }
+    .standard-card summary span { display: block; margin-left: 20px; color: var(--muted); font-size: .9rem; }
+    .standard-card dl { display: grid; gap: 10px; margin: 0; padding: 0 12px 14px; }
+    .standard-card dl div { padding-top: 10px; border-top: 1px solid rgba(184,199,220,.12); }
+    .standard-card dt { color: var(--accent); font-size: .72rem; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; }
+    .standard-card dd { margin: 4px 0 0; color: var(--muted); line-height: 1.62; }
     .explainability { grid-column: 1 / -1; }
     .explanation-grid { display: grid; gap: 16px; margin-top: 18px; }
     .explanation-card { padding: 20px; border: 1px solid var(--border); border-radius: 22px; background: var(--panel); }
