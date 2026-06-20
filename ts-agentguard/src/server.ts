@@ -6,8 +6,8 @@ import { z, ZodTypeAny } from "zod";
 
 import { ApprovalStore } from "./approval";
 import { AuditLog } from "./audit";
-import { assessmentDashboardHtml, assessmentLandingHtml, assessmentQuestionnaireHtml } from "./assessment";
-import { evaluateAssessment } from "./assessment/scoring";
+import { assessmentDashboardHtml, assessmentLandingHtml, assessmentQuestionnaireHtml, executiveAssessmentSummaryHtml } from "./assessment";
+import { demoAssessmentAnswers, evaluateAssessment } from "./assessment/scoring";
 import { MockBrowserExecutor } from "./executors/mock-browser";
 import { MockGitHubExecutor } from "./executors/mock-github";
 import { SettlementOrchestratorExecutor } from "./executors/settlement-orchestrator";
@@ -317,6 +317,26 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
 
     const result = evaluateAssessment(body.answers);
     return reply.type("text/html; charset=utf-8").send(assessmentDashboardHtml(result));
+  });
+
+  app.get("/report", async (_request, reply) => {
+    const result = evaluateAssessment(demoAssessmentAnswers);
+    return reply.type("text/html; charset=utf-8").send(executiveAssessmentSummaryHtml(result));
+  });
+
+  app.get("/report/executive-summary", async (_request, reply) => {
+    const result = evaluateAssessment(demoAssessmentAnswers);
+    return reply.type("text/html; charset=utf-8").send(executiveAssessmentSummaryHtml(result));
+  });
+
+  app.post("/assessment/report", async (request, reply) => {
+    const body = validateBody(AssessmentDashboardBodySchema, request.body, reply);
+    if (!body) {
+      return reply;
+    }
+
+    const result = evaluateAssessment(body.answers);
+    return reply.type("text/html; charset=utf-8").send(executiveAssessmentSummaryHtml(result));
   });
 
   app.get("/demo", async (_request, reply) => reply.type("text/html; charset=utf-8").send(demoHtml()));
