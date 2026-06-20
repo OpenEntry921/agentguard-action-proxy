@@ -3,10 +3,10 @@ import { AssessmentAnswer, AssessmentGrade, AssessmentReadiness, AssessmentRiskL
 export type { AssessmentResult } from "./types";
 
 export function calculateAssessmentRiskLevel(score: number): AssessmentRiskLevel {
-  if (score <= 49) return "CRITICAL RISK";
-  if (score <= 69) return "HIGH RISK";
-  if (score <= 84) return "MEDIUM RISK";
-  return "LOW RISK";
+  if (score <= 49) return "Critical Risk";
+  if (score <= 69) return "High Risk";
+  if (score <= 84) return "Medium Risk";
+  return "Low Risk";
 }
 
 function calculateAssessmentGrade(score: number): AssessmentGrade {
@@ -40,40 +40,37 @@ const priorityRiskDescriptions: Record<DomainScore["domain"], string> = {
   STRATEGIC_GOVERNANCE: "전사 AI 거버넌스 체계가 부족합니다.",
 };
 
-const domainRecommendedActions: Record<DomainScore["domain"], string[]> = {
-  FINANCIAL_ACTIONS: ["금전 실행 사전 승인 기준 수립", "거래 한도 및 예외 승인 절차 구축", "금전 실행 감사 로그 점검"],
-  AI_RISK_MANAGEMENT: ["AI Risk Register 구축", "위험등급 체계 수립", "잔여위험 평가 수행"],
-  PRIVACY_DATA_PROTECTION: ["AI 입력 금지 정보 기준 수립", "민감정보 유출 점검 절차 구축", "데이터 보호 사고 대응 절차 정비"],
-  MODEL_GOVERNANCE_HUMAN_OVERSIGHT: ["Human Review 절차 구축", "고위험 AI 승인 체계 수립", "AI 결과 품질 및 오류 점검 루프 구축"],
-  STRATEGIC_GOVERNANCE: ["AI Governance Committee 설립", "AI 정책 체계 구축", "경영진 AI 위험 보고 체계 수립"],
+const timeHorizonActions: Record<DomainScore["domain"], Record<RecommendedActionGroup["label"], string[]>> = {
+  FINANCIAL_ACTIONS: { "30 Days": ["금전 실행 사전 승인 기준 수립"], "90 Days": ["거래 한도 및 예외 승인 절차 구축"], "180 Days": ["금전 실행 감사 로그 정례 점검"] },
+  AI_RISK_MANAGEMENT: { "30 Days": ["AI Risk Register 작성"], "90 Days": ["AI 위험등급 체계 수립"], "180 Days": ["잔여위험 정기 평가 프로세스 정착"] },
+  PRIVACY_DATA_PROTECTION: { "30 Days": ["민감정보 처리 기준 수립"], "90 Days": ["민감정보 유출 점검 절차 구축"], "180 Days": ["데이터 보호 사고 대응 훈련 운영"] },
+  MODEL_GOVERNANCE_HUMAN_OVERSIGHT: { "30 Days": ["Human Review 구축"], "90 Days": ["고위험 AI 승인체계 구축"], "180 Days": ["AI 결과 품질 및 오류 점검 루프 정착"] },
+  STRATEGIC_GOVERNANCE: { "30 Days": ["경영진 AI 위험 보고 기준 수립"], "90 Days": ["AI 정책 체계 구축"], "180 Days": ["AI Governance Committee 운영"] },
 };
 
 function lowestDomainScores(domainScores: DomainScore[]): DomainScore[] {
-  return [...domainScores].sort((left, right) => left.score - right.score).slice(0, 3);
+  return [...domainScores].sort((left, right) => left.score - right.score || left.label.localeCompare(right.label)).slice(0, 3);
 }
 
 function buildPriorityRisks(domainScores: DomainScore[]): PriorityRisk[] {
-  return lowestDomainScores(domainScores).map((domainScore) => ({
-    domain: domainScore.domain,
-    label: domainScore.label,
-    score: domainScore.score,
-    description: priorityRiskDescriptions[domainScore.domain],
-  }));
+  return lowestDomainScores(domainScores).map((domainScore) => ({ domain: domainScore.domain, label: domainScore.label, score: domainScore.score, description: priorityRiskDescriptions[domainScore.domain] }));
 }
 
 function buildRecommendedActions(domainScores: DomainScore[]): RecommendedActionGroup[] {
-  return lowestDomainScores(domainScores).map((domainScore) => ({
-    domain: domainScore.domain,
-    label: domainScore.label,
-    actions: domainRecommendedActions[domainScore.domain],
+  const priorityDomains = lowestDomainScores(domainScores);
+  return (["30 Days", "90 Days", "180 Days"] as const).map((label) => ({
+    label,
+    actions: [...new Set(priorityDomains.flatMap((domainScore) => timeHorizonActions[domainScore.domain][label]))].slice(0, 3),
   }));
 }
 
-function statusLabel(score: number): string {
-  if (score <= 49) return "Needs Immediate Attention";
-  if (score <= 69) return "Developing";
-  if (score <= 84) return "Mostly Ready";
-  return "Ready";
+function percentage(score: number): string {
+  return `${Math.max(0, Math.min(100, Math.round(score)))}%`;
+}
+
+function buildExecutiveSummary(domainScores: DomainScore[]): string {
+  const weakestLabels = lowestDomainScores(domainScores).map((domainScore) => domainScore.label.replace(/^D\d+\s+/, ""));
+  return `귀사는 AI를 적극 활용하고 있으나 ${weakestLabels.slice(0, 2).join(" 및 ")} 통제가 상대적으로 부족합니다.\n\n단기적으로 ${weakestLabels.join(", ")} 개선이 필요합니다.`;
 }
 
 export function evaluateAssessment(answers: AssessmentAnswer[]): AssessmentResult {
@@ -82,14 +79,10 @@ export function evaluateAssessment(answers: AssessmentAnswer[]): AssessmentResul
   const domainScores = domains.map((domain) => {
     const questions = assessmentQuestions.filter((question) => question.domain === domain);
     const total = questions.reduce((sum, question) => sum + (answerValues[question.id] ?? 0), 0);
-    return {
-      domain,
-      label: domainLabels[domain],
-      score: Math.round((total / (questions.length * 4)) * 100),
-      maxScore: 100 as const,
-    };
+    return { domain, label: domainLabels[domain], score: Math.round((total / (questions.length * 4)) * 100), maxScore: 100 as const };
   });
   const totalScore = Math.round(domainScores.reduce((sum, domainScore) => sum + domainScore.score, 0) / domainScores.length);
+  const scoreFor = (domain: DomainScore["domain"]) => domainScores.find((score) => score.domain === domain)?.score ?? totalScore;
 
   return {
     totalScore,
@@ -101,13 +94,11 @@ export function evaluateAssessment(answers: AssessmentAnswer[]): AssessmentResul
     domainScores,
     priorityRisks: buildPriorityRisks(domainScores),
     recommendedActions: buildRecommendedActions(domainScores),
-    regulatoryReadiness: statusLabel(Math.round((domainScores[2].score + domainScores[4].score) / 2)),
-    controlMaturity: statusLabel(Math.round((domainScores[0].score + domainScores[1].score + domainScores[3].score) / 3)),
-    auditReadiness: statusLabel(Math.round((domainScores[3].score + domainScores[4].score) / 2)),
+    executiveSummary: buildExecutiveSummary(domainScores),
+    regulatoryReadiness: percentage(totalScore),
+    controlMaturity: percentage((scoreFor("FINANCIAL_ACTIONS") + scoreFor("AI_RISK_MANAGEMENT") + scoreFor("MODEL_GOVERNANCE_HUMAN_OVERSIGHT")) / 3),
+    auditReadiness: percentage((scoreFor("FINANCIAL_ACTIONS") + scoreFor("PRIVACY_DATA_PROTECTION") + scoreFor("MODEL_GOVERNANCE_HUMAN_OVERSIGHT") + scoreFor("STRATEGIC_GOVERNANCE")) / 4 + 5),
   };
 }
 
-export const demoAssessmentAnswers: AssessmentAnswer[] = assessmentQuestions.map((question) => ({
-  questionId: question.id,
-  value: 2,
-}));
+export const demoAssessmentAnswers: AssessmentAnswer[] = assessmentQuestions.map((question) => ({ questionId: question.id, value: 2 }));

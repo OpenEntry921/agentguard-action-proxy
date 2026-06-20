@@ -12,7 +12,7 @@ export interface AssessmentQuestion {
 }
 
 export type AssessmentAnswerValue = 0 | 1 | 2 | 4;
-export type AssessmentRiskLevel = "CRITICAL RISK" | "HIGH RISK" | "MEDIUM RISK" | "LOW RISK";
+export type AssessmentRiskLevel = "Critical Risk" | "High Risk" | "Medium Risk" | "Low Risk";
 export type AssessmentGrade = "D" | "C" | "B" | "A" | "A+";
 export type AssessmentReadiness = "Not Ready" | "Partially Ready" | "Ready" | "Advanced";
 
@@ -36,8 +36,7 @@ export interface PriorityRisk {
 }
 
 export interface RecommendedActionGroup {
-  domain: AssessmentDomain;
-  label: string;
+  label: "30 Days" | "90 Days" | "180 Days";
   actions: string[];
 }
 
@@ -57,6 +56,7 @@ export interface AssessmentResult {
   domainScores: DomainScore[];
   priorityRisks: PriorityRisk[];
   recommendedActions: RecommendedActionGroup[];
+  executiveSummary: string;
   regulatoryReadiness: string;
   controlMaturity: string;
   auditReadiness: string;
