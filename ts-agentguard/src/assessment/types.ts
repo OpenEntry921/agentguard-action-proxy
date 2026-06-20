@@ -58,6 +58,9 @@ export type StandardsAlignmentStatus = "GREEN" | "YELLOW" | "RED";
 export interface StandardsReference {
   framework: "ISO/IEC 42001" | "NIST AI RMF" | "EU AI Act" | "금융위 AI 가이드라인";
   reference: string;
+  meaning: string;
+  currentImplication: string;
+  recommendedImprovement: string;
 }
 
 export interface StandardsAlignment {
