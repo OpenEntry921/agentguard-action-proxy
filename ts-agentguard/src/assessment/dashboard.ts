@@ -1,4 +1,4 @@
-import { AssessmentResult, DomainExplanation, DomainScore, RecommendedActionGroup, PriorityRisk, QuestionExplanation } from "./types";
+import { AssessmentResult, DomainExplanation, DomainScore, RecommendedActionGroup, PriorityRisk, QuestionExplanation, StandardsAlignment, StandardsAlignmentStatus } from "./types";
 
 function escapeHtml(value: string): string {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
@@ -35,6 +35,29 @@ function renderActionGroup(group: RecommendedActionGroup): string {
   return `<article>
     <h3>${escapeHtml(group.label)}</h3>
     <ul>${group.actions.map((action) => `<li>${escapeHtml(action)}</li>`).join("")}</ul>
+  </article>`;
+}
+
+function renderAlignmentStatus(status: StandardsAlignmentStatus): string {
+  if (status === "GREEN") return "Green";
+  if (status === "YELLOW") return "Yellow";
+  return "Red";
+}
+
+function renderStandardsAlignment(item: StandardsAlignment): string {
+  return `<article class="alignment-card alignment-${item.status.toLowerCase()}">
+    <div class="alignment-head">
+      <div>
+        <h3>${escapeHtml(item.label)}</h3>
+        <p>${escapeHtml(item.summary)}</p>
+      </div>
+      <div class="alignment-score">
+        <strong>${item.score}</strong>
+        <span>${escapeHtml(renderAlignmentStatus(item.status))}</span>
+      </div>
+    </div>
+    <div class="impact-badge">표준 영향도 ${escapeHtml(item.impact)}</div>
+    <ul class="standard-list">${item.standards.map((standard) => `<li><span aria-hidden="true">✓</span><strong>${escapeHtml(standard.framework)}</strong> ${escapeHtml(standard.reference)}</li>`).join("")}</ul>
   </article>`;
 }
 
@@ -117,7 +140,7 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
     .metric-card p { margin: 12px 0 0; }
     .domains { grid-column: span 7; }
     .risks { grid-column: span 5; }
-    .domains h2, .risks h2, .actions h2 { margin: 6px 0 18px; font-size: 1.35rem; }
+    .domains h2, .risks h2, .actions h2, .standards h2 { margin: 6px 0 18px; font-size: 1.35rem; }
     .domain-row { display: grid; gap: 10px; padding: 16px 0; border-top: 1px solid rgba(184,199,220,.16); }
     .domain-row:first-of-type { border-top: 0; padding-top: 0; }
     .domain-row > div:first-child { display: flex; justify-content: space-between; gap: 16px; color: var(--muted); }
@@ -134,6 +157,24 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
     .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
     .action-grid article { padding: 20px; border: 1px solid var(--border); border-radius: 20px; background: var(--panel); }
     .action-grid h3 { margin-bottom: 16px; color: var(--good); font-size: 1.35rem; }
+    .standards { grid-column: 1 / -1; }
+    .standards > p { margin-top: -6px; }
+    .alignment-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 18px; }
+    .alignment-card { padding: 20px; border: 1px solid var(--border); border-radius: 22px; background: var(--panel); }
+    .alignment-red { border-color: rgba(255,107,107,.46); }
+    .alignment-yellow { border-color: rgba(255,189,89,.46); }
+    .alignment-green { border-color: rgba(143,255,204,.36); }
+    .alignment-head { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; }
+    .alignment-head h3 { font-size: 1.22rem; }
+    .alignment-head p { margin: 8px 0 0; }
+    .alignment-score { min-width: 86px; text-align: right; }
+    .alignment-score strong { display: block; color: var(--text); font-size: 2.4rem; line-height: 1; }
+    .alignment-score span, .impact-badge { display: inline-flex; margin-top: 8px; padding: 7px 10px; border-radius: 999px; color: var(--text); border: 1px solid rgba(184,199,220,.24); background: rgba(184,199,220,.08); font-weight: 900; text-transform: uppercase; letter-spacing: .05em; font-size: .74rem; }
+    .impact-badge { color: var(--warn); text-transform: none; letter-spacing: 0; }
+    .standard-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 16px 0 0; }
+    .standard-list li { list-style: none; margin: 0; padding: 12px; border: 1px solid rgba(184,199,220,.14); border-radius: 14px; background: rgba(102,217,239,.06); color: var(--muted); }
+    .standard-list li span { color: var(--good); margin-right: 8px; font-weight: 950; }
+    .standard-list li strong { display: block; color: var(--text); margin: 0 0 3px 22px; }
     .explainability { grid-column: 1 / -1; }
     .explanation-grid { display: grid; gap: 16px; margin-top: 18px; }
     .explanation-card { padding: 20px; border: 1px solid var(--border); border-radius: 22px; background: var(--panel); }
@@ -147,7 +188,7 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
     .findings { display: grid; gap: 10px; padding: 16px; border: 1px solid rgba(255,189,89,.36); border-radius: 18px; background: rgba(255,189,89,.08); }
     .findings span { color: var(--warn); font-weight: 950; }
     .findings li { margin-bottom: 6px; }
-    @media (max-width: 920px) { .hero, .metrics, .dashboard-grid, .action-grid { grid-template-columns: 1fr; } .domains, .risks, .actions, .hero, .metrics { grid-column: 1; } }
+    @media (max-width: 920px) { .hero, .metrics, .dashboard-grid, .action-grid, .alignment-grid, .standard-list { grid-template-columns: 1fr; } .domains, .risks, .actions, .standards, .hero, .metrics { grid-column: 1; } }
   </style>
 </head>
 <body>
@@ -188,6 +229,12 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
         <div class="section-kicker">Recommended Actions</div>
         <h2 id="actions-title">권장 실행 계획</h2>
         <div class="action-grid">${result.recommendedActions.map(renderActionGroup).join("")}</div>
+      </section>
+      <section class="standards" aria-labelledby="standards-title">
+        <div class="section-kicker">Standards Alignment</div>
+        <h2 id="standards-title">표준 연계 결과</h2>
+        <p>현재 MVP 5개 Domain의 기존 점수를 ISO/IEC 42001, NIST AI RMF, EU AI Act, 금융위 AI 가이드라인 관점의 결과로 요약합니다. 조문 전문과 내부 Crosswalk는 표시하지 않습니다.</p>
+        <div class="alignment-grid">${result.standardsAlignment.map(renderStandardsAlignment).join("")}</div>
       </section>
       <section class="explainability" aria-labelledby="explainability-title">
         <div class="section-kicker">Explainability Layer</div>
