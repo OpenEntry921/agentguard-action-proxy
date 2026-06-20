@@ -15,12 +15,20 @@ function renderMetric(label: string, value: string, detail = ""): string {
 function renderDomainScore(domainScore: DomainScore): string {
   return `<div class="domain-row">
     <div><strong>${escapeHtml(domainScore.label)}</strong><span>${domainScore.score}%</span></div>
-    <div class="progress" aria-label="${escapeHtml(domainScore.label)} score ${domainScore.score} out of ${domainScore.maxScore}"><span style="width: ${domainScore.score}%"></span></div>
+    <div class="progress" aria-label="${escapeHtml(domainScore.label)} 점수 ${domainScore.score} / ${domainScore.maxScore}"><span style="width: ${domainScore.score}%"></span></div>
   </div>`;
 }
 
 function renderPriorityRisk(risk: PriorityRisk): string {
   return `<li><strong>${escapeHtml(risk.label)}</strong><span>${risk.score}%</span><p>${escapeHtml(risk.description)}</p></li>`;
+}
+
+function renderPriorityRisks(risks: PriorityRisk[]): string {
+  if (risks.length === 0) {
+    return `<p class="empty-state">중대한 우선 관리 위험이 확인되지 않았습니다.</p>`;
+  }
+
+  return `<ol>${risks.map(renderPriorityRisk).join("")}</ol>`;
 }
 
 function renderActionGroup(group: RecommendedActionGroup): string {
@@ -30,10 +38,26 @@ function renderActionGroup(group: RecommendedActionGroup): string {
   </article>`;
 }
 
+function renderAnswerLabel(answer: QuestionExplanation["answer"]): string {
+  if (answer === "YES") return "예";
+  if (answer === "PARTIAL") return "일부";
+  if (answer === "NOT SURE") return "확인 필요";
+  return "아니오";
+}
+
+function renderMaturityLabel(displayName: string): string {
+  return displayName
+    .replace("Level 1 Initial", "1단계 초기")
+    .replace("Level 2 Developing", "2단계 개발 중")
+    .replace("Level 3 Managed", "3단계 관리 중")
+    .replace("Level 4 Governed", "4단계 거버넌스 운영")
+    .replace("Level 5 Optimized", "5단계 최적화");
+}
+
 function renderQuestionExplanation(question: QuestionExplanation): string {
   return `<tr>
     <td>${escapeHtml(question.displayId)}</td>
-    <td>${escapeHtml(question.answer)}</td>
+    <td>${escapeHtml(renderAnswerLabel(question.answer))}</td>
     <td>${question.points}/${question.maxPoints}</td>
     <td>${escapeHtml(question.impact)}</td>
   </tr>`;
@@ -46,7 +70,7 @@ function renderExplanation(explanation: DomainExplanation): string {
       <strong>${explanation.score}<small>/100</small></strong>
     </div>
     <table>
-      <thead><tr><th>Question</th><th>Answer</th><th>Points</th><th>Score Impact</th></tr></thead>
+      <thead><tr><th>문항</th><th>답변</th><th>점수</th><th>평가 영향</th></tr></thead>
       <tbody>${explanation.answerBreakdown.map(renderQuestionExplanation).join("")}</tbody>
     </table>
     <div class="findings"><span>결과</span><ul>${explanation.findings.map((finding) => `<li>${escapeHtml(finding)}</li>`).join("")}</ul></div>
@@ -105,6 +129,7 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
     li::marker { color: var(--accent); font-weight: 900; }
     .risks li span { display: block; margin: 4px 0; color: var(--warn); font-weight: 900; }
     .risks li p { margin: 0; }
+    .empty-state { margin: 0; padding: 18px; border: 1px solid rgba(143,255,204,.26); border-radius: 18px; background: rgba(143,255,204,.08); color: var(--text); font-weight: 850; }
     .actions { grid-column: 1 / -1; }
     .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
     .action-grid article { padding: 20px; border: 1px solid var(--border); border-radius: 20px; background: var(--panel); }
@@ -129,7 +154,7 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
   <main>
     <header>
       <div><div class="eyebrow">AGAF Assessment MVP v0.3</div><h1>Executive Dashboard</h1><p>현재 5개 Domain과 기존 질문 응답만으로 AI 거버넌스 점수, 위험등급, 규제 준비도, 실행계획을 자동 생성합니다.</p></div>
-      <a class="back" href="/assessment/start">Run Again</a>
+      <a class="back" href="/assessment/start">다시 평가하기</a>
     </header>
     <div class="dashboard-grid">
       <section class="hero" aria-labelledby="summary-title">
@@ -145,9 +170,9 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
         </article>
       </section>
       <section class="metrics" aria-label="Executive readiness metrics">
-        ${renderMetric("Regulatory Readiness", result.regulatoryReadiness, "현재 5개 Domain 기반 임시 계산")}
-        ${renderMetric("Control Maturity", result.controlMaturity, result.maturityLevel.displayName)}
-        ${renderMetric("Audit Readiness", result.auditReadiness, `Governance Grade ${result.governanceGrade}`)}
+        ${renderMetric("규제 대응 준비도", result.regulatoryReadiness, "현재 평가 범위 내에서 산정")}
+        ${renderMetric("통제 성숙도", result.controlMaturity, renderMaturityLabel(result.maturityLevel.displayName))}
+        ${renderMetric("감사 대응 준비도", result.auditReadiness, `거버넌스 등급 ${result.governanceGrade}`)}
       </section>
       <section class="domains" aria-labelledby="domain-title">
         <div class="section-kicker">5 Domain Overview</div>
@@ -157,17 +182,17 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
       <section class="risks" aria-labelledby="risks-title">
         <div class="section-kicker">Highest Priority Risks</div>
         <h2 id="risks-title">우선 관리 위험</h2>
-        <ol>${topRisks.map(renderPriorityRisk).join("")}</ol>
+        ${renderPriorityRisks(topRisks)}
       </section>
       <section class="actions" aria-labelledby="actions-title">
         <div class="section-kicker">Recommended Actions</div>
-        <h2 id="actions-title">30 / 90 / 180 실행 계획</h2>
+        <h2 id="actions-title">권장 실행 계획</h2>
         <div class="action-grid">${result.recommendedActions.map(renderActionGroup).join("")}</div>
       </section>
       <section class="explainability" aria-labelledby="explainability-title">
         <div class="section-kicker">Explainability Layer</div>
         <h2 id="explainability-title">왜 이런 점수가 나왔는가?</h2>
-        <p>각 Domain 점수는 질문별 답변 포인트를 기준으로 산출되며, NO / NOT SURE / PARTIAL 응답은 주요 감점 근거와 개선 과제로 연결됩니다.</p>
+        <p>평가 결과는 응답 내용과 영역별 준비 수준을 바탕으로 산정되었습니다. 현재 평가 범위 내에서 양호한 영역과 우선 보완 영역을 함께 확인할 수 있습니다.</p>
         <div class="explanation-grid">${result.explanations.map(renderExplanation).join("")}</div>
       </section>
     </div>

@@ -1,11 +1,11 @@
 import { AssessmentQuestion } from "./types";
 
 export const domainLabels: Record<AssessmentQuestion["domain"], string> = {
-  FINANCIAL_ACTIONS: "D04 Financial Actions",
-  AI_RISK_MANAGEMENT: "D08 AI Risk Management",
-  PRIVACY_DATA_PROTECTION: "D13 Privacy & Data Protection",
-  MODEL_GOVERNANCE_HUMAN_OVERSIGHT: "D17 Model Governance / Human Oversight",
-  STRATEGIC_GOVERNANCE: "D25 Strategic Governance",
+  FINANCIAL_ACTIONS: "D04 금전 실행 관리",
+  AI_RISK_MANAGEMENT: "D08 AI 위험관리",
+  PRIVACY_DATA_PROTECTION: "D13 개인정보 및 데이터 보호",
+  MODEL_GOVERNANCE_HUMAN_OVERSIGHT: "D17 AI 운영 관리 및 사람의 검토",
+  STRATEGIC_GOVERNANCE: "D25 전략 거버넌스",
 };
 
 export const assessmentQuestions: AssessmentQuestion[] = [
