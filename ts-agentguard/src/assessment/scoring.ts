@@ -1,4 +1,5 @@
 import { assessmentQuestions, domainLabels } from "./questions";
+import { buildStandardsAlignment } from "./standards-mapping";
 import { AssessmentAnswer, AssessmentAnswerLabel, AssessmentGrade, AssessmentReadiness, AssessmentRiskLevel, AssessmentResult, DomainExplanation, DomainScore, MaturityLevel, RecommendedActionGroup, PriorityRisk } from "./types";
 export type { AssessmentResult } from "./types";
 
@@ -190,6 +191,7 @@ export function evaluateAssessment(answers: AssessmentAnswer[]): AssessmentResul
     governanceGrade: calculateAssessmentGrade(totalScore),
     aiReadiness: calculateReadiness(totalScore),
     domainScores,
+    standardsAlignment: buildStandardsAlignment(domainScores),
     priorityRisks,
     explanations,
     recommendedActions: buildRecommendedActions(riskLevel),

@@ -53,6 +53,23 @@ export interface DomainScore {
   maxScore: 100;
 }
 
+export type StandardsAlignmentStatus = "GREEN" | "YELLOW" | "RED";
+
+export interface StandardsReference {
+  framework: "ISO/IEC 42001" | "NIST AI RMF" | "EU AI Act" | "금융위 AI 가이드라인";
+  reference: string;
+}
+
+export interface StandardsAlignment {
+  domain: AssessmentDomain;
+  label: string;
+  score: number;
+  status: StandardsAlignmentStatus;
+  impact: "낮음" | "중간" | "높음";
+  summary: string;
+  standards: StandardsReference[];
+}
+
 export interface PriorityRisk {
   domain: AssessmentDomain;
   label: string;
@@ -79,6 +96,7 @@ export interface AssessmentResult {
   governanceGrade: AssessmentGrade;
   aiReadiness: AssessmentReadiness;
   domainScores: DomainScore[];
+  standardsAlignment: StandardsAlignment[];
   priorityRisks: PriorityRisk[];
   explanations: DomainExplanation[];
   recommendedActions: RecommendedActionGroup[];
