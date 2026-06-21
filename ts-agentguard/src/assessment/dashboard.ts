@@ -4,6 +4,10 @@ function escapeHtml(value: string): string {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
 }
 
+function serializeResultForScript(result: AssessmentResult): string {
+  return JSON.stringify(result).replaceAll("<", "\\u003c");
+}
+
 export function topRisksForDashboard(result: AssessmentResult): PriorityRisk[] {
   return result.priorityRisks;
 }
@@ -134,7 +138,9 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
     h2, h3 { margin: 0; }
     p { color: var(--muted); line-height: 1.7; }
     .eyebrow, .section-kicker { color: var(--accent); font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
-    .back { color: var(--text); text-decoration: none; border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; font-weight: 900; }
+    .header-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: flex-end; }
+    .back, .summary-button { display: inline-flex; align-items: center; color: var(--text); text-decoration: none; border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; font: inherit; font-weight: 900; background: rgba(102,217,239,.08); cursor: pointer; }
+    .summary-button { border-color: rgba(102,217,239,.5); color: var(--accent); }
     .dashboard-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
     section { border: 1px solid var(--border); border-radius: 28px; background: rgba(15, 28, 46, .92); box-shadow: 0 22px 60px rgba(0,0,0,.28); padding: 24px; }
     .hero { grid-column: 1 / -1; display: grid; grid-template-columns: 1.1fr 1.9fr; gap: 18px; padding: 0; border: 0; background: transparent; box-shadow: none; }
@@ -211,7 +217,10 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
   <main>
     <header>
       <div><div class="eyebrow">AGAF Assessment MVP v0.3</div><h1>Executive Dashboard</h1><p>현재 5개 Domain과 기존 질문 응답만으로 AI 거버넌스 점수, 위험등급, 규제 준비도, 실행계획을 자동 생성합니다.</p></div>
-      <a class="back" href="/assessment/start">다시 평가하기</a>
+      <div class="header-actions">
+        <a class="back" href="/assessment/start">다시 평가하기</a>
+        <button class="summary-button" type="button" id="executive-summary-button">Executive Summary</button>
+      </div>
     </header>
     <div class="dashboard-grid">
       <section class="hero" aria-labelledby="summary-title">
@@ -260,6 +269,20 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
       </section>
     </div>
   </main>
+<script>
+    const dashboardResult = ${serializeResultForScript(result)};
+    document.getElementById("executive-summary-button").addEventListener("click", async () => {
+      const response = await fetch("/summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ result: dashboardResult }),
+      });
+      const html = await response.text();
+      document.open();
+      document.write(html);
+      document.close();
+    });
+  </script>
 </body>
 </html>`;
 }

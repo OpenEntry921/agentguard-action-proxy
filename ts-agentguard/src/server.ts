@@ -117,6 +117,10 @@ const AssessmentDashboardBodySchema = z.object({
   })),
 });
 
+const AssessmentSummaryBodySchema = z.object({
+  result: z.custom<ReturnType<typeof evaluateAssessment>>((value) => typeof value === "object" && value !== null),
+});
+
 export function buildServer(state: AgentGuardState = createState()): FastifyInstance {
   const app = Fastify({ logger: false });
   const { audit, approvals, tokens, previews, attemptCounter } = state;
@@ -327,6 +331,15 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
   app.get("/report/executive-summary", async (_request, reply) => {
     const result = evaluateAssessment(demoAssessmentAnswers);
     return reply.type("text/html; charset=utf-8").send(executiveAssessmentSummaryHtml(result));
+  });
+
+  app.post("/summary", async (request, reply) => {
+    const body = validateBody(AssessmentSummaryBodySchema, request.body, reply);
+    if (!body) {
+      return reply;
+    }
+
+    return reply.type("text/html; charset=utf-8").send(executiveAssessmentSummaryHtml(body.result));
   });
 
   app.post("/assessment/report", async (request, reply) => {

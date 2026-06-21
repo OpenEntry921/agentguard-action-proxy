@@ -1,40 +1,30 @@
-import { AssessmentResult, PriorityRisk, RecommendedActionGroup } from "./types";
+import { AssessmentResult, PriorityRisk, RecommendedActionGroup, StandardsAlignment, StandardsAlignmentStatus } from "./types";
 
 function escapeHtml(value: string): string {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
-}
-
-function stripDomainCode(label: string): string {
-  return label.replace(/^D\d+\s+/, "");
 }
 
 function assessmentDate(): string {
   return new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric" }).format(new Date());
 }
 
-function renderRiskPriority(index: number): string {
-  if (index === 0) return "즉시 관리";
-  if (index === 1) return "우선 관리";
-  return "단기 관리";
+function renderSummaryText(summary: string): string {
+  return summary.split("\n\n").map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("");
 }
 
-function renderRiskList(risks: PriorityRisk[]): string {
+function renderRisk(risk: PriorityRisk, index: number): string {
+  return `<li>
+    <div class="item-index">${index + 1}</div>
+    <div><strong>${escapeHtml(risk.label)}</strong><span>${risk.score}%</span><p>${escapeHtml(risk.description)}</p></div>
+  </li>`;
+}
+
+function renderTopRisks(risks: PriorityRisk[]): string {
   if (risks.length === 0) {
     return `<p class="empty-state">중대한 우선 관리 위험이 확인되지 않았습니다.</p>`;
   }
 
-  return `<ol class="risk-list">${risks.map(renderRisk).join("")}</ol>`;
-}
-
-function renderRisk(risk: PriorityRisk, index: number): string {
-  return `<li class="risk-item">
-    <span class="risk-number">${index + 1}</span>
-    <div>
-      <strong>${escapeHtml(stripDomainCode(risk.label))}</strong>
-      <p>${escapeHtml(risk.description)}</p>
-    </div>
-    <span class="priority">${renderRiskPriority(index)}</span>
-  </li>`;
+  return `<ol class="risk-list">${risks.slice(0, 3).map(renderRisk).join("")}</ol>`;
 }
 
 function renderRoadmap(group: RecommendedActionGroup): string {
@@ -44,111 +34,124 @@ function renderRoadmap(group: RecommendedActionGroup): string {
   </article>`;
 }
 
+function renderAlignmentStatus(status: StandardsAlignmentStatus): string {
+  if (status === "GREEN") return "Green";
+  if (status === "YELLOW") return "Yellow";
+  return "Red";
+}
+
+function renderStandardsAlignment(item: StandardsAlignment): string {
+  return `<article class="standard-card status-${item.status.toLowerCase()}">
+    <div><h3>${escapeHtml(item.label)}</h3><p>${escapeHtml(item.summary)}</p></div>
+    <div class="standard-score"><strong>${item.score}</strong><span>${escapeHtml(renderAlignmentStatus(item.status))}</span></div>
+  </article>`;
+}
+
 export function executiveAssessmentSummaryHtml(result: AssessmentResult): string {
   const companyName = "평가 대상 조직";
   const version = "AGAF Assessment MVP v0.3";
-  const topRisks = result.priorityRisks;
 
   return `<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AGAF Executive Assessment Summary</title>
+  <title>AGAF Executive Assessment Report</title>
   <style>
-    :root { color-scheme: dark; --bg: #07111f; --card: #0f1c2e; --panel: #0b1728; --border: #223555; --text: #eaf2ff; --muted: #b8c7dc; --accent: #66d9ef; --good: #8fffcc; --warn: #ffbd59; --risk: #ff6b6b; }
+    :root { color-scheme: light; --bg: #eef1f5; --paper: #ffffff; --ink: #172033; --muted: #5d687a; --line: #d7dde7; --navy: #12213a; --blue: #1f4e79; --gold: #a67c00; --red: #9f2f2f; }
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: radial-gradient(circle at top left, #164a7d 0, var(--bg) 34rem); color: var(--text); }
-    main { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 24px 0; }
-    .page { min-height: calc(100vh - 48px); display: grid; grid-template-rows: auto 1fr auto; gap: 14px; border: 1px solid var(--border); border-radius: 30px; background: rgba(15, 28, 46, .94); box-shadow: 0 26px 70px rgba(0,0,0,.34); padding: clamp(22px, 3vw, 34px); }
-    header, .topline, .score-row, .lower-grid, footer { display: grid; gap: 14px; }
-    header { grid-template-columns: 1.6fr 1fr; align-items: start; padding-bottom: 12px; border-bottom: 1px solid rgba(184,199,220,.16); }
-    .eyebrow { color: var(--accent); font-weight: 950; letter-spacing: .14em; text-transform: uppercase; font-size: .78rem; }
-    h1 { margin: 8px 0 0; font-size: clamp(2rem, 4.5vw, 4.1rem); line-height: .95; letter-spacing: -.045em; }
-    .meta { justify-self: end; width: min(360px, 100%); display: grid; gap: 8px; }
-    .meta div { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(184,199,220,.14); color: var(--muted); font-weight: 750; }
-    .meta strong { color: var(--text); text-align: right; }
-    .score-row { grid-template-columns: .82fr 1.18fr; align-items: stretch; }
-    .score-card, .summary-card, .panel { border: 1px solid var(--border); border-radius: 24px; background: var(--panel); padding: 22px; }
-    .score-card { background: linear-gradient(145deg, rgba(102,217,239,.18), rgba(11,23,40,.94)); }
-    .score-label { color: var(--accent); font-weight: 950; letter-spacing: .12em; text-transform: uppercase; }
-    .score { margin: 12px 0 8px; font-size: clamp(4rem, 10vw, 7rem); line-height: .82; font-weight: 950; letter-spacing: -.07em; }
-    .score small { color: var(--muted); font-size: .34em; }
-    .risk-badge { display: inline-flex; margin-top: 8px; padding: 10px 14px; border-radius: 999px; background: rgba(255,107,107,.16); color: var(--risk); border: 1px solid rgba(255,107,107,.48); font-weight: 950; }
-    h2, h3, p { margin: 0; }
-    .summary-card h2, .panel h2 { margin-bottom: 10px; font-size: 1rem; color: var(--accent); letter-spacing: .12em; text-transform: uppercase; }
-    .summary-card p { color: var(--text); font-size: clamp(1.05rem, 1.9vw, 1.35rem); line-height: 1.62; font-weight: 650; }
-    .lower-grid { grid-template-columns: 1fr 1.15fr; }
-    .risk-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
-    .risk-item { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 13px; border: 1px solid rgba(184,199,220,.14); border-radius: 18px; background: rgba(255,255,255,.025); }
-    .risk-number { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; background: rgba(102,217,239,.16); color: var(--accent); font-weight: 950; }
-    .risk-item strong { font-size: 1rem; }
-    .risk-item p { margin-top: 3px; color: var(--muted); line-height: 1.45; font-size: .92rem; }
-    .priority { color: var(--warn); font-weight: 950; white-space: nowrap; }
-    .roadmap { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-    .roadmap-card { min-height: 150px; border: 1px solid rgba(184,199,220,.14); border-radius: 18px; padding: 16px; background: rgba(102,217,239,.06); }
-    .roadmap-card h3 { color: var(--good); margin-bottom: 12px; }
-    ul { margin: 0; padding-left: 19px; }
-    li { color: var(--muted); line-height: 1.48; margin-bottom: 8px; }
-    .empty-state { margin: 0; padding: 18px; border: 1px solid rgba(143,255,204,.26); border-radius: 18px; background: rgba(143,255,204,.08); color: var(--text); font-weight: 850; line-height: 1.55; }
-    .message { margin-top: 14px; border: 1px solid rgba(143,255,204,.26); border-radius: 20px; padding: 18px; background: rgba(143,255,204,.08); color: var(--text); font-size: clamp(1.25rem, 2.6vw, 2rem); line-height: 1.35; font-weight: 900; text-align: center; }
-    footer { grid-template-columns: 1fr auto; align-items: end; padding-top: 10px; border-top: 1px solid rgba(184,199,220,.16); color: var(--muted); font-weight: 750; }
-    footer strong { display: block; color: var(--text); margin-top: 2px; }
-    .actions { display: flex; gap: 10px; }
-    .link { color: var(--text); text-decoration: none; border: 1px solid var(--border); border-radius: 14px; padding: 10px 14px; font-weight: 900; }
-    @media (max-width: 940px) { .page { min-height: auto; } header, .score-row, .lower-grid, .roadmap, footer { grid-template-columns: 1fr; } .meta { justify-self: stretch; } .actions { flex-wrap: wrap; } }
+    body { margin: 0; min-height: 100vh; font-family: Georgia, "Times New Roman", serif; background: var(--bg); color: var(--ink); }
+    .toolbar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: flex-end; gap: 10px; padding: 14px 22px; background: rgba(238,241,245,.96); border-bottom: 1px solid var(--line); }
+    .toolbar a, .toolbar button { border: 1px solid var(--navy); border-radius: 4px; background: var(--navy); color: white; padding: 10px 14px; font: 700 .9rem Arial, sans-serif; text-decoration: none; cursor: pointer; }
+    .toolbar a { background: white; color: var(--navy); }
+    main { width: min(960px, calc(100% - 32px)); margin: 28px auto 42px; }
+    .report { background: var(--paper); border: 1px solid var(--line); box-shadow: 0 18px 45px rgba(18,33,58,.13); padding: clamp(30px, 5vw, 58px); }
+    header { display: grid; grid-template-columns: 1fr auto; gap: 24px; padding-bottom: 24px; border-bottom: 3px solid var(--navy); }
+    .eyebrow { color: var(--blue); font: 800 .78rem Arial, sans-serif; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { margin: 10px 0 0; color: var(--navy); font-size: clamp(2rem, 4.4vw, 3.7rem); line-height: 1.02; letter-spacing: -.03em; }
+    .meta { min-width: 270px; border: 1px solid var(--line); }
+    .meta div { display: flex; justify-content: space-between; gap: 16px; padding: 11px 13px; border-bottom: 1px solid var(--line); font: 700 .88rem Arial, sans-serif; }
+    .meta div:last-child { border-bottom: 0; }
+    .meta span { color: var(--muted); }
+    section { padding: 26px 0; border-bottom: 1px solid var(--line); break-inside: avoid; }
+    h2 { margin: 0 0 18px; color: var(--navy); font: 800 1rem Arial, sans-serif; letter-spacing: .13em; text-transform: uppercase; }
+    h3, p { margin: 0; }
+    p, li { color: var(--muted); line-height: 1.68; }
+    .score-grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: 20px; }
+    .score-box { border: 2px solid var(--navy); padding: 24px; text-align: center; }
+    .score-label { color: var(--blue); font: 800 .82rem Arial, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+    .score { margin-top: 10px; color: var(--navy); font: 900 clamp(4rem, 10vw, 6.8rem) Arial, sans-serif; line-height: .9; }
+    .score small { color: var(--muted); font-size: .3em; }
+    .risk-badge { display: inline-flex; margin-top: 16px; border: 1px solid var(--red); color: var(--red); padding: 8px 12px; font: 900 .94rem Arial, sans-serif; }
+    .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .metric { border-left: 4px solid var(--blue); background: #f7f9fc; padding: 14px; }
+    .metric span { display: block; color: var(--muted); font: 800 .76rem Arial, sans-serif; text-transform: uppercase; }
+    .metric strong { display: block; margin-top: 8px; color: var(--navy); font: 900 1.7rem Arial, sans-serif; }
+    .narrative p + p { margin-top: 12px; }
+    .risk-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+    .risk-list li { display: grid; grid-template-columns: auto 1fr; gap: 14px; padding: 15px; border: 1px solid var(--line); background: #fbfcfe; }
+    .item-index { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; background: var(--navy); color: white; font: 900 1rem Arial, sans-serif; }
+    .risk-list strong { color: var(--navy); font: 900 1rem Arial, sans-serif; }
+    .risk-list span { display: block; margin: 4px 0; color: var(--gold); font: 900 .88rem Arial, sans-serif; }
+    .roadmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .roadmap-card, .standard-card, .recommendation, .empty-state { border: 1px solid var(--line); background: #fbfcfe; padding: 16px; }
+    .roadmap-card h3 { color: var(--blue); font: 900 1.1rem Arial, sans-serif; margin-bottom: 10px; }
+    ul { margin: 0; padding-left: 20px; }
+    .standards-grid { display: grid; gap: 12px; }
+    .standard-card { display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: start; }
+    .standard-card h3 { color: var(--navy); font: 900 1rem Arial, sans-serif; margin-bottom: 6px; }
+    .standard-score { min-width: 76px; text-align: right; font-family: Arial, sans-serif; }
+    .standard-score strong { display: block; color: var(--navy); font-size: 2rem; line-height: 1; }
+    .standard-score span { color: var(--gold); font-weight: 900; text-transform: uppercase; }
+    .recommendation { border-left: 5px solid var(--navy); }
+    footer { padding-top: 22px; color: var(--muted); font: 700 .9rem Arial, sans-serif; display: flex; justify-content: space-between; gap: 18px; }
+    footer strong { color: var(--navy); }
+    @media (max-width: 820px) { header, .score-grid, .metric-grid, .roadmap, .standard-card, footer { grid-template-columns: 1fr; } .meta { min-width: 0; } }
+    @media print { body { background: white; } .toolbar { display: none; } main { width: 100%; margin: 0; } .report { border: 0; box-shadow: none; padding: 0; } section { break-inside: avoid; } }
   </style>
 </head>
 <body>
+  <nav class="toolbar" aria-label="Report actions">
+    <a href="/assessment/start">다시 평가하기</a>
+    <button type="button" onclick="window.print()">Print Report</button>
+  </nav>
   <main>
-    <section class="page" aria-labelledby="report-title">
+    <article class="report" aria-labelledby="report-title">
       <header>
         <div>
-          <div class="eyebrow">Executive Assessment Summary</div>
-          <h1 id="report-title">AGAF 경영진 평가 요약</h1>
+          <div class="eyebrow">Executive Summary</div>
+          <h1 id="report-title">AGAF Executive Assessment Report</h1>
         </div>
         <div class="meta" aria-label="Assessment metadata">
-          <div><span>조직명</span><strong>${escapeHtml(companyName)}</strong></div>
+          <div><span>회사명</span><strong>${escapeHtml(companyName)}</strong></div>
           <div><span>평가일</span><strong>${escapeHtml(assessmentDate())}</strong></div>
-          <div><span>평가 버전</span><strong>${escapeHtml(version)}</strong></div>
+          <div><span>버전</span><strong>${escapeHtml(version)}</strong></div>
         </div>
       </header>
 
-      <div>
-        <section class="score-row" aria-label="Executive score and summary">
-          <article class="score-card">
-            <div class="score-label">AI Governance Score</div>
-            <div class="score">${result.totalScore}<small> / ${result.maxScore}</small></div>
-            <div class="risk-badge">${escapeHtml(result.riskLevel)}</div>
-          </article>
-          <article class="summary-card">
-            <h2>경영진 요약</h2>
-            <p>${escapeHtml(result.executiveSummary)}</p>
-          </article>
-        </section>
+      <section aria-labelledby="score-title">
+        <h2 id="score-title">Section 1 · AI Governance Score</h2>
+        <div class="score-grid">
+          <div class="score-box"><div class="score-label">총점</div><div class="score">${result.totalScore}<small> / ${result.maxScore}</small></div><div class="risk-badge">${escapeHtml(result.riskLevel)}</div></div>
+          <div class="metric-grid">
+            <div class="metric"><span>규제 대응 준비도</span><strong>${escapeHtml(result.regulatoryReadiness)}</strong></div>
+            <div class="metric"><span>통제 성숙도</span><strong>${escapeHtml(result.controlMaturity)}</strong></div>
+            <div class="metric"><span>감사 대응 준비도</span><strong>${escapeHtml(result.auditReadiness)}</strong></div>
+          </div>
+        </div>
+      </section>
 
-        <section class="lower-grid" aria-label="Top risks and roadmap">
-          <article class="panel">
-            <h2>우선 관리 위험</h2>
-            ${renderRiskList(topRisks)}
-          </article>
-          <article class="panel">
-            <h2>권장 실행 계획</h2>
-            <div class="roadmap">${result.recommendedActions.map(renderRoadmap).join("")}</div>
-          </article>
-        </section>
-
-        <div class="message">AI 시대의 경쟁력은<br />AI를 사용하는 능력이 아니라<br />AI를 책임 있게 관리하는 능력입니다.</div>
-      </div>
+      <section class="narrative" aria-labelledby="narrative-title"><h2 id="narrative-title">Section 2 · 경영진 요약</h2>${renderSummaryText(result.executiveSummary)}</section>
+      <section aria-labelledby="risks-title"><h2 id="risks-title">Section 3 · Top 3 Risks</h2>${renderTopRisks(result.priorityRisks)}</section>
+      <section aria-labelledby="roadmap-title"><h2 id="roadmap-title">Section 4 · 30 / 90 / 180 실행계획</h2><div class="roadmap">${result.recommendedActions.map(renderRoadmap).join("")}</div></section>
+      <section aria-labelledby="standards-title"><h2 id="standards-title">Section 5 · 표준 연계 결과</h2><div class="standards-grid">${result.standardsAlignment.map(renderStandardsAlignment).join("")}</div></section>
+      <section aria-labelledby="recommendation-title"><h2 id="recommendation-title">Section 6 · 경영진 권고사항</h2><div class="recommendation"><p>AI 활용 확대 이전에 승인·감사·위험관리 체계를 우선 정비할 것을 권고합니다.</p><p>특히 고위험 AI 사용 시 Human Review 체계 구축이 필요합니다.</p></div></section>
 
       <footer>
-        <div>평가 결과는 <strong>AGAF</strong> 기준으로 생성되었습니다</div>
-        <nav class="actions" aria-label="Report actions">
-          <a class="link" href="/assessment/start">다시 평가하기</a>
-          <a class="link" href="/demo/assessment">평가 홈</a>
-        </nav>
+        <div>Assessment generated using <strong>AGAF</strong><br />(AI Governance Assessment Framework)</div>
+        <div>© OpenEntry</div>
       </footer>
-    </section>
+    </article>
   </main>
 </body>
 </html>`;
