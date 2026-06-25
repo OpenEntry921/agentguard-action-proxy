@@ -1,20 +1,30 @@
+import type {
+  GovernOpsApprovalState,
+  GovernOpsEnforcementAction,
+  GovernOpsTokenStatus,
+} from "./context";
+
 export interface GovernOpsDecisionRecord {
   decisionId: string;
-  requestId: string;
-  policyId?: string;
-  outcome: "ALLOW" | "REVIEW_REQUIRED" | "DENY" | "UNKNOWN";
-  reasons: string[];
-  recordedAt?: Date;
-  metadata?: Record<string, unknown>;
+  policyId: string;
+  sourceQuestionIds: string[];
+  agentId: string;
+  contextId: string;
+  userRequestAmount: number;
+  agentDecisionAmount: number;
+  riskScore: number;
+  enforcementAction: GovernOpsEnforcementAction;
+  approvalState: GovernOpsApprovalState;
+  tokenStatus: GovernOpsTokenStatus;
+  executionResult: string;
+  auditCorrelationId: string;
+  createdAt: string;
 }
 
-export interface GovernOpsDecisionRecordInput {
-  requestId: string;
-  policyId?: string;
-  outcome?: GovernOpsDecisionRecord["outcome"];
-  reasons?: string[];
-  metadata?: Record<string, unknown>;
-}
+export type GovernOpsDecisionRecordInput = Omit<GovernOpsDecisionRecord, "decisionId" | "createdAt"> & {
+  decisionId?: string;
+  createdAt?: string;
+};
 
 export function createGovernOpsDecisionRecord(): GovernOpsDecisionRecord {
   // TODO: Convert runtime policy evaluation output into a GovernOps decision record.

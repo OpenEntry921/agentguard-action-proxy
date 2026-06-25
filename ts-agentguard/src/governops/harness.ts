@@ -1,17 +1,39 @@
-import { GovernOpsRuntimeContext } from "./context";
-import { GovernOpsDecisionRecord } from "./decision-record";
-import { GovernOpsRuntimePolicy } from "./compiler";
+import type {
+  GovernOpsActionTaxonomy,
+  GovernOpsApprovalState,
+  GovernOpsEnforcementAction,
+  GovernOpsRuntimeContext,
+  GovernOpsTokenStatus,
+} from "./context";
+import type { GovernOpsRuntimePolicy } from "./compiler";
+
+export interface GovernOpsProposedAction {
+  actionId: string;
+  actionTaxonomy: GovernOpsActionTaxonomy;
+  targetSystem: string;
+  targetResource: string;
+  amount: number;
+  asset: string;
+  requestedBy: string;
+  generatedByAgent: string;
+  timestamp: string;
+}
 
 export interface GovernOpsHarnessInput {
   context: GovernOpsRuntimeContext;
   policy: GovernOpsRuntimePolicy;
-  action: unknown;
+  action: GovernOpsProposedAction;
 }
 
 export interface GovernOpsHarnessResult {
-  decisionRecord: GovernOpsDecisionRecord;
-  tokenRequest?: unknown;
-  metadata?: Record<string, unknown>;
+  enforcementAction: GovernOpsEnforcementAction;
+  reason: string;
+  sourceQuestionIds: string[];
+  policyId: string;
+  decisionId: string;
+  approvalState: GovernOpsApprovalState;
+  executionAllowed: boolean;
+  tokenStatus: GovernOpsTokenStatus;
 }
 
 export function runGovernOpsHarness(): GovernOpsHarnessResult {

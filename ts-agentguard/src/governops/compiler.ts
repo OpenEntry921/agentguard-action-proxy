@@ -1,4 +1,4 @@
-import { GovernOpsRuntimePolicyContext } from "./context";
+import type { GovernOpsActionTaxonomy, GovernOpsEnforcementAction } from "./context";
 
 export interface GovernOpsCompilerInput {
   agafDocument: unknown;
@@ -8,10 +8,14 @@ export interface GovernOpsCompilerInput {
 
 export interface GovernOpsRuntimePolicy {
   policyId: string;
-  runtime: string;
-  version?: string;
-  context?: GovernOpsRuntimePolicyContext;
-  metadata?: Record<string, unknown>;
+  sourceQuestionIds: string[];
+  actionTaxonomy: GovernOpsActionTaxonomy;
+  budgetLimit: number;
+  approvalRequired: boolean;
+  enforcementType: GovernOpsEnforcementAction;
+  decisionRecordLevel: string;
+  identityRequirement: string;
+  contextRequirement: string;
 }
 
 export function compileGovernOpsRuntimePolicy(): GovernOpsRuntimePolicy {
