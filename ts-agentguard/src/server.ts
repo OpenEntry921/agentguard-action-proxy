@@ -305,6 +305,27 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
 
   app.get("/demo/kgld", async (_request, reply) => reply.type("text/html; charset=utf-8").send(kgldDemoHtml()));
 
+  app.get("/demo/governops-preview-panel.js", async (_request, reply) => {
+    const candidates = [
+      join(process.cwd(), "dist", "demo", "governops-preview-panel.js"),
+      join(process.cwd(), "src", "demo", "governops-preview-panel.js"),
+      join(__dirname, "demo", "governops-preview-panel.js"),
+    ];
+
+    const modulePath = candidates.find((candidate) => existsSync(candidate));
+
+    if (!modulePath) {
+      return reply.status(404).send({
+        message: "GovernOps Preview Panel module not found",
+        searched: candidates,
+      });
+    }
+
+    return reply
+      .type("application/javascript; charset=utf-8")
+      .send(readFileSync(modulePath, "utf-8"));
+  });
+
   app.get("/demo/assessment", async (_request, reply) =>
     reply.type("text/html; charset=utf-8").send(assessmentLandingHtml()),
   );
