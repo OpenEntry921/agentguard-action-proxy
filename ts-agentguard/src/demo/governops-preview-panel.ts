@@ -15,6 +15,16 @@ function renderDecisionBadge(decision: string): string {
   return `<span class="decision ${decisionClass}">${decision}</span>`;
 }
 
+function formatMultiplier(multiplier: number): string {
+  return Number.isInteger(multiplier) ? multiplier.toString() : multiplier.toFixed(2).replace(/\.?0+$/, "");
+}
+
+function renderRuntimeContextSummary(runtimeContext: GovernOpsPreview["runtimeContext"]): string {
+  const multiplier = runtimeContext.agentDecisionAmount / runtimeContext.userRequestAmount;
+
+  return `GovernOps detected that the AI Agent attempted to execute an action ${formatMultiplier(multiplier)}x larger than the original user request.`;
+}
+
 export function renderGovernOpsPreviewPanelHtml(
   governOpsPreview: GovernOpsPreview = preview,
 ): string {
@@ -37,7 +47,7 @@ export function renderGovernOpsPreviewPanelHtml(
     renderRow("Token Status", harnessResult.tokenStatus),
     renderRow("Execution", decisionRecord.executionResult),
     "</div>",
-    '<p class="note">GovernOps detected that the AI Agent attempted to execute an action 10x larger than the original user request.</p>',
+    `<p class="note">${renderRuntimeContextSummary(runtimeContext)}</p>`,
     '<p class="note"><b>No Decision Record → No Token → No Execution</b></p>',
   ].join("");
 }
