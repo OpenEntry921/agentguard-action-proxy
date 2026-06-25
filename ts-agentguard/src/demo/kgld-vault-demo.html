@@ -104,8 +104,8 @@ async function renderGovernOpsPreviewPanel(){
       const previewPanel = await import(modulePath);
       panel.innerHTML = previewPanel.renderGovernOpsPreviewPanelHtml();
       return;
-    } catch (_) {
-      // Try the next known build/source serving location.
+    } catch (error) {
+      console.error("GovernOps Preview Panel load failed:", modulePath, error);
     }
   }
   panel.textContent = 'GovernOps Preview Panel failed to load.';
