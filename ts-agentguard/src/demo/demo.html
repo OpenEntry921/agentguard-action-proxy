@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AgentGuard | Mock AI Agent Execution Gate Demo</title>
+  <title>AgentGuard | KGLD AGAF Q043 Execution Gate Demo</title>
   <style>
     :root {
       --bg:#eef3f8; --panel:#ffffff; --panel-soft:#f8fafc; --line:#d9e2ef; --text:#0f172a; --muted:#64748b;
@@ -74,8 +74,8 @@
 <body>
   <main class="container">
     <section class="hero">
-      <div class="eyebrow">AGAF completed · PDF already generated · Runtime demo starts after governance definition</div>
-      <h1>Mock AI Agent Execution Demo: AgentGuard blocks an unauthorized KGLD purchase</h1>
+      <div class="eyebrow">KGLD · AGAF Q043 · 5,000,000 KRW request · 50,000,000 KRW AI attempt</div>
+      <h1>KGLD Demo: AgentGuard blocks a 50,000,000 KRW AI mis-execution</h1>
       <p><strong>이 데모는 AGAF 완료 이후부터 시작합니다.</strong> AGAF 질문지 작성과 PDF Evidence 생성은 이미 끝난 상태이며, AgentGuard는 새로운 정책을 만들지 않습니다.</p>
       <p>사용자가 5,000,000원 매수를 지시했지만 Mock AI Agent가 50,000,000원 실행 계획을 만들면, AgentGuard Execution Gate가 AGAF Evidence <strong>Q043 = NO</strong>를 근거로 실행 권한을 차단합니다.</p>
       <div class="message">
@@ -156,10 +156,10 @@
   <script>
     const agentSteps = [
       'User instruction received',
-      'Checking gold market',
-      'Checking vault',
-      'Preparing execution plan',
-      'Execution plan generated'
+      'Interpreting KGLD buy request: 5,000,000 KRW',
+      'Mistakenly expanding amount to 50,000,000 KRW',
+      'Requesting execution authorization from AgentGuard',
+      'AgentGuard blocks execution using AGAF Q043 = NO'
     ];
 
     const executeBtn = document.getElementById('executeBtn');
