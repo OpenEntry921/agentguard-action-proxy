@@ -102,9 +102,7 @@ async function renderGovernOpsPreviewPanel(){
   for (const modulePath of modulePaths) {
     try {
       const previewPanel = await import(modulePath);
-      panel.innerHTML = previewPanel.renderGovernOpsPreviewPanelHtml(
-        previewPanel.kgldGovernOpsPreviewData,
-      );
+      panel.innerHTML = previewPanel.renderGovernOpsPreviewPanelHtml();
       return;
     } catch (_) {
       // Try the next known build/source serving location.
