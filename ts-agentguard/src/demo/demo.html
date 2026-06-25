@@ -69,8 +69,8 @@
   <div id="sessionStatus" class="session-banner">새 데모 세션을 준비하는 중...</div>
 
   <section class="grid">
-    <div class="card"><div class="k">User Request</div><div class="v">Buy KGLD · 5,000,000 KRW</div></div>
-    <div class="card"><div class="k">AI Agent Attempt</div><div class="v">Buy KGLD · 50,000,000 KRW</div></div>
+    <div class="card"><div class="k">User Request</div><div class="v">Buy KGLD 5,000,000 KRW</div></div>
+    <div class="card"><div class="k">AI Attempt</div><div class="v">Buy KGLD 50,000,000 KRW</div></div>
     <div class="card"><div class="k">AGAF Evidence</div><div class="v">Q043 = NO</div></div>
     <div class="card"><div class="k">Execution Outcome</div><div class="v">BLOCK · Token Not Issued</div></div>
   </section>
@@ -209,7 +209,7 @@ const MCP_SIMULATION = {
   },
 };
 
-function scenarioMetaAds(){
+function scenarioKgld(){
   return {
     action_id:'kgld-q043-block', actor_type:'ai_agent', actor_id:'financial-agent-kgld-1',
     action_type:'finance.buy_kgld', target_system:'KGLD Trading / Settlement', target_resource:'KGLD',
@@ -275,7 +275,7 @@ function renderRuntimePanels(selected){
 
 function loadScenario(){
   const selected = document.getElementById('scenario').value;
-  if(selected === 'C') req = scenarioMetaAds(); else if (isRuntimeScenario(selected)) req = {action_id:`runtime-${Math.random().toString(16).slice(2,10)}`, actor_type:'ai_agent', actor_id:'agent-runtime-v1', action_type:selected==='runtime_create_branch'?'github.create_branch':(selected==='runtime_create_pr'?'github.create_pr':(selected==='runtime_workflow_block'?'github.modify_workflow':'github.access_secret')), target_system:'GitHub', target_resource:'sandbox/repo', parameters:{sandbox_only:true, mode:'runtime_interception'}, context:{runtime_interception:true, sandbox_only:true}, requested_at:new Date().toISOString()}; else req = scenarioMcp(selected);
+  if(selected === 'C') req = scenarioKgld(); else if (isRuntimeScenario(selected)) req = {action_id:`runtime-${Math.random().toString(16).slice(2,10)}`, actor_type:'ai_agent', actor_id:'agent-runtime-v1', action_type:selected==='runtime_create_branch'?'github.create_branch':(selected==='runtime_create_pr'?'github.create_pr':(selected==='runtime_workflow_block'?'github.modify_workflow':'github.access_secret')), target_system:'GitHub', target_resource:'sandbox/repo', parameters:{sandbox_only:true, mode:'runtime_interception'}, context:{runtime_interception:true, sandbox_only:true}, requested_at:new Date().toISOString()}; else req = scenarioMcp(selected);
   token = null;
   previewData = null;
   flowState = 'requested';
@@ -418,18 +418,17 @@ function renderRisk(d){
 function renderSecurityData(){
   if(!req) return;
   const isKgld = req.action_type === 'finance.buy_kgld';
-  const isMeta = req.action_type === 'browser.update_ad_budget';
-  const actionText = isKgld ? 'Buy KGLD Execution Attempt' : (isMeta ? '광고 예산 변경' : (req.action_type === 'github.modify_ci_workflow' ? 'Workflow Modification Attempt' : 'Secret Export Attempt'));
-  const beforeValue = isKgld ? `${req.parameters.user_requested_amount.toLocaleString()} ${req.parameters.currency}` : (isMeta ? `${req.parameters.current_budget.toLocaleString()} ${req.parameters.currency}` : '-');
-  const afterValue = isKgld ? `${req.parameters.agent_attempted_amount.toLocaleString()} ${req.parameters.currency}` : (isMeta ? `${req.parameters.new_budget.toLocaleString()} ${req.parameters.currency}` : req.target_resource);
+  const actionText = isKgld ? 'Buy KGLD Execution Attempt' : (req.action_type === 'github.modify_ci_workflow' ? 'Workflow Modification Attempt' : 'Secret Export Attempt');
+  const beforeValue = isKgld ? `Buy KGLD ${req.parameters.user_requested_amount.toLocaleString()} ${req.parameters.currency}` : '-';
+  const afterValue = isKgld ? `Buy KGLD ${req.parameters.agent_attempted_amount.toLocaleString()} ${req.parameters.currency}` : req.target_resource;
   const envValue = req.context.environment || 'Cloud RBI Session';
   document.getElementById('securityData').innerHTML = `
     <div class="risk-grid">
       <div class="risk-item"><div class="muted">실행 주체</div><div>AI Browser Agent</div></div>
-      <div class="risk-item"><div class="muted">대상 시스템</div><div>${isKgld ? 'KGLD Trading / Settlement' : (isMeta ? 'Meta Ads' : (req.action_type === 'github.export_secrets' ? 'GitHub / Environment' : 'GitHub'))}</div></div>
+      <div class="risk-item"><div class="muted">대상 시스템</div><div>${isKgld ? 'KGLD Trading / Settlement' : (req.action_type === 'github.export_secrets' ? 'GitHub / Environment' : 'GitHub')}</div></div>
       <div class="risk-item"><div class="muted">행동</div><div>${actionText}</div></div>
-      <div class="risk-item"><div class="muted">${isKgld ? 'User Request' : (isMeta ? '기존 값/상태' : '대상 리소스')}</div><div>${isKgld ? beforeValue : (isMeta ? beforeValue : req.target_resource)}</div></div>
-      <div class="risk-item"><div class="muted">${isKgld ? 'AI Agent Attempt' : (isMeta ? '요청 값/변경' : '요청 행위')}</div><div>${isKgld ? afterValue : (isMeta ? afterValue : actionText)}</div></div>
+      <div class="risk-item"><div class="muted">${isKgld ? 'User Request' : '대상 리소스'}</div><div>${isKgld ? beforeValue : req.target_resource}</div></div>
+      <div class="risk-item"><div class="muted">${isKgld ? 'AI Attempt' : '요청 행위'}</div><div>${isKgld ? afterValue : actionText}</div></div>
       <div class="risk-item"><div class="muted">실행 환경</div><div>${envValue}</div></div>
     </div>`;
 }
