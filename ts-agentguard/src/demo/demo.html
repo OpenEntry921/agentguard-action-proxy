@@ -59,39 +59,33 @@
 <body>
 <div class="container">
   <section class="hero">
-    <h1>AgentGuard AI 실행 거버넌스 보안 콘솔</h1>
-    <p><b>기존 IAM/RBI는 "접근"을 보호합니다.</b> AgentGuard는 AI가 실제로 수행하는 <b>실행행위(Runtime Execution)</b>를 정책 기반으로 통제합니다.</p>
-    <p>즉, "누가 로그인했는가"가 아니라 "AI가 실제로 무엇을 실행하려 하는가"를 실시간으로 평가하고 승인·차단합니다.</p>
-    <p><b>Cloud RBI는 격리 세션을 제공하고, AgentGuard는 그 위에서 AI 실행행위를 Runtime에서 Interception/Policy Evaluation 합니다.</b> 즉, <b>RBI 위 AI Runtime Governance Layer</b>입니다.</p>
+    <h1>AgentGuard KGLD 금융 실행 거버넌스 데모</h1>
+    <p><b>사용자는 금 5,000,000 KRW 매수를 요청했습니다.</b> 그러나 AI Agent는 KGLD 50,000,000 KRW 매수를 실행하려고 했습니다.</p>
+    <p><b>AgentGuard는 정책을 만드는 시스템이 아니라, AGAF에서 정의된 거버넌스를 실행 시점에 집행(Enforce)하는 시스템입니다.</b></p>
+    <p>AGAF Evidence(Q043 = NO)를 근거로 Execution Gate가 실행을 차단하므로 Ephemeral Token은 발급되지 않고 Settlement는 실행되지 않습니다.</p>
 
   </section>
 
   <div id="sessionStatus" class="session-banner">새 데모 세션을 준비하는 중...</div>
 
   <section class="grid">
-    <div class="card"><div class="k">실행 환경</div><div class="v">Cloud RBI Session</div></div>
-    <div class="card"><div class="k">세션 격리 상태</div><div class="v">활성화</div></div>
-    <div class="card"><div class="k">AI 브라우저 에이전트</div><div class="v">AI Browser Agent 연결됨</div></div>
-    <div class="card"><div class="k">Runtime Governance</div><div class="v">정책 기반 통제 활성</div></div>
+    <div class="card"><div class="k">User Request</div><div class="v">Buy KGLD · 5,000,000 KRW</div></div>
+    <div class="card"><div class="k">AI Agent Attempt</div><div class="v">Buy KGLD · 50,000,000 KRW</div></div>
+    <div class="card"><div class="k">AGAF Evidence</div><div class="v">Q043 = NO</div></div>
+    <div class="card"><div class="k">Execution Outcome</div><div class="v">BLOCK · Token Not Issued</div></div>
   </section>
 
   <section class="main">
     <div class="panel">
       <h2>시나리오 실행 화면</h2>
-      <p id="scenarioDesc" class="kv">시나리오: Scripted Demo와 GitHub Runtime Interception Demo를 비교해 실행 경로 차이를 확인합니다.</p>
+      <p id="scenarioDesc" class="kv">시나리오: AGAF 완료 및 PDF 생성 이후, KGLD 매수 실행 시점에서 AgentGuard가 AGAF Q043 증거를 근거로 과다 실행을 차단합니다.</p>
       <div class="controls">
         <select id="scenario">
-          <option value="cicd_attack">Scripted Demo: MCP GitHub Workflow Attack</option>
-          <option value="runtime_create_branch">Runtime Demo: GitHub Create Branch</option>
-          <option value="runtime_create_pr">Runtime Demo: GitHub Create PR</option>
-          <option value="runtime_workflow_block">Runtime Demo: GitHub Workflow Modification Block</option>
-          <option value="runtime_secret_block">Runtime Demo: GitHub Secret Access Block</option>
-          <option value="api_key_leak">Scripted Demo: MCP API Secret Exfiltration</option>
-          <option value="C">(Optional) Meta Ads Budget Escalation</option>
+          <option value="C">KGLD 금융 실행 거버넌스: AGAF Q043 Execution Block</option>
         </select>
-        <button class="primary" id="startBtn" onclick="startAttackSimulation()">공격 시뮬레이션 시작</button>
-        <button onclick="approve()">관리자 승인</button>
-        <button onclick="deny()">실행 차단</button>
+        <button class="primary" id="startBtn" onclick="startAttackSimulation()">KGLD 실행 거버넌스 데모 시작</button>
+        <button onclick="approve()">수동 승인(비권장)</button>
+        <button onclick="deny()">차단 결정 유지</button>
       </div>
       <div id="workflow" class="status info">워크플로우 상태: 실행 요청 대기 중</div>
 
@@ -130,12 +124,12 @@
 let req = null, token = null, previewData = null, flowState = 'requested', simulationRunning = false;
 const SCENARIO_META = {
   C: {
-    desc: '시나리오: Meta Ads 최적화 과정에서 AI가 비정상적인 광고 예산 증액(500,000 → 50,000,000 KRW)을 시도합니다. (Optional secondary demo)',
-    thoughtStream: ['Campaign performance optimization 시작...','광고 성과 데이터 분석 중...','추천 예산 증가 전략 적용...','광고 예산 업데이트 요청 생성...','Automated campaign optimization 실행 중...'],
-    timeline: ['AI Browser Agent connected','Campaign optimization workflow started','Large budget escalation detected','Runtime Interception triggered','Policy evaluation completed','Human approval required BEFORE EXECUTION'],
-    riskFactors: ['비정상 광고 예산 증가 감지','자동화된 브라우저 실행행위 감지','운영 패턴 이탈','재무 영향 가능성 높음'],
-    impact: '광고비 과다 지출 · 운영 비용 급증 · 재무 영향 고위험',
-    finalBlocked: 'REVIEW_REQUIRED / HUMAN APPROVAL REQUIRED BEFORE EXECUTION'
+    desc: '시나리오: 사용자는 KGLD 5,000,000 KRW 매수를 요청했지만 AI Agent가 50,000,000 KRW 매수를 시도합니다. AgentGuard는 AGAF Q043 Evidence(NO)를 실행 시점에 집행해 Settlement 전에 차단합니다.',
+    thoughtStream: ['AGAF completed: 금융 실행 거버넌스 기준 확정','AGAF PDF generated: evidence artifact ready','User Request: Buy KGLD 5,000,000 KRW','AI Agent Attempt: Buy KGLD 50,000,000 KRW','AgentGuard Execution Gate: AGAF evidence lookup','AGAF Evidence: Question ID Q043 / Answer NO','Decision: BLOCK','Ephemeral Token: NOT ISSUED','Settlement: NOT EXECUTED'],
+    timeline: ['AGAF completed','AGAF PDF generated','User Request: Buy KGLD 5,000,000 KRW','AI Agent Attempt: Buy KGLD 50,000,000 KRW','AgentGuard Execution Gate','AGAF Evidence: Q043 = NO','Decision: BLOCK','Ephemeral Token NOT ISSUED','Settlement NOT EXECUTED'],
+    riskFactors: ['사용자 요청 금액 대비 10배 과다 실행 시도','AGAF Q043 답변이 NO로 기록됨','Execution Gate가 AGAF Evidence를 근거로 사전 차단','Ephemeral Token 미발급으로 Settlement 경로 봉쇄'],
+    impact: '무단 금융 실행 방지 · 과다 매수 차단 · Settlement 실행 전 통제',
+    finalBlocked: 'BLOCK / TOKEN NOT ISSUED / SETTLEMENT NOT EXECUTED'
   },
   cicd_attack: {
     desc: 'PRIMARY: MCP 기반 GitHub privileged workflow modification 시도를 Runtime Interception으로 차단하는 AI Runtime Security Incident 데모(모의).',
@@ -171,7 +165,7 @@ const SCENARIO_META = {
   },
   runtime_secret_block: {
     desc: 'Runtime Demo: GitHub Secret Access 요청이 실행 토큰 발급 전에 차단됩니다.',
-    thoughtStream: ['Secret access intent 생성...','Runtime executor 요청 수신...','정책 위반 검출...','토큰 미발급 결정...','API 실행 차단...'],
+    thoughtStream: ['Secret access intent 생성...','Runtime executor 요청 수신...','정책 위반 검출...','토큰 미발급 결정...','API 차단 결정 유지...'],
     timeline: ['GitHub action intent generated','AgentGuard runtime executor received request','Policy decision completed','Execution token not issued','GitHub API call blocked'],
     riskFactors: ['Secret access policy violation','Token issuance denied','Execution blocked before API call'],
     impact: '비밀정보 유출 방지 · 사전 차단',
@@ -217,10 +211,10 @@ const MCP_SIMULATION = {
 
 function scenarioMetaAds(){
   return {
-    action_id:'act-C', actor_type:'ai_agent', actor_id:'browser-agent-1',
-    action_type:'browser.update_ad_budget', target_system:'Meta Ads', target_resource:'campaign-42',
-    parameters:{current_budget:500000,new_budget:50000000,currency:'KRW'},
-    context:{environment:'Cloud RBI Session', flow:'ad_optimization'}, requested_at:new Date().toISOString()
+    action_id:'kgld-q043-block', actor_type:'ai_agent', actor_id:'financial-agent-kgld-1',
+    action_type:'finance.buy_kgld', target_system:'KGLD Trading / Settlement', target_resource:'KGLD',
+    parameters:{user_requested_amount:5000000,agent_attempted_amount:50000000,currency:'KRW',instrument:'KGLD'},
+    context:{environment:'AGAF Runtime Enforcement', agaf_completed:true, agaf_pdf_generated:true, question_id:'Q043', answer:'NO', governance_source:'AGAF'}, requested_at:new Date().toISOString()
   };
 }
 function scenarioMcp(name){
@@ -266,13 +260,16 @@ function renderRuntimePanels(selected){
   document.getElementById('runtimeModeBadge').innerHTML = `<p><b>현재 실행 모드:</b> <span class="badge ${runtime ? 'low':'info'}">${runtimeModeLabel(selected)}</span></p>`;
   document.getElementById('runtimeNarrative').style.display = runtime ? 'block' : 'none';
   document.getElementById('runtimeNarrative').innerHTML = runtime ? '“이 모드는 미리 짜놓은 payload 시뮬레이션이 아니라, GitHub 실행 요청이 AgentGuard Runtime Executor를 통과하는 구조를 보여줍니다. AI Agent는 GitHub API를 직접 호출하지 않고, AgentGuard가 정책과 실행 토큰을 검증한 뒤에만 sandbox execution을 허용합니다.”' : '';
-  const path = runtime ? ['GitHub Action Intent','AgentGuard Runtime Executor','Policy Decision','Execution Token','Token Validation','GitHub API Executor','Sandbox Result'] : ['Predefined Payload','AgentGuard Preview','Policy Decision','Simulated Result'];
+  const path = selected === 'C' ? ['AGAF 완료','AGAF PDF 생성 완료','User Request','AI Agent Attempt','AgentGuard Execution Gate','AGAF Evidence Q043=NO','Decision BLOCK','Ephemeral Token NOT ISSUED','Settlement NOT EXECUTED'] : (runtime ? ['GitHub Action Intent','AgentGuard Runtime Executor','Policy Decision','Execution Token','Token Validation','GitHub API Executor','Sandbox Result'] : ['Predefined Payload','AgentGuard Preview','Policy Decision','Simulated Result']);
   document.getElementById('executionPathPanel').innerHTML = `<h3>Execution Path</h3><div class="flow">${path.map((p)=>`<div class="flow-step active">${p}</div>`).join('')}</div>`;
   const meta = RUNTIME_SCENARIOS[selected];
   if(runtime && meta){
     const expiry = new Date(Date.now() + 5*60*1000).toISOString();
     document.getElementById('tokenPanel').innerHTML = `<h3>Token Panel</h3><div class="risk-grid"><div class="risk-item"><div class="muted">Execution Token</div><div>${meta.token}</div></div><div class="risk-item"><div class="muted">Token Validation</div><div>${meta.token_validation}</div></div><div class="risk-item"><div class="muted">Token Scope</div><div>${meta.token_scope}</div></div><div class="risk-item"><div class="muted">Token Expiry</div><div>${meta.token === 'Issued' ? expiry : '-'}</div></div><div class="risk-item"><div class="muted">Token Signature</div><div>${meta.token_signature}</div></div></div>`;
     document.getElementById('apiCallPanel').innerHTML = `<h3>GitHub API Call Status</h3><p><b>GitHub API Called:</b> ${meta.github_api_called}</p>`;
+  } else if(selected === 'C') {
+    document.getElementById('tokenPanel').innerHTML = `<h3>Ephemeral Token</h3><div class="risk-grid"><div class="risk-item"><div class="muted">Token Status</div><div><b>NOT ISSUED</b></div></div><div class="risk-item"><div class="muted">Reason</div><div>AGAF Q043 Answer = NO</div></div><div class="risk-item"><div class="muted">Enforcement Point</div><div>AgentGuard Execution Gate</div></div><div class="risk-item"><div class="muted">Policy Source</div><div>AGAF Evidence, not AgentGuard-authored policy</div></div></div>`;
+    document.getElementById('apiCallPanel').innerHTML = `<h3>Settlement</h3><p><b>Settlement Status:</b> NOT EXECUTED — blocked after AgentGuard Execution Gate and before settlement submission.</p>`;
   } else { document.getElementById('tokenPanel').innerHTML=''; document.getElementById('apiCallPanel').innerHTML=''; }
 }
 
@@ -300,12 +297,17 @@ async function preview(){
   previewData = await r.json();
   flowState = 'analyzed';
   renderRisk(previewData); renderFlow();
-  setWorkflow('위험 분석 완료. 관리자 승인 필요','medium');
-  setResult('관리자 승인 필요', 'high');
+  if(req?.action_type === 'finance.buy_kgld') {
+    setWorkflow('AGAF Q043 근거로 실행 차단: Ephemeral Token 미발급, Settlement 미실행','critical');
+    setResult('BLOCK / TOKEN NOT ISSUED / SETTLEMENT NOT EXECUTED', 'critical');
+  } else {
+    setWorkflow('위험 분석 완료. 수동 승인(비권장) 필요','medium');
+    setResult('수동 승인(비권장) 필요', 'high');
+  }
   await refreshAudit(); renderApproval();
 }
-async function approve(){ await fetch(`/actions/${req.action_id}/approve`,{method:'POST'}); flowState='approved'; setWorkflow('관리자 승인 완료. 실행 허용 상태','low'); setResult('관리자 승인 후 실행 허용', 'low'); await refreshAudit(); renderApproval(); renderFlow(); }
-async function deny(){ await fetch(`/actions/${req.action_id}/deny`,{method:'POST'}); flowState='denied'; setWorkflow('정책 위반으로 실행 차단','critical'); setResult('AI 실행 차단됨', 'critical'); await refreshAudit(); renderApproval(); renderFlow(); }
+async function approve(){ await fetch(`/actions/${req.action_id}/approve`,{method:'POST'}); flowState='approved'; setWorkflow('수동 승인(비권장) 완료. 실행 허용 상태','low'); setResult('수동 승인(비권장) 후 실행 허용', 'low'); await refreshAudit(); renderApproval(); renderFlow(); }
+async function deny(){ await fetch(`/actions/${req.action_id}/deny`,{method:'POST'}); flowState='denied'; setWorkflow('정책 위반으로 차단 결정 유지','critical'); setResult('AI 차단 결정 유지됨', 'critical'); await refreshAudit(); renderApproval(); renderFlow(); }
 async function executeAction(){
   const r=await fetch('/actions/execute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action_request:req,execution_token:token})});
   const data = await r.json(); document.getElementById('exec').textContent = JSON.stringify(data,null,2);
@@ -357,6 +359,13 @@ async function startAttackSimulation(){
     pushTimelineEvent({timestamp:new Date().toISOString(), event_type:"runtime_summary", message:`Policy: ${rt.policy} / Token: ${rt.token} / GitHub API Called: ${rt.github_api_called}`});
     setResult(rt.final_result, rt.policy === "ALLOW" ? "low" : "critical");
     setWorkflow(`Runtime Interception 완료: ${rt.final_result}`, rt.policy === "ALLOW" ? "low" : "critical");
+  } else if(selected === 'C') {
+    pushTimelineEvent({timestamp:new Date().toISOString(), event_type:'agaf_evidence', message:'AGAF Evidence: Question ID Q043 / Answer NO'});
+    pushTimelineEvent({timestamp:new Date().toISOString(), event_type:'execution_blocked', message:'Decision BLOCK — Ephemeral Token NOT ISSUED — Settlement NOT EXECUTED'});
+    flowState = 'blocked';
+    setResult('BLOCK / TOKEN NOT ISSUED / SETTLEMENT NOT EXECUTED', 'critical');
+    setWorkflow('AgentGuard Execution Gate 완료: Settlement 전 차단', 'critical');
+    renderApproval(); renderFlow();
   } else if(isMcp){
     const finalText = previewData?.decision === 'DENY' ? 'BLOCKED BEFORE EXECUTION' : 'HUMAN REVIEW REQUIRED';
     pushTimelineEvent({timestamp:new Date().toISOString(), event_type:'critical_risk', message:'CRITICAL RISK DETECTED'});
@@ -379,6 +388,7 @@ function renderRisk(d){
   const mcp = MCP_SIMULATION[selected];
   const resultSuffix = d?.decision === 'DENY' ? 'BLOCKED BEFORE EXECUTION' : (d?.decision === 'REVIEW_REQUIRED' ? 'HUMAN REVIEW REQUIRED' : 'ALLOWED');
   const scenario = SCENARIO_META[selected];
+  if(selected === 'C') { d = {...d, decision:'BLOCK', risk_level:'CRITICAL', risk_score:100}; }
   const mcpDetails = mcp ? `
     <h3>MCP 공격 시뮬레이션 체인</h3>
     <div class="risk-grid">
@@ -395,7 +405,8 @@ function renderRisk(d){
     <div class="risk-grid">
       <div class="risk-item"><div class="muted">위험 등급</div><div><span class="badge ${riskClass}">${riskLevelKo(d.risk_level)} (${d.risk_level})</span></div></div>
       <div class="risk-item"><div class="muted">Risk Score</div><div><b>${d.risk_score} / 100</b></div></div>
-      <div class="risk-item"><div class="muted">정책 결정</div><div><span class="badge ${mapRiskClass(d?.risk_level)}">${d?.decision || '-'}</span></div></div>
+      <div class="risk-item"><div class="muted">Decision</div><div><span class="badge ${mapRiskClass(d?.risk_level)}">${d?.decision || '-'}</span></div></div>
+      ${selected === 'C' ? '<div class="risk-item"><div class="muted">Question ID</div><div><b>Q043</b></div></div><div class="risk-item"><div class="muted">Answer</div><div><b>NO</b></div></div>' : ''}
       <div class="risk-item"><div class="muted">예상 영향도</div><div>${scenario.impact}</div></div>
     </div>
     <p class="kv"><b>위험 판단 사유</b></p>
@@ -406,18 +417,19 @@ function renderRisk(d){
 }
 function renderSecurityData(){
   if(!req) return;
+  const isKgld = req.action_type === 'finance.buy_kgld';
   const isMeta = req.action_type === 'browser.update_ad_budget';
-  const actionText = isMeta ? '광고 예산 변경' : (req.action_type === 'github.modify_ci_workflow' ? 'Workflow Modification Attempt' : 'Secret Export Attempt');
-  const beforeValue = isMeta ? `${req.parameters.current_budget.toLocaleString()} ${req.parameters.currency}` : '-';
-  const afterValue = isMeta ? `${req.parameters.new_budget.toLocaleString()} ${req.parameters.currency}` : req.target_resource;
+  const actionText = isKgld ? 'Buy KGLD Execution Attempt' : (isMeta ? '광고 예산 변경' : (req.action_type === 'github.modify_ci_workflow' ? 'Workflow Modification Attempt' : 'Secret Export Attempt'));
+  const beforeValue = isKgld ? `${req.parameters.user_requested_amount.toLocaleString()} ${req.parameters.currency}` : (isMeta ? `${req.parameters.current_budget.toLocaleString()} ${req.parameters.currency}` : '-');
+  const afterValue = isKgld ? `${req.parameters.agent_attempted_amount.toLocaleString()} ${req.parameters.currency}` : (isMeta ? `${req.parameters.new_budget.toLocaleString()} ${req.parameters.currency}` : req.target_resource);
   const envValue = req.context.environment || 'Cloud RBI Session';
   document.getElementById('securityData').innerHTML = `
     <div class="risk-grid">
       <div class="risk-item"><div class="muted">실행 주체</div><div>AI Browser Agent</div></div>
-      <div class="risk-item"><div class="muted">대상 시스템</div><div>${isMeta ? 'Meta Ads' : (req.action_type === 'github.export_secrets' ? 'GitHub / Environment' : 'GitHub')}</div></div>
+      <div class="risk-item"><div class="muted">대상 시스템</div><div>${isKgld ? 'KGLD Trading / Settlement' : (isMeta ? 'Meta Ads' : (req.action_type === 'github.export_secrets' ? 'GitHub / Environment' : 'GitHub'))}</div></div>
       <div class="risk-item"><div class="muted">행동</div><div>${actionText}</div></div>
-      <div class="risk-item"><div class="muted">${isMeta ? '기존 값/상태' : '대상 리소스'}</div><div>${isMeta ? beforeValue : req.target_resource}</div></div>
-      <div class="risk-item"><div class="muted">${isMeta ? '요청 값/변경' : '요청 행위'}</div><div>${isMeta ? afterValue : actionText}</div></div>
+      <div class="risk-item"><div class="muted">${isKgld ? 'User Request' : (isMeta ? '기존 값/상태' : '대상 리소스')}</div><div>${isKgld ? beforeValue : (isMeta ? beforeValue : req.target_resource)}</div></div>
+      <div class="risk-item"><div class="muted">${isKgld ? 'AI Agent Attempt' : (isMeta ? '요청 값/변경' : '요청 행위')}</div><div>${isKgld ? afterValue : (isMeta ? afterValue : actionText)}</div></div>
       <div class="risk-item"><div class="muted">실행 환경</div><div>${envValue}</div></div>
     </div>`;
 }
@@ -429,8 +441,8 @@ function textFor(e){
   const m = {
     action_requested:'AI 브라우저 실행행위 감지', execution_attempted:'실행 시도 감지',
     policy_evaluated:'정책 평가 완료', risk_scored:'위험 분석 완료', preview_generated:'실행 사전 분석 완료',
-    approval_requested:'관리자 승인 요청', denied:'실행 차단', approved:'관리자 승인 완료',
-    token_issued:'실행 토큰 발급', execution_blocked:'실행 차단됨', execution_completed:'실행 허용',
+    approval_requested:'수동 승인(비권장) 요청', denied:'차단 결정 유지', approved:'수동 승인(비권장) 완료',
+    token_issued:'실행 토큰 발급', execution_blocked:'차단 결정 유지됨', execution_completed:'실행 허용',
     mcp_tool_response_received:'MCP tool response received',
     suspicious_tool_instruction_detected:'suspicious tool instruction detected',
     ai_generated_high_risk_action:'AI generated high-risk GitHub action',
@@ -446,16 +458,16 @@ function renderTimeline(events, live=false){
 }
 function renderApproval(){
   let msg = '승인 요청 전 상태', cls='info';
-  if(flowState === 'analyzed') { msg='관리자 승인 필요'; cls='high'; }
-  if(flowState === 'approved') { msg='관리자 승인 완료'; cls='low'; }
-  if(flowState === 'denied' || flowState === 'blocked') { msg='실행 차단됨'; cls='critical'; }
+  if(flowState === 'analyzed') { msg='수동 승인(비권장) 필요'; cls='high'; }
+  if(flowState === 'approved') { msg='수동 승인(비권장) 완료'; cls='low'; }
+  if(flowState === 'denied' || flowState === 'blocked') { msg='차단 결정 유지됨'; cls='critical'; }
   if(flowState === 'allowed') { msg='실행 허용'; cls='low'; }
   document.getElementById('approvalPanel').innerHTML = `<span class="badge ${cls}">${msg}</span><p class="kv">상태 흐름: 승인 요청 → 승인/차단 → 실행 허용 또는 거부.</p>`;
 }
 function renderFlow(){
   const steps = [
     ['requested','AI 요청'], ['intercepted','실행 가로채기'], ['analyzed','위험 분석'],
-    ['evaluated','정책 평가'], ['approved','관리자 승인'], ['allowed','실행 허용 / 차단']
+    ['evaluated','정책 평가'], ['approved','수동 승인(비권장)'], ['allowed','실행 허용 / 차단']
   ];
   const order = ['requested','intercepted','analyzed','evaluated','approved','allowed'];
   let idx = order.indexOf(flowState);
@@ -468,7 +480,7 @@ async function startNewDemoSession(){
   const r = await fetch('/demo/reset', {method:'POST'});
   const data = await r.json();
   clearDemoUi(data.message || '새 데모 세션 초기화됨');
-  document.getElementById('scenario').value = 'cicd_attack';
+  document.getElementById('scenario').value = 'C';
   loadScenario();
   await refreshAudit();
 }
