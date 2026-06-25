@@ -25,3 +25,4 @@ AgentGuard
 - `decision-record.ts` — TODO placeholder for recording policy decisions in a GovernOps-compatible shape.
 - `harness.ts` — TODO placeholder for connecting runtime policy evaluation, token generation, and AgentGuard execution.
 - `index.ts` — Barrel exports for the adapter surface.
+- `sample-kgld.ts` — Static KGLD GovernOps demo sample data for the 5M request → 50M agent decision BLOCK scenario.
