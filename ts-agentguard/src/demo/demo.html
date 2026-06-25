@@ -56,20 +56,25 @@
     .chain-verdict { text-align:right; min-width:160px; }
     .chain-verdict .label { color:#64748b; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
     .chain-verdict .value { margin-top:4px; color:#dc2626; font-size:26px; font-weight:900; letter-spacing:.04em; }
-    .chain-grid { display:grid; grid-template-columns:repeat(7, minmax(120px,1fr)); gap:8px; align-items:stretch; }
-    .chain-node { position:relative; border:1px solid #dbe4f0; border-radius:14px; padding:11px 10px; background:#fff; min-height:112px; }
-    .chain-node:not(:last-child)::after { content:'→'; position:absolute; right:-9px; top:44%; transform:translateY(-50%); width:18px; height:18px; border-radius:999px; background:#0f172a; color:#fff; display:grid; place-items:center; font-size:12px; font-weight:900; z-index:2; }
+    .chain-grid { display:grid; grid-template-columns:minmax(240px, 560px); justify-content:center; gap:22px; margin-top:8px; }
+    .chain-node { position:relative; border:1px solid #dbe4f0; border-radius:14px; padding:14px 16px; background:#fff; min-height:78px; text-align:center; }
+    .chain-node:not(:last-child)::after { content:'↓'; position:absolute; left:50%; bottom:-18px; transform:translateX(-50%); width:24px; height:24px; border-radius:999px; background:#0f172a; color:#fff; display:grid; place-items:center; font-size:14px; font-weight:900; z-index:2; }
     .chain-node.warning { border-color:#fed7aa; background:#fff7ed; }
     .chain-node.violation, .chain-node.block { border-color:#fecaca; background:#fef2f2; }
     .chain-node.evidence { border-color:#bfdbfe; background:#eff6ff; }
     .chain-node.final { border-color:#cbd5e1; background:#f8fafc; }
     .chain-step { color:#64748b; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
-    .chain-title { margin-top:6px; font-size:13px; font-weight:800; color:#0f172a; }
-    .chain-value { margin-top:8px; font-size:15px; line-height:1.25; font-weight:900; }
+    .chain-title { margin-top:6px; font-size:16px; font-weight:900; color:#0f172a; }
+    .chain-value { margin-top:8px; font-size:20px; line-height:1.25; font-weight:900; }
+    .chain-value.small { font-size:16px; }
     .chain-node.block .chain-value, .chain-node.violation .chain-value { color:#dc2626; }
-    .chain-note { margin-top:6px; color:#64748b; font-size:11px; line-height:1.25; }
-    .chain-summary { margin-top:14px; border-radius:12px; background:#0f172a; color:#fff; padding:12px 14px; font-weight:800; line-height:1.45; }
-    @media (max-width: 1100px) { .chain-grid { grid-template-columns:1fr; } .chain-node:not(:last-child)::after { content:'↓'; right:calc(50% - 9px); top:auto; bottom:-13px; } .chain-verdict { text-align:left; } .evidence-chain-head { flex-direction:column; } }
+    .chain-note { margin-top:6px; color:#64748b; font-size:12px; line-height:1.3; }
+    .chain-evidence-pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+    .chain-evidence-pair div { border:1px solid #bfdbfe; border-radius:10px; background:#fff; padding:8px; }
+    .chain-evidence-pair span { display:block; color:#64748b; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
+    .chain-evidence-pair b { display:block; margin-top:4px; font-size:20px; }
+    .chain-summary { margin:14px auto 0; max-width:560px; border-radius:12px; background:#0f172a; color:#fff; padding:12px 14px; font-weight:800; line-height:1.45; }
+    @media (max-width: 1100px) { .chain-verdict { text-align:left; } .evidence-chain-head { flex-direction:column; } }
     .result-box { margin-top:8px; border-radius:12px; border:1px solid var(--line); padding:14px; font-size:20px; font-weight:800; }
     .thought-stream { background:#0b1220; color:#d6e2ff; border-radius:10px; padding:10px; min-height:96px; }
     .thought-line { margin-bottom:6px; font-size:13px; }
@@ -124,45 +129,45 @@
         <div class="chain-grid">
           <div class="chain-node">
             <div class="chain-step">1. User Request</div>
-            <div class="chain-title">사용자 지시</div>
-            <div class="chain-value">Buy KGLD<br>5,000,000 KRW</div>
-            <div class="chain-note">투자자가 승인한 원래 금액</div>
+            <div class="chain-title">Buy KGLD</div>
+            <div class="chain-value">5,000,000 KRW</div>
+            <div class="chain-note">투자자가 승인한 원래 요청</div>
           </div>
           <div class="chain-node warning">
             <div class="chain-step">2. AI Agent Attempt</div>
-            <div class="chain-title">실행 시도</div>
-            <div class="chain-value">Buy KGLD<br>50,000,000 KRW</div>
-            <div class="chain-note">요청 대비 10배 과다 실행</div>
+            <div class="chain-title">Buy KGLD</div>
+            <div class="chain-value">50,000,000 KRW</div>
+            <div class="chain-note">AI Agent가 실행하려 한 금액</div>
           </div>
           <div class="chain-node violation">
             <div class="chain-step">3. Violation</div>
-            <div class="chain-title">위반 유형</div>
-            <div class="chain-value">Amount mismatch</div>
-            <div class="chain-note">Excessive financial execution</div>
+            <div class="chain-title">Amount exceeds approved request</div>
+            <div class="chain-value small">요청 금액 초과 실행 시도</div>
           </div>
           <div class="chain-node evidence">
             <div class="chain-step">4. AGAF Evidence</div>
-            <div class="chain-title">근거 질문</div>
-            <div class="chain-value">Q043 = NO</div>
-            <div class="chain-note">AGAF가 제공한 실행 통제 근거</div>
+            <div class="chain-title">실행 차단 근거</div>
+            <div class="chain-evidence-pair">
+              <div><span>Question ID</span><b>Q043</b></div>
+              <div><span>Answer</span><b>NO</b></div>
+            </div>
+            <div class="chain-note">AgentGuard가 집행하는 AGAF Evidence</div>
           </div>
           <div class="chain-node block">
             <div class="chain-step">5. AgentGuard Decision</div>
-            <div class="chain-title">실행 게이트</div>
+            <div class="chain-title">Execution Gate</div>
             <div class="chain-value">BLOCK</div>
-            <div class="chain-note">정책 생성이 아니라 실행 시점 집행</div>
+            <div class="chain-note">정책 생성이 아니라 실행 시점 차단</div>
           </div>
           <div class="chain-node final">
             <div class="chain-step">6. Ephemeral Token</div>
             <div class="chain-title">토큰 상태</div>
             <div class="chain-value">NOT ISSUED</div>
-            <div class="chain-note">토큰이 없어 실행 경로 차단</div>
           </div>
           <div class="chain-node final">
             <div class="chain-step">7. Settlement</div>
             <div class="chain-title">최종 처리</div>
             <div class="chain-value">NOT EXECUTED</div>
-            <div class="chain-note">AgentGuard 차단 이후 미실행</div>
           </div>
         </div>
         <div class="chain-summary">AI가 5,000,000 KRW 요청을 50,000,000 KRW로 잘못 실행하려 했고, AgentGuard가 AGAF Q043 = NO 증거를 근거로 BLOCK했습니다.</div>
