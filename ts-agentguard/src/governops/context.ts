@@ -1,8 +1,37 @@
+export type GovernOpsActionTaxonomy =
+  | "gold.purchase"
+  | "kgld.borrow_rlusd"
+  | "agent.lifecycle.kill_switch";
+
+export type GovernOpsAgentRole = "financial_agent" | "automated_buyer";
+
+export type GovernOpsEnforcementAction = "ALLOW" | "REVIEW" | "BLOCK" | "FREEZE" | "ESCALATE";
+
+export type GovernOpsApprovalState =
+  | "NOT_REQUIRED"
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "OVERRIDDEN";
+
+export type GovernOpsTokenStatus =
+  | "NOT_ISSUED"
+  | "ISSUED"
+  | "USED"
+  | "EXPIRED"
+  | "REVOKED"
+  | "BURNED";
+
 export interface GovernOpsRuntimeContext {
-  requestId: string;
-  actorId: string;
-  sourceSystem: string;
-  metadata?: Record<string, unknown>;
+  contextId: string;
+  userRequestAmount: number;
+  agentDecisionAmount: number;
+  deviationPercent: number;
+  promptHash: string;
+  ragHash: string;
+  reputationScore: number;
+  riskScore: number;
+  timestamp: string;
 }
 
 export interface GovernOpsRuntimePolicyContext {

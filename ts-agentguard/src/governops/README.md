@@ -1,8 +1,8 @@
 # GovernOps Runtime Adapter
 
-This directory contains the initial GovernOps Runtime Adapter structure.
+This directory contains the KGLD demo typed adapter surface only for the GovernOps Runtime Adapter.
 
-The adapter is intentionally limited to TypeScript interfaces, placeholder functions, and TODO comments in this phase. Runtime behavior is not implemented yet.
+The adapter is intentionally limited to TypeScript interfaces, placeholder functions, and TODO comments in this phase. Runtime behavior is not implemented yet, and the KGLD demo typed adapter surface does not compile, evaluate, persist, issue tokens, or execute policies.
 
 ## Planned flow
 
