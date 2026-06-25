@@ -87,7 +87,7 @@
           <option value="runtime_workflow_block">Runtime Demo: GitHub Workflow Modification Block</option>
           <option value="runtime_secret_block">Runtime Demo: GitHub Secret Access Block</option>
           <option value="api_key_leak">Scripted Demo: Secret Access Governance Incident</option>
-          <option value="C">(Optional) SaaS Admin Quota Escalation</option>
+          <option value="C">Scripted Demo: Data Export Governance Review</option>
         </select>
         <button class="primary" id="startBtn" onclick="startAttackSimulation()">Run AgentGuard demo</button>
         <button onclick="approve()">Grant exception approval</button>
@@ -103,7 +103,7 @@
       <div id="apiCallPanel" style="margin-top:12px"></div>
       <div id="riskPanel" style="margin-top:12px"></div>
 
-      <h3>Runtime Context + Decision Data</h3>
+      <h3>Runtime Preview + Decision Data</h3>
       <div id="thoughtStream" class="thought-stream"></div>
       <div id="securityData"></div>
       <details>
@@ -130,11 +130,11 @@
 let req = null, token = null, previewData = null, flowState = 'requested', simulationRunning = false;
 const SCENARIO_META = {
   C: {
-    desc: '시나리오: SaaS admin 자동화 중 AI가 승인된 변경 범위를 넘어 워크스페이스 quota를 500에서 50,000으로 확대하려고 시도합니다. (Optional secondary demo)',
-    thoughtStream: ['Workspace optimization 시작...','Runtime context 수집 중...','Quota adjustment recommendation 적용...','Admin API update 요청 생성...','Automated workspace maintenance 실행 중...'],
-    timeline: ['AI Agent Runtime connected','Workspace maintenance workflow started','Large quota escalation detected','Runtime Interception triggered','Policy evaluation completed','Human approval required BEFORE EXECUTION'],
-    riskFactors: ['비정상 quota 증가 감지','자동화된 admin 실행행위 감지','운영 패턴 이탈','조직 리소스 영향 가능성 높음'],
-    impact: '승인 범위 초과 · 조직 리소스 남용 · 운영 영향 고위험',
+    desc: 'Scripted Demo: AI Agent가 승인된 작업 범위를 넘어 고객 데이터 대량 내보내기를 시도할 때 Runtime Preview와 Execution Gate가 실행 전 검토로 전환하는 범용 제품 데모입니다.',
+    thoughtStream: ['Customer support automation 시작...','Runtime context 수집 중...','Data export recommendation 적용...','Bulk export 요청 생성...','Execution Gate 평가 대기 중...'],
+    timeline: ['AI Agent Runtime connected','Support automation workflow started','Bulk data export intent detected','Runtime Preview generated','Policy evaluation completed','Human approval required BEFORE EXECUTION'],
+    riskFactors: ['승인 범위를 벗어난 대량 데이터 접근','자동화된 export 실행행위 감지','운영 패턴 이탈','대상 시스템 영향 가능성 높음'],
+    impact: '승인 범위 초과 · 데이터 노출 가능성 · 운영 영향 고위험',
     finalBlocked: 'REVIEW_REQUIRED / HUMAN APPROVAL REQUIRED BEFORE EXECUTION'
   },
   cicd_attack: {
@@ -215,12 +215,12 @@ const MCP_SIMULATION = {
   },
 };
 
-function scenarioQuotaEscalation(){
+function scenarioDataExportReview(){
   return {
-    action_id:'act-C', actor_type:'ai_agent', actor_id:'agent-runtime-admin',
-    action_type:'saas.update_workspace_quota', target_system:'SaaS Admin API', target_resource:'workspace-42',
-    parameters:{approved_quota:500, requested_quota:50000, unit:'seats'},
-    context:{environment:'Isolated Runtime Session', flow:'workspace_maintenance'}, requested_at:new Date().toISOString()
+    action_id:'act-C', actor_type:'ai_agent', actor_id:'agent-runtime-support',
+    action_type:'app.export_customer_records', target_system:'Business Application API', target_resource:'customer-records',
+    parameters:{approved_scope:'single_ticket_context', requested_scope:'bulk_customer_export', format:'csv', safety:'simulation_only'},
+    context:{environment:'Isolated Runtime Session', flow:'support_automation'}, requested_at:new Date().toISOString()
   };
 }
 function scenarioMcp(name){
@@ -278,7 +278,7 @@ function renderRuntimePanels(selected){
 
 function loadScenario(){
   const selected = document.getElementById('scenario').value;
-  if(selected === 'C') req = scenarioQuotaEscalation(); else if (isRuntimeScenario(selected)) req = {action_id:`runtime-${Math.random().toString(16).slice(2,10)}`, actor_type:'ai_agent', actor_id:'agent-runtime-v1', action_type:selected==='runtime_create_branch'?'github.create_branch':(selected==='runtime_create_pr'?'github.create_pr':(selected==='runtime_workflow_block'?'github.modify_workflow':'github.access_secret')), target_system:'GitHub', target_resource:'sandbox/repo', parameters:{sandbox_only:true, mode:'runtime_interception'}, context:{runtime_interception:true, sandbox_only:true}, requested_at:new Date().toISOString()}; else req = scenarioMcp(selected);
+  if(selected === 'C') req = scenarioDataExportReview(); else if (isRuntimeScenario(selected)) req = {action_id:`runtime-${Math.random().toString(16).slice(2,10)}`, actor_type:'ai_agent', actor_id:'agent-runtime-v1', action_type:selected==='runtime_create_branch'?'github.create_branch':(selected==='runtime_create_pr'?'github.create_pr':(selected==='runtime_workflow_block'?'github.modify_workflow':'github.access_secret')), target_system:'GitHub', target_resource:'sandbox/repo', parameters:{sandbox_only:true, mode:'runtime_interception'}, context:{runtime_interception:true, sandbox_only:true}, requested_at:new Date().toISOString()}; else req = scenarioMcp(selected);
   token = null;
   previewData = null;
   flowState = 'requested';
@@ -406,18 +406,19 @@ function renderRisk(d){
 }
 function renderSecurityData(){
   if(!req) return;
-  const isQuota = req.action_type === 'saas.update_workspace_quota';
-  const actionText = isQuota ? 'Workspace Quota Modification Attempt' : (req.action_type === 'github.modify_ci_workflow' ? 'Workflow Modification Attempt' : 'Secret Export Attempt');
-  const beforeValue = isQuota ? `${req.parameters.approved_quota.toLocaleString()} ${req.parameters.unit}` : req.target_resource;
-  const afterValue = isQuota ? `${req.parameters.requested_quota.toLocaleString()} ${req.parameters.unit}` : actionText;
-  const envValue = req.context.environment || 'Isolated Runtime Session';
+  const isDataExport = req.action_type === 'app.export_customer_records';
+  const isRuntime = req.context.runtime_interception;
+  const actionText = isDataExport ? 'Bulk Data Export Attempt' : (req.action_type === 'github.modify_ci_workflow' ? 'Workflow Modification Attempt' : (req.action_type === 'github.export_secrets' ? 'Secret Export Attempt' : req.action_type));
+  const beforeValue = isDataExport ? req.parameters.approved_scope : req.target_resource;
+  const afterValue = isDataExport ? req.parameters.requested_scope : actionText;
+  const envValue = req.context.environment || (isRuntime ? 'AgentGuard Runtime Executor' : 'Isolated Runtime Session');
   document.getElementById('securityData').innerHTML = `
     <div class="risk-grid">
       <div class="risk-item"><div class="muted">실행 주체</div><div>AI Agent Runtime</div></div>
-      <div class="risk-item"><div class="muted">대상 시스템</div><div>${isQuota ? 'SaaS Admin API' : (req.action_type === 'github.export_secrets' ? 'GitHub / Environment' : 'GitHub')}</div></div>
+      <div class="risk-item"><div class="muted">대상 시스템</div><div>${req.target_system || (req.action_type === 'github.export_secrets' ? 'GitHub / Environment' : 'GitHub')}</div></div>
       <div class="risk-item"><div class="muted">행동</div><div>${actionText}</div></div>
-      <div class="risk-item"><div class="muted">${isQuota ? 'Policy-approved value' : '대상 리소스'}</div><div>${beforeValue}</div></div>
-      <div class="risk-item"><div class="muted">${isQuota ? 'AI requested execution' : '요청 행위'}</div><div>${afterValue}</div></div>
+      <div class="risk-item"><div class="muted">${isDataExport ? 'Policy-approved scope' : '대상 리소스'}</div><div>${beforeValue}</div></div>
+      <div class="risk-item"><div class="muted">${isDataExport ? 'AI requested execution' : '요청 행위'}</div><div>${afterValue}</div></div>
       <div class="risk-item"><div class="muted">실행 환경</div><div>${envValue}</div></div>
     </div>`;
 }
