@@ -196,7 +196,7 @@
         ],
         executionPlan: {
           display: 'Buy KGLD 50,000,000 KRW',
-          description: 'AI Assistant가 사용자 요청보다 큰 금액의 KGLD 매수 실행 계획을 생성했고, 거래 한도 정책 검증 대상이 되었습니다.',
+          description: 'AI Assistant가 KGLD 매수 실행 계획을 생성했습니다.',
           violation: 'Violation: Transaction amount exceeds the permitted limit. Requested 5,000,000 KRW, attempted 50,000,000 KRW.'
         },
         evidence: { questionId: 'Q031', policy: 'Transaction Limit Enforcement', rule: 'IF txn.amount > limit THEN deny', answer: 'NO', meaning: 'Transaction amount is above the configured limit, so the transaction must be denied before execution.', decision: 'BLOCK', token: 'NOT ISSUED', settlement: 'NOT EXECUTED' },
@@ -211,7 +211,7 @@
           { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '이상 거래 점수를 계산하고 있습니다...' },
           { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '실행 계획을 생성하고 있습니다...' }
         ],
-        executionPlan: { display: 'Sell KGLD with abnormal transaction score', description: 'AI Assistant가 이상 거래 임계값을 초과한 KGLD 매도 실행 계획을 생성했습니다.', violation: 'Violation: Transaction anomaly score exceeds the policy threshold.' },
+        executionPlan: { display: 'Sell KGLD', description: 'AI Assistant가 KGLD 매도 실행 계획을 생성했습니다.', violation: 'Violation: Transaction anomaly score exceeds the policy threshold.' },
         evidence: { questionId: 'Q035', policy: 'Abnormal Transaction Detection', rule: 'IF txn.anomaly_score > threshold THEN hold', answer: 'NO', meaning: 'The transaction anomaly score is above threshold, so the sell order must be held and blocked from settlement.', decision: 'BLOCK', token: 'NOT ISSUED', settlement: 'NOT EXECUTED' },
         finalMessage: 'Execution rejected.\n\nReason\nAbnormal transaction policy violation detected.\n\nThe execution was blocked before settlement.'
       },
@@ -224,7 +224,7 @@
           { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: 'Human Approval Required 정책을 확인하고 있습니다...' },
           { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '실행 계획을 생성하고 있습니다...' }
         ],
-        executionPlan: { display: 'Borrow RLUSD above approval threshold', description: 'AI Assistant가 사람 승인 기준을 초과하는 RLUSD 대출 실행 계획을 생성했습니다.', violation: 'Violation: Borrow request exceeds the human approval threshold and requires review.' },
+        executionPlan: { display: 'Borrow RLUSD', description: 'AI Assistant가 RLUSD 대출 실행 계획을 생성했습니다.', violation: 'Violation: Borrow request exceeds the human approval threshold and requires review.' },
         evidence: { questionId: 'Q032', policy: 'Human Approval Required', rule: 'IF txn.amount > approval_threshold THEN require_human', answer: 'NO', meaning: 'The borrowing amount requires explicit human approval before execution can continue.', decision: 'REVIEW REQUIRED', token: 'NOT ISSUED', settlement: 'NOT EXECUTED' },
         finalMessage: 'Execution paused.\n\nReason\nHuman approval is required by policy.\n\nNo token is issued and settlement does not execute until review is completed.'
       },
@@ -237,7 +237,7 @@
           { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '수령처 whitelist 등록 여부를 확인하고 있습니다...' },
           { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '실행 계획을 생성하고 있습니다...' }
         ],
-        executionPlan: { display: 'Withdraw Gold to non-whitelisted payee', description: 'AI Assistant가 whitelist에 없는 수령처로 금 출고 실행 계획을 생성했습니다.', violation: 'Violation: Payee is not in the whitelist and requires verification.' },
+        executionPlan: { display: 'Withdraw Gold', description: 'AI Assistant가 금 출고 실행 계획을 생성했습니다.', violation: 'Violation: Payee is not in the whitelist and requires verification.' },
         evidence: { questionId: 'Q036', policy: 'New Payee Verification', rule: 'IF payee NOT IN whitelist THEN require_verification', answer: 'NO', meaning: 'The payee is not whitelisted, so verification is required and execution must be blocked.', decision: 'BLOCK', token: 'NOT ISSUED', settlement: 'NOT EXECUTED' },
         finalMessage: 'Execution rejected.\n\nReason\nNew payee verification policy violation detected.\n\nThe execution was blocked before settlement.'
       },
@@ -250,7 +250,7 @@
           { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: 'Infrastructure as Code 정책 위반 여부를 확인하고 있습니다...' },
           { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '실행 계획을 생성하고 있습니다...' }
         ],
-        executionPlan: { display: 'Apply IaC with policy violation', description: 'AI Assistant가 IaC 정책 위반이 포함된 배포 적용 계획을 생성했습니다.', violation: 'Violation: IaC policy violation detected before apply.' },
+        executionPlan: { display: 'Apply Terraform to Production', description: 'AI Assistant가 Production 배포 실행 계획을 생성했습니다.', violation: 'Violation: IaC policy violation detected before apply.' },
         evidence: { questionId: 'Q047', policy: 'Infrastructure as Code Validation', rule: 'IF iac.policy_violation THEN block_apply', answer: 'NO', meaning: 'The deployment contains an IaC policy violation, so apply must be blocked.', decision: 'BLOCK', token: 'NOT ISSUED', settlement: 'NOT EXECUTED' },
         finalMessage: 'Execution rejected.\n\nReason\nInfrastructure as Code validation failed.\n\nThe execution was blocked before settlement.'
       },
@@ -263,7 +263,7 @@
           { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: 'API Cost / Budget Control 정책을 확인하고 있습니다...' },
           { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '실행 계획을 생성하고 있습니다...' }
         ],
-        executionPlan: { display: 'Increase Meta Ads budget above policy budget', description: 'AI Assistant가 정책 예산을 초과하는 Meta Ads 예산 변경 실행 계획을 생성했습니다.', violation: 'Violation: API cost exceeds the approved budget and must be throttled.' },
+        executionPlan: { display: 'Increase Meta Ads Budget', description: 'AI Assistant가 Meta Ads 예산 변경 실행 계획을 생성했습니다.', violation: 'Violation: API cost exceeds the approved budget and must be throttled.' },
         evidence: { questionId: 'Q095', policy: 'API Cost / Budget Control', rule: 'IF api.cost > budget THEN throttle', answer: 'NO', meaning: 'The requested API cost is above budget, so the budget change must be throttled and blocked.', decision: 'BLOCK', token: 'NOT ISSUED', settlement: 'NOT EXECUTED' },
         finalMessage: 'Execution rejected.\n\nReason\nAPI budget control policy violation detected.\n\nThe execution was blocked before settlement.'
       }
