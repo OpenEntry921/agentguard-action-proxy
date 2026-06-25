@@ -59,29 +59,29 @@
 <body>
 <div class="container">
   <section class="hero">
-    <h1>AgentGuard Execution Gate for AGAF Governance</h1>
-    <p><b>AGAF defines governance evidence.</b> AgentGuard does not decide what the organization should allow; it enforces the execution authority already defined by AGAF before anything can settle.</p>
-    <p>The AI Agent remains free to reason and propose financial actions, including incorrect ones. Execution authority is granted only when the request complies with organizational governance.</p>
-    <p><b>Settlement is always downstream of AgentGuard.</b> When the execution request fails AGAF-derived governance checks, AgentGuard blocks the request and settlement never occurs.</p>
+    <h1>KGLD Demo: AGAF Q043 기반 AgentGuard 실행 차단</h1>
+    <p><b>AGAF에서 정의된 거버넌스를 AgentGuard가 실행 단계에서 집행한다.</b> AgentGuard는 조직 정책을 새로 만들지 않고, AGAF 질문지와 PDF로 확정된 거버넌스 증거를 실행 직전에 검증한다.</p>
+    <p>AI Agent는 사용자의 금 5,000,000원 매수 요청을 받았지만 금 50,000,000원 매수를 시도한다. AgentGuard Execution Gate는 AGAF Q043의 확인 절차 부재를 근거로 실행 권한을 차단한다.</p>
+    <p><b>Settlement is always downstream of AgentGuard.</b> 차단 시 Ephemeral Token은 발급되지 않고 Settlement는 실행되지 않는다.</p>
 
   </section>
 
   <div id="sessionStatus" class="session-banner">새 데모 세션을 준비하는 중...</div>
 
   <section class="grid">
-    <div class="card"><div class="k">Governance Source</div><div class="v">AGAF Questionnaire + PDF</div></div>
-    <div class="card"><div class="k">AI Agent</div><div class="v">Financial request received</div></div>
-    <div class="card"><div class="k">Execution Gate</div><div class="v">AgentGuard validation active</div></div>
-    <div class="card"><div class="k">Settlement</div><div class="v">Downstream only</div></div>
+    <div class="card"><div class="k">AGAF Status</div><div class="v">Questionnaire + PDF complete</div></div>
+    <div class="card"><div class="k">User Request</div><div class="v">KGLD 5,000,000 KRW</div></div>
+    <div class="card"><div class="k">AI Attempt</div><div class="v">KGLD 50,000,000 KRW</div></div>
+    <div class="card"><div class="k">Decision</div><div class="v">BLOCK · No token · No settlement</div></div>
   </section>
 
   <section class="main">
     <div class="panel">
       <h2>Execution Authority Demonstration</h2>
-      <p id="scenarioDesc" class="kv">Scenario: AGAF governance evidence is generated first, then AgentGuard acts as the execution gate before downstream settlement.</p>
+      <p id="scenarioDesc" class="kv">Scenario: AGAF questionnaire and PDF are completed first; AgentGuard then enforces AGAF-defined governance at execution time before settlement.</p>
       <div class="controls">
         <select id="scenario">
-          <option value="cicd_attack">AGAF Demo: Incorrect financial execution blocked</option>
+          <option value="cicd_attack">KGLD Demo: AGAF Q043 blocks excessive buy attempt</option>
           <option value="runtime_create_branch">Runtime Preview: compliant execution reaches sandbox</option>
           <option value="runtime_create_pr">Runtime Preview: compliant approval packet</option>
           <option value="runtime_workflow_block">Runtime Preview: governance exception requires review</option>
@@ -138,12 +138,12 @@ const SCENARIO_META = {
     finalBlocked: 'REVIEW_REQUIRED / HUMAN APPROVAL REQUIRED BEFORE EXECUTION'
   },
   cicd_attack: {
-    desc: 'PRIMARY: AGAF governance evidence exists, the AI Agent proposes an incorrect high-risk financial execution, and AgentGuard blocks execution before settlement.',
-    thoughtStream: ['AGAF Questionnaire completed...','AGAF PDF governance evidence available...','AI Agent receives financial request...','AI Agent attempts an incorrect execution...','AgentGuard Execution Gate validates request before settlement...'],
-    timeline: ['AGAF Questionnaire completed','AGAF PDF generated','AI Agent received financial request','Incorrect execution attempted','AgentGuard Execution Gate invoked','AGAF governance evidence validated','Execution blocked by governance evidence','Settlement never occurs'],
-    riskFactors: ['Requested execution exceeds AGAF-defined authority','Governance evidence does not support settlement','Execution authority missing for requested amount/scope','Settlement must remain downstream of AgentGuard'],
-    impact: 'Unauthorized financial execution avoided · settlement prevented · AGAF governance preserved',
-    finalBlocked: 'DENY / BLOCKED BEFORE SETTLEMENT'
+    desc: 'PRIMARY: AGAF 질문지 완료 → AGAF PDF 생성 완료 → 사용자 요청 금 5,000,000원 매수 → AI Agent 오판 금 50,000,000원 매수 시도 → AgentGuard Execution Gate 검증 → AGAF Q043 근거로 차단 → Ephemeral Token 미발급 → Settlement 미실행.',
+    thoughtStream: ['AGAF Questionnaire completed...','AGAF PDF generated...','User Request: Buy KGLD worth 5,000,000 KRW','AI Agent Attempt: Buy KGLD worth 50,000,000 KRW','AgentGuard Execution Gate validates AGAF Q043 before settlement...'],
+    timeline: ['AGAF Questionnaire completed','AGAF PDF generated','User Request: Buy KGLD worth 5,000,000 KRW','AI Agent Attempt: Buy KGLD worth 50,000,000 KRW','AgentGuard Execution Gate validation','AGAF Q043 evidence checked: Answer NO','Ephemeral Token not issued','Settlement not executed'],
+    riskFactors: ['Amount mismatch: user requested 5,000,000 KRW but AI attempted 50,000,000 KRW','Excessive financial execution attempted','AGAF Q043 confirmation procedure evidence is NO','Settlement must remain downstream of AgentGuard'],
+    impact: 'Unauthorized KGLD purchase blocked · ephemeral token not issued · settlement not executed',
+    finalBlocked: 'BLOCK / TOKEN NOT ISSUED / SETTLEMENT NOT EXECUTED'
   },
   runtime_create_branch: {
     desc: 'Runtime Demo: GitHub Create Branch 요청이 AgentGuard Runtime Executor를 통과해 sandbox repo에서만 실행됩니다.',
@@ -198,12 +198,12 @@ function runtimeModeLabel(key){ return isRuntimeScenario(key) ? 'GITHUB RUNTIME 
 
 const MCP_SIMULATION = {
   cicd_attack: {
-    action_type: 'browser.update_ad_budget', target_resource: 'campaign-42',
-    parameters: {current_budget:500000, new_budget:50000000, currency:'KRW', agaf_approved_limit:500000, safety:'simulation_only'},
-    context: {agaf_evidence_present:true, settlement_downstream:true, authority_mismatch:true},
-    thought: 'AI Agent decides to accelerate the financial task by attempting settlement outside the AGAF-approved authority',
-    tool_response: 'Financial request: "Settle the higher amount now and reconcile governance evidence later"',
-    signal: 'AGAF evidence mismatch detected'
+    action_type: 'kgld.buy', target_resource: 'KGLD',
+    parameters: {user_request_amount:5000000, ai_attempt_amount:50000000, currency:'KRW', asset:'KGLD', agaf_question_id:'Q043', agaf_answer:'NO', safety:'simulation_only'},
+    context: {agaf_questionnaire_complete:true, agaf_pdf_generated:true, agaf_evidence_present:true, settlement_downstream:true, authority_mismatch:true},
+    thought: 'AI Agent misreads the user request and attempts to buy KGLD worth 50,000,000 KRW instead of 5,000,000 KRW',
+    tool_response: 'Execution attempt: Buy KGLD worth 50,000,000 KRW',
+    signal: 'AGAF Q043 evidence says no confirmation procedure exists for wrong amount or wrong counterparty handling'
   },
   api_key_leak: {
     action_type: 'github.export_secrets', target_resource: '.env.production',
@@ -228,11 +228,11 @@ function scenarioMcp(name){
   return {
     action_id:`mcp-attack-${Math.random().toString(16).slice(2,14)}`,
     actor_type:'ai_agent', actor_id:'agent-mcp-v1-malicious',
-    action_type:s.action_type, target_system:'GitHub', target_resource:s.target_resource,
+    action_type:s.action_type, target_system: name === 'cicd_attack' ? 'KGLD Trading' : 'GitHub', target_resource:s.target_resource,
     parameters:s.parameters,
     context:{
       simulated:true, no_real_credentials:true, mcp_session_id:`mcp-session-${Math.random().toString(16).slice(2,10)}`,
-      prompt_injection_detected:true, tool_poisoning_detected:true, ...s.context
+      prompt_injection_detected:name !== 'cicd_attack', tool_poisoning_detected:name !== 'cicd_attack', ...s.context
     },
     requested_at:new Date().toISOString()
   };
@@ -266,7 +266,9 @@ function renderRuntimePanels(selected){
   document.getElementById('runtimeModeBadge').innerHTML = `<p><b>현재 실행 모드:</b> <span class="badge ${runtime ? 'low':'info'}">${runtimeModeLabel(selected)}</span></p>`;
   document.getElementById('runtimeNarrative').style.display = runtime ? 'block' : 'none';
   document.getElementById('runtimeNarrative').innerHTML = runtime ? '“이 모드는 미리 짜놓은 payload 시뮬레이션이 아니라, GitHub 실행 요청이 AgentGuard Runtime Executor를 통과하는 구조를 보여줍니다. AI Agent는 GitHub API를 직접 호출하지 않고, AgentGuard가 정책과 실행 토큰을 검증한 뒤에만 sandbox execution을 허용합니다.”' : '';
-  const path = runtime ? ['AI Execution Intent','AgentGuard Execution Gate','AGAF Evidence Check','Execution Token','Token Validation','Sandbox Execution','Downstream Result'] : ['AGAF Evidence','AI Execution Request','AgentGuard Execution Gate','Governance Decision','Settlement Outcome'];
+  const path = selected === 'cicd_attack'
+    ? ['AGAF Questionnaire complete','AGAF PDF generated','User Request: 5,000,000 KRW','AI Attempt: 50,000,000 KRW','AgentGuard Execution Gate','AGAF Q043 blocks','Token not issued','Settlement not executed']
+    : (runtime ? ['AI Execution Intent','AgentGuard Execution Gate','AGAF Evidence Check','Execution Token','Token Validation','Sandbox Execution','Downstream Result'] : ['AGAF Evidence','AI Execution Request','AgentGuard Execution Gate','Governance Decision','Settlement Outcome']);
   document.getElementById('executionPathPanel').innerHTML = `<h3>Execution Path</h3><div class="flow">${path.map((p)=>`<div class="flow-step active">${p}</div>`).join('')}</div>`;
   const meta = RUNTIME_SCENARIOS[selected];
   if(runtime && meta){
@@ -406,6 +408,30 @@ function renderRisk(d){
 }
 function renderSecurityData(){
   if(!req) return;
+  const isKgld = req.action_type === 'kgld.buy';
+  if(isKgld) {
+    document.getElementById('securityData').innerHTML = `
+      <div class="audit-panel" style="margin-top:10px;">
+        <h3>Runtime Preview: AGAF 기반 AgentGuard 차단 시나리오</h3>
+        <p class="kv"><b>User Request:</b><br>Buy KGLD worth 5,000,000 KRW</p>
+        <p class="kv"><b>AI Agent Attempt:</b><br>Buy KGLD worth 50,000,000 KRW</p>
+        <p class="kv"><b>Violation:</b><br>Amount mismatch / excessive financial execution</p>
+        <p class="kv"><b>AGAF Evidence:</b><br>[D04 금전 실행 관리]<br>Q043 · Question 3<br>“AI가 잘못된 금액이나 잘못된 거래처로 처리하지 않도록 확인 절차가 있습니까?”</p>
+        <p class="kv"><b>Answer:</b><br>NO</p>
+        <p class="kv"><b>AgentGuard Decision:</b><br><span class="badge critical">BLOCK</span></p>
+        <p class="kv"><b>Token Status:</b><br>NOT ISSUED</p>
+        <p class="kv"><b>Settlement:</b><br>NOT EXECUTED</p>
+      </div>
+      <div class="risk-grid">
+        <div class="risk-item"><div class="muted">실행 주체</div><div>AI Agent</div></div>
+        <div class="risk-item"><div class="muted">대상 시스템</div><div>KGLD Trading</div></div>
+        <div class="risk-item"><div class="muted">사용자 요청</div><div>${req.parameters.asset} ${req.parameters.user_request_amount.toLocaleString()} ${req.parameters.currency} 매수</div></div>
+        <div class="risk-item"><div class="muted">AI Agent 실행 시도</div><div>${req.parameters.asset} ${req.parameters.ai_attempt_amount.toLocaleString()} ${req.parameters.currency} 매수</div></div>
+        <div class="risk-item"><div class="muted">AGAF 근거</div><div>[D04 금전 실행 관리] Q043 · Answer: NO</div></div>
+        <div class="risk-item"><div class="muted">집행 결과</div><div>AgentGuard BLOCK → Ephemeral Token NOT ISSUED → Settlement NOT EXECUTED</div></div>
+      </div>`;
+    return;
+  }
   const isMeta = req.action_type === 'browser.update_ad_budget';
   const actionText = isMeta ? 'Financial settlement/budget execution' : (req.action_type === 'github.modify_ci_workflow' ? 'Workflow Modification Attempt' : 'Secret Export Attempt');
   const beforeValue = isMeta ? `${req.parameters.current_budget.toLocaleString()} ${req.parameters.currency}` : '-';
