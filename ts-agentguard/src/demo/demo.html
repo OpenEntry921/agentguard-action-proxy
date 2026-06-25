@@ -121,7 +121,8 @@
     <section class="layout">
       <section class="panel" aria-labelledby="conversation-panel-title">
         <h2 id="conversation-panel-title"><span class="panel-number">1</span>AI Conversation</h2>
-        <p>정적인 설명 패널이 아니라, 사용자가 시나리오를 선택하면 AI가 실행 계획을 만드는 흐름을 순차 재생합니다. 실제 LLM 연결 없이 Script 기반으로 동작합니다.</p>
+        <p>사용자와 AI Agent의 대화로부터
+실행 계획(Execution Plan)이 생성되는 과정을 보여줍니다.</p>
         <div class="conversation-shell">
           <div class="conversation-header">
             <div><strong>AgentGuard Demo Chat</strong><span>Scripted AI assistant · no external API call</span></div>
@@ -144,7 +145,8 @@
 
       <section class="panel" aria-labelledby="guard-panel-title">
         <h2 id="guard-panel-title"><span class="panel-number">2</span>Governance / Execution Evidence Panel</h2>
-        <p>AI Conversation에서 Execution Plan이 생성되는 순간, AgentGuard가 실행 요청을 받아 기존 AGAF Evidence를 순차적으로 검증합니다.</p>
+        <p>생성된 실행 계획을 AGAF Evidence와 비교하여
+실행 가능 여부를 검증합니다.</p>
         <div class="compare">
           <div class="compare-card">
             <div class="label">User Request</div>
