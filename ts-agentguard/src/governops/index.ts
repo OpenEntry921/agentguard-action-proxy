@@ -14,3 +14,10 @@ export type { GovernOpsDecisionRecord, GovernOpsDecisionRecordInput } from "./de
 export { createGovernOpsDecisionRecord } from "./decision-record";
 export type { GovernOpsHarnessInput, GovernOpsHarnessResult, GovernOpsProposedAction } from "./harness";
 export { runGovernOpsHarness } from "./harness";
+export {
+  kgldDecisionRecordSample,
+  kgldHarnessResultSample,
+  kgldProposedActionSample,
+  kgldRuntimeContextSample,
+  kgldRuntimePolicySample,
+} from "./sample-kgld";
