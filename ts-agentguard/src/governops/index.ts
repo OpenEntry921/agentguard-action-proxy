@@ -21,3 +21,5 @@ export {
   kgldRuntimeContextSample,
   kgldRuntimePolicySample,
 } from "./sample-kgld";
+export type { GovernOpsPreview } from "./preview-adapter";
+export { createGovernOpsPreview } from "./preview-adapter";

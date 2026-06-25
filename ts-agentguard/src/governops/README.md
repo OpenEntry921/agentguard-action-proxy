@@ -26,3 +26,4 @@ AgentGuard
 - `harness.ts` — TODO placeholder for connecting runtime policy evaluation, token generation, and AgentGuard execution.
 - `index.ts` — Barrel exports for the adapter surface.
 - `sample-kgld.ts` — Static KGLD GovernOps demo sample data for the 5M request → 50M agent decision BLOCK scenario.
+- `preview-adapter.ts` — Read-only adapter that assembles static GovernOps preview data for future UI integration.
