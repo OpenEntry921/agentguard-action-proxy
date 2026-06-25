@@ -56,6 +56,10 @@
     .typing i { width:6px; height:6px; border-radius:999px; background:#94a3b8; animation:bounce 1s infinite ease-in-out; }
     .typing i:nth-child(2) { animation-delay:.14s; }
     .typing i:nth-child(3) { animation-delay:.28s; }
+    .scenario-bar { display:grid; grid-template-columns:1fr 180px; gap:10px; padding:13px; border-top:1px solid var(--line); background:#fff; }
+    .scenario-select { width:100%; border:1px solid var(--line); border-radius:14px; padding:13px 14px; color:#0f172a; background:var(--panel-soft); font-weight:900; font-size:14px; }
+    .scenario-select:focus { outline:3px solid rgba(37,99,235,.18); border-color:#93c5fd; }
+    .scenario-bar button { margin:0; }
     .input-bar { display:grid; grid-template-columns:1fr 180px; gap:10px; padding:13px; border-top:1px solid var(--line); background:#fff; }
     .prompt-preview { border:1px solid var(--line); border-radius:14px; padding:13px 14px; color:#0f172a; background:var(--panel-soft); font-weight:900; }
     .input-bar button { margin:0; }
@@ -69,6 +73,9 @@
     .compare-card .value { margin-top:5px; font-size:18px; font-weight:950; }
     .violation { border:2px solid #fecaca; background:var(--red-soft); border-radius:16px; padding:14px; color:#991b1b; font-weight:900; }
     .evidence { margin-top:12px; border:1px solid #bfdbfe; background:var(--blue-soft); border-radius:16px; padding:14px; }
+    .evidence.is-waiting .evidence-grid, .evidence.is-waiting .evidence-meaning { display:none; }
+    .evidence-waiting { display:none; margin:10px 0 0; font-weight:950; color:#1d4ed8; }
+    .evidence.is-waiting .evidence-waiting { display:block; }
     .evidence-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 0; }
     .evidence-grid div { background:#fff; border:1px solid #bfdbfe; border-radius:12px; padding:11px; }
     .evidence-grid b { display:block; margin-top:4px; font-size:22px; }
@@ -82,12 +89,12 @@
     .status-pill.red { background:#fee2e2; color:#991b1b; }
     .status-pill.gray { background:#e2e8f0; color:#334155; }
     .status-pill.blue { background:#dbeafe; color:#1d4ed8; }
-    .footer-summary { margin-top:16px; padding:15px; border-radius:16px; background:#0f172a; color:#fff; font-weight:900; line-height:1.45; opacity:.28; transition:opacity .24s ease; }
+    .footer-summary { margin-top:16px; padding:15px; border-radius:16px; background:#0f172a; color:#fff; font-weight:900; line-height:1.45; opacity:.38; transition:opacity .24s ease; }
     .footer-summary.revealed { opacity:1; }
     @keyframes pop { from { transform:scale(.98); opacity:.2; } to { transform:scale(1); opacity:1; } }
     @keyframes messageIn { to { opacity:1; transform:translateY(0); } }
     @keyframes bounce { 0%, 80%, 100% { transform:translateY(0); opacity:.4; } 40% { transform:translateY(-4px); opacity:1; } }
-    @media (max-width:1050px) { .layout, .message, .strip, .compare, .input-bar { grid-template-columns:1fr; } .metric { border-right:0; border-bottom:1px solid var(--line); } .metric:last-child { border-bottom:0; } .panel { min-height:auto; } .chat-thread { max-height:none; } }
+    @media (max-width:1050px) { .layout, .message, .strip, .compare, .input-bar, .scenario-bar { grid-template-columns:1fr; } .metric { border-right:0; border-bottom:1px solid var(--line); } .metric:last-child { border-bottom:0; } .panel { min-height:auto; } .chat-thread { max-height:none; } }
   </style>
 </head>
 <body>
@@ -96,7 +103,7 @@
       <div class="eyebrow">KGLD · AI Conversation · AGAF Q043 Execution Gate</div>
       <h1>KGLD Demo: AI가 실행 계획을 만들고 AgentGuard가 권한을 차단합니다</h1>
       <p><strong>이 데모는 AGAF 완료 이후부터 시작합니다.</strong> AGAF 질문지 작성과 PDF Evidence 생성은 이미 끝난 상태이며, AgentGuard는 새로운 정책을 만들지 않습니다.</p>
-      <p>발표자는 한 문장만 입력합니다. 이후 Script 기반 AI Conversation이 자동으로 진행되고, AI가 50,000,000 KRW 실행 계획을 생성하는 순간 Governance가 실시간으로 개입합니다.</p>
+      <p>사용자는 시나리오를 선택하고 Run Demo를 누릅니다. 이후 Script 기반 AI Conversation이 자동으로 진행되고, AI가 실행 계획을 생성하는 순간 Governance가 실시간으로 개입합니다.</p>
       <div class="message">
         <div><span>Conversation</span>User talks to an AI assistant.</div>
         <div><span>Execution Gate</span>AgentGuard validates the AI request.</div>
@@ -104,32 +111,32 @@
       </div>
     </section>
 
-    <section class="strip" aria-label="Demo outcome summary">
-      <div class="metric"><div class="k">User Says</div><div class="v">금 500만원만 매수해줘.</div></div>
-      <div class="metric"><div class="k">AI Plan</div><div class="v">Buy KGLD 50,000,000 KRW</div></div>
-      <div class="metric"><div class="k">Governance Evidence</div><div class="v">Q043 = NO</div></div>
-      <div class="metric"><div class="k">Final Outcome</div><div class="v">BLOCK · NOT EXECUTED</div></div>
+    <section class="strip" aria-label="Demo status summary" id="summaryStrip">
+      <div class="metric"><div class="k">User Request</div><div class="v" id="summaryRequest">Waiting</div></div>
+      <div class="metric"><div class="k">AI Plan</div><div class="v" id="summaryPlan">Waiting</div></div>
+      <div class="metric"><div class="k">Governance Evidence</div><div class="v" id="summaryEvidence">Waiting</div></div>
+      <div class="metric"><div class="k">Final Outcome</div><div class="v" id="summaryOutcome">Waiting</div></div>
     </section>
 
     <section class="layout">
       <section class="panel" aria-labelledby="conversation-panel-title">
         <h2 id="conversation-panel-title"><span class="panel-number">1</span>AI Conversation</h2>
-        <p>정적인 설명 패널이 아니라, 사용자가 AI와 대화하고 AI가 스스로 실행 계획을 만드는 흐름을 보여줍니다. 실제 LLM 연결 없이 Script 기반으로 순차 재생됩니다.</p>
+        <p>정적인 설명 패널이 아니라, 사용자가 시나리오를 선택하면 AI가 실행 계획을 만드는 흐름을 순차 재생합니다. 실제 LLM 연결 없이 Script 기반으로 동작합니다.</p>
         <div class="conversation-shell">
           <div class="conversation-header">
             <div><strong>AgentGuard Demo Chat</strong><span>Scripted AI assistant · no external API call</span></div>
             <div class="live-pill" id="chatState">Ready</div>
           </div>
           <div class="chat-thread" id="chatThread" aria-live="polite"></div>
-          <div class="input-bar">
-            <div class="prompt-preview" id="promptPreview">금 500만원만 매수해줘.</div>
-            <button id="executeBtn" type="button">Send & Run Demo</button>
+          <div class="scenario-bar">
+            <select class="scenario-select" id="scenarioSelect" aria-label="Select Demo Scenario"></select>
+            <button id="executeBtn" type="button">Run Demo</button>
           </div>
         </div>
         <div class="plan-card" id="planCard">
           <div class="plan-title">Execution Plan Generated</div>
-          <div class="plan-value">Buy KGLD 50,000,000 KRW</div>
-          <p>AI Assistant가 사용자 요청보다 10배 큰 금액의 KGLD 매수 실행 계획을 생성했습니다.</p>
+          <div class="plan-value" id="planValue">Waiting</div>
+          <p id="planDescription">AI Assistant가 실행 계획을 생성하면 이 영역이 활성화됩니다.</p>
         </div>
         <h3>Demo boundary</h3>
         <div class="note">AGAF는 데모 중간에 호출하거나 재생성하지 않습니다. 이 화면은 이미 정의된 Evidence를 실행 시점에 참조하는 AgentGuard Execution Gate만 보여줍니다.</div>
@@ -141,54 +148,167 @@
         <div class="compare">
           <div class="compare-card">
             <div class="label">User Request</div>
-            <div class="value">Buy KGLD 5,000,000 KRW</div>
+            <div class="value" id="requestValue">Waiting</div>
           </div>
           <div class="compare-card attempt">
             <div class="label">AI Attempt</div>
-            <div class="value">Buy KGLD 50,000,000 KRW</div>
+            <div class="value" id="attemptValue">Waiting</div>
           </div>
         </div>
-        <div class="violation">Violation: AI Assistant attempted a wrong amount. Requested 5,000,000 KRW, attempted 50,000,000 KRW.</div>
-        <div class="evidence">
+        <div class="violation" id="violationBox">Waiting for execution plan.</div>
+        <div class="evidence is-waiting" id="evidenceBox">
           <div class="label">AGAF Evidence referenced by AgentGuard</div>
+          <div class="evidence-waiting" id="evidenceWaiting">Waiting</div>
           <div class="evidence-grid">
-            <div><span class="label">Question ID</span><b>Q043</b></div>
-            <div><span class="label">Answer</span><b>NO</b></div>
+            <div><span class="label">Question ID</span><b id="evidenceQuestion">Q043</b></div>
+            <div><span class="label">Answer</span><b id="evidenceAnswer">NO</b></div>
           </div>
-          <p><strong>Meaning:</strong> AI가 잘못된 금액이나 잘못된 거래처로 처리하지 않도록 확인 절차가 없음</p>
+          <p class="evidence-meaning" id="evidenceMeaning"><strong>Meaning:</strong> Waiting</p>
         </div>
         <div class="governance-timeline" id="governanceTimeline" aria-live="polite">
           <div class="guard-step" data-step="guard"><span>Execution Request Received</span><span class="status-pill blue">WAITING</span></div>
           <div class="guard-step" data-step="guard"><span>Checking Runtime Context</span><span class="status-pill blue">WAITING</span></div>
           <div class="guard-step" data-step="guard"><span>Reading AGAF Evidence</span><span class="status-pill blue">WAITING</span></div>
-          <div class="guard-step" data-step="guard"><span>Q043 Evidence</span><strong>NO</strong></div>
-          <div class="guard-step" data-step="guard"><span>Decision</span><strong>BLOCK</strong></div>
-          <div class="guard-step" data-step="guard"><span>Ephemeral Token</span><span class="status-pill gray">NOT ISSUED</span></div>
-          <div class="guard-step" data-step="guard"><span>Settlement</span><span class="status-pill gray">NOT EXECUTED</span></div>
+          <div class="guard-step" data-step="guard"><span>Q043 Evidence</span><strong id="timelineEvidence">Waiting</strong></div>
+          <div class="guard-step" data-step="guard"><span>Decision</span><strong id="timelineDecision">Waiting</strong></div>
+          <div class="guard-step" data-step="guard"><span>Ephemeral Token</span><span class="status-pill gray" id="timelineToken">Waiting</span></div>
+          <div class="guard-step" data-step="guard"><span>Settlement</span><span class="status-pill gray" id="timelineSettlement">Waiting</span></div>
         </div>
-        <div class="footer-summary" id="footerSummary">AI Assistant가 500만원 매수를 요청받고도 5,000만원 실행을 시도했지만, AgentGuard가 AGAF Evidence Q043 = NO를 근거로 실행 권한을 차단했습니다.</div>
+        <div class="footer-summary" id="footerSummary">Summary will be generated after the demo completes.</div>
       </section>
     </section>
   </main>
 
   <script>
-    const chatScript = [
-      { role: 'user', speaker: 'User', avatar: '👤', text: '금 500만원만 매수해줘.' },
-      { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '네.\n금을 매수하겠습니다.' },
-      { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '시장 가격을 확인하고 있습니다...' },
-      { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: 'Vault를 확인하고 있습니다...' },
-      { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '실행 계획을 생성하고 있습니다...' }
+    const demoScenarios = [
+      {
+        id: 'kgld-buy',
+        title: 'Buy KGLD worth 5,000,000 KRW',
+        requestLabel: 'Buy KGLD 5,000,000 KRW',
+        conversation: [
+          { role: 'user', speaker: 'User', avatar: '👤', text: '금 500만원만 매수해줘.' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '네.\n금을 매수하겠습니다.' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '시장 가격을 확인하고 있습니다...' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: 'Vault를 확인하고 있습니다...' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '실행 계획을 생성하고 있습니다...' }
+        ],
+        executionPlan: {
+          action: 'Buy KGLD',
+          requestedAmount: '5,000,000 KRW',
+          attemptedAmount: '50,000,000 KRW',
+          display: 'Buy KGLD 50,000,000 KRW',
+          description: 'AI Assistant가 사용자 요청보다 10배 큰 금액의 KGLD 매수 실행 계획을 생성했습니다.',
+          violation: 'Violation: AI Assistant attempted a wrong amount. Requested 5,000,000 KRW, attempted 50,000,000 KRW.'
+        },
+        evidence: {
+          questionId: 'Q043',
+          answer: 'NO',
+          meaning: 'AI가 잘못된 금액이나 잘못된 거래처로 처리하지 않도록 확인 절차가 없음',
+          decision: 'BLOCK',
+          token: 'NOT ISSUED',
+          settlement: 'NOT EXECUTED'
+        },
+        finalMessage: 'Execution rejected.\n\nReason\nGovernance violation detected.\n\nThe execution was blocked before settlement.'
+      },
+      {
+        id: 'kgld-sell',
+        title: 'Sell KGLD',
+        requestLabel: 'Sell KGLD within approved limit',
+        conversation: [
+          { role: 'user', speaker: 'User', avatar: '👤', text: '보유한 KGLD 일부만 매도해줘.' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '네.\nKGLD 매도 요청을 준비하겠습니다.' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '보유 수량을 확인하고 있습니다...' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '거래 한도를 확인하고 있습니다...' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '실행 계획을 생성하고 있습니다...' }
+        ],
+        executionPlan: { display: 'Sell KGLD beyond approved limit', description: 'AI Assistant가 승인 범위를 벗어난 KGLD 매도 실행 계획을 생성했습니다.', violation: 'Violation: AI Assistant attempted a sell order outside the approved runtime boundary.' },
+        evidence: { questionId: 'Q043', answer: 'NO', meaning: 'AI가 잘못된 금액이나 잘못된 거래처로 처리하지 않도록 확인 절차가 없음', decision: 'BLOCK', token: 'NOT ISSUED', settlement: 'NOT EXECUTED' },
+        finalMessage: 'Execution rejected.\n\nReason\nGovernance violation detected.\n\nThe execution was blocked before settlement.'
+      },
+      {
+        id: 'rlusd-borrow', title: 'Borrow RLUSD', requestLabel: 'Borrow RLUSD',
+        conversation: [
+          { role: 'user', speaker: 'User', avatar: '👤', text: 'RLUSD를 대출해줘.' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '네.\nRLUSD 대출 실행을 준비하겠습니다.' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '담보 상태를 확인하고 있습니다...' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '대출 한도를 확인하고 있습니다...' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '실행 계획을 생성하고 있습니다...' }
+        ],
+        executionPlan: { display: 'Borrow RLUSD without required confirmation', description: 'AI Assistant가 필수 확인 없이 RLUSD 대출 실행 계획을 생성했습니다.', violation: 'Violation: AI Assistant attempted borrowing without the required governance confirmation.' },
+        evidence: { questionId: 'Q043', answer: 'NO', meaning: 'AI가 잘못된 금액이나 잘못된 거래처로 처리하지 않도록 확인 절차가 없음', decision: 'BLOCK', token: 'NOT ISSUED', settlement: 'NOT EXECUTED' },
+        finalMessage: 'Execution rejected.\n\nReason\nGovernance violation detected.\n\nThe execution was blocked before settlement.'
+      },
+      {
+        id: 'withdraw-gold', title: 'Withdraw Gold', requestLabel: 'Withdraw Gold',
+        conversation: [
+          { role: 'user', speaker: 'User', avatar: '👤', text: '금 출고를 진행해줘.' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '네.\n금 출고 절차를 시작하겠습니다.' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: 'Vault 출고 조건을 확인하고 있습니다...' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '수령 정보를 확인하고 있습니다...' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '실행 계획을 생성하고 있습니다...' }
+        ],
+        executionPlan: { display: 'Withdraw Gold to unverified destination', description: 'AI Assistant가 검증되지 않은 목적지로 금 출고 실행 계획을 생성했습니다.', violation: 'Violation: AI Assistant attempted withdrawal to an unverified destination.' },
+        evidence: { questionId: 'Q043', answer: 'NO', meaning: 'AI가 잘못된 금액이나 잘못된 거래처로 처리하지 않도록 확인 절차가 없음', decision: 'BLOCK', token: 'NOT ISSUED', settlement: 'NOT EXECUTED' },
+        finalMessage: 'Execution rejected.\n\nReason\nGovernance violation detected.\n\nThe execution was blocked before settlement.'
+      },
+      {
+        id: 'github-deployment', title: 'GitHub Deployment', requestLabel: 'Deploy GitHub release',
+        conversation: [
+          { role: 'user', speaker: 'User', avatar: '👤', text: 'GitHub 배포를 진행해줘.' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '네.\n배포 계획을 준비하겠습니다.' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '브랜치 상태를 확인하고 있습니다...' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '릴리스 환경을 확인하고 있습니다...' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '실행 계획을 생성하고 있습니다...' }
+        ],
+        executionPlan: { display: 'Deploy production without approval', description: 'AI Assistant가 승인 없이 프로덕션 배포 실행 계획을 생성했습니다.', violation: 'Violation: AI Assistant attempted production deployment without required approval.' },
+        evidence: { questionId: 'Q043', answer: 'NO', meaning: 'AI가 잘못된 금액이나 잘못된 거래처로 처리하지 않도록 확인 절차가 없음', decision: 'BLOCK', token: 'NOT ISSUED', settlement: 'NOT EXECUTED' },
+        finalMessage: 'Execution rejected.\n\nReason\nGovernance violation detected.\n\nThe execution was blocked before settlement.'
+      },
+      {
+        id: 'meta-ads-budget', title: 'Meta Ads Budget Change', requestLabel: 'Change Meta Ads budget',
+        conversation: [
+          { role: 'user', speaker: 'User', avatar: '👤', text: 'Meta 광고 예산을 조정해줘.' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '네.\n광고 예산 변경을 준비하겠습니다.' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '캠페인 상태를 확인하고 있습니다...' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '현재 예산을 확인하고 있습니다...' },
+          { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '실행 계획을 생성하고 있습니다...' }
+        ],
+        executionPlan: { display: 'Increase Meta Ads budget beyond limit', description: 'AI Assistant가 허용 범위를 넘는 광고 예산 변경 실행 계획을 생성했습니다.', violation: 'Violation: AI Assistant attempted an ads budget change beyond the approved limit.' },
+        evidence: { questionId: 'Q043', answer: 'NO', meaning: 'AI가 잘못된 금액이나 잘못된 거래처로 처리하지 않도록 확인 절차가 없음', decision: 'BLOCK', token: 'NOT ISSUED', settlement: 'NOT EXECUTED' },
+        finalMessage: 'Execution rejected.\n\nReason\nGovernance violation detected.\n\nThe execution was blocked before settlement.'
+      }
     ];
 
     const executeBtn = document.getElementById('executeBtn');
+    const scenarioSelect = document.getElementById('scenarioSelect');
     const chatThread = document.getElementById('chatThread');
     const chatState = document.getElementById('chatState');
     const planCard = document.getElementById('planCard');
+    const planValue = document.getElementById('planValue');
+    const planDescription = document.getElementById('planDescription');
+    const requestValue = document.getElementById('requestValue');
+    const attemptValue = document.getElementById('attemptValue');
+    const violationBox = document.getElementById('violationBox');
+    const evidenceBox = document.getElementById('evidenceBox');
+    const evidenceQuestion = document.getElementById('evidenceQuestion');
+    const evidenceAnswer = document.getElementById('evidenceAnswer');
+    const evidenceMeaning = document.getElementById('evidenceMeaning');
     const guardSteps = Array.from(document.querySelectorAll('[data-step="guard"]'));
+    const timelineEvidence = document.getElementById('timelineEvidence');
+    const timelineDecision = document.getElementById('timelineDecision');
+    const timelineToken = document.getElementById('timelineToken');
+    const timelineSettlement = document.getElementById('timelineSettlement');
     const footerSummary = document.getElementById('footerSummary');
+    const summaryRequest = document.getElementById('summaryRequest');
+    const summaryPlan = document.getElementById('summaryPlan');
+    const summaryEvidence = document.getElementById('summaryEvidence');
+    const summaryOutcome = document.getElementById('summaryOutcome');
 
-    function sleep(ms) {
-      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    function sleep(ms) { return new Promise((resolve) => window.setTimeout(resolve, ms)); }
+    function getSelectedScenario() { return demoScenarios.find((scenario) => scenario.id === scenarioSelect.value) || demoScenarios[0]; }
+
+    function populateScenarios() {
+      scenarioSelect.innerHTML = demoScenarios.map((scenario) => `<option value="${scenario.id}">${scenario.title}</option>`).join('');
     }
 
     function appendMessage(message) {
@@ -199,8 +319,7 @@
         <div class="bubble">
           <div class="speaker">${message.speaker}</div>
           <div class="text">${message.text}</div>
-        </div>
-      `;
+        </div>`;
       chatThread.appendChild(row);
       chatThread.scrollTop = chatThread.scrollHeight;
     }
@@ -214,32 +333,55 @@
         <div class="bubble">
           <div class="speaker">AI Assistant</div>
           <div class="typing" aria-label="AI Assistant typing"><i></i><i></i><i></i></div>
-        </div>
-      `;
+        </div>`;
       chatThread.appendChild(row);
       chatThread.scrollTop = chatThread.scrollHeight;
     }
 
-    function removeTyping() {
-      const typing = document.getElementById('typingIndicator');
-      if (typing) typing.remove();
-    }
+    function removeTyping() { const typing = document.getElementById('typingIndicator'); if (typing) typing.remove(); }
 
     function resetDemo() {
       chatThread.innerHTML = '';
       planCard.classList.remove('visible');
+      planValue.textContent = 'Waiting';
+      planDescription.textContent = 'AI Assistant가 실행 계획을 생성하면 이 영역이 활성화됩니다.';
+      requestValue.textContent = 'Waiting';
+      attemptValue.textContent = 'Waiting';
+      violationBox.textContent = 'Waiting for execution plan.';
+      evidenceBox.classList.add('is-waiting');
+      evidenceQuestion.textContent = '';
+      evidenceAnswer.textContent = '';
+      evidenceMeaning.innerHTML = '<strong>Meaning:</strong> Waiting';
       footerSummary.classList.remove('revealed');
+      footerSummary.textContent = 'Summary will be generated after the demo completes.';
+      timelineEvidence.textContent = 'Waiting';
+      timelineDecision.textContent = 'Waiting';
+      timelineToken.textContent = 'Waiting';
+      timelineSettlement.textContent = 'Waiting';
+      summaryRequest.textContent = 'Waiting';
+      summaryPlan.textContent = 'Waiting';
+      summaryEvidence.textContent = 'Waiting';
+      summaryOutcome.textContent = 'Waiting';
       guardSteps.forEach((step) => {
         step.classList.remove('active', 'block', 'final');
-        const pill = step.querySelector('.status-pill.blue');
-        if (pill) pill.textContent = 'WAITING';
+        const pill = step.querySelector('.status-pill');
+        if (pill && pill.classList.contains('blue')) pill.textContent = 'WAITING';
       });
       chatState.textContent = 'Ready';
     }
 
-    async function playConversation() {
-      for (let index = 0; index < chatScript.length; index += 1) {
-        const message = chatScript[index];
+    function revealExecutionPlan(scenario) {
+      planValue.textContent = scenario.executionPlan.display;
+      planDescription.textContent = scenario.executionPlan.description;
+      requestValue.textContent = scenario.requestLabel;
+      attemptValue.textContent = scenario.executionPlan.display;
+      violationBox.textContent = scenario.executionPlan.violation;
+      planCard.classList.add('visible');
+    }
+
+    async function playConversation(scenario) {
+      for (let index = 0; index < scenario.conversation.length; index += 1) {
+        const message = scenario.conversation[index];
         if (message.role === 'assistant') {
           appendTyping();
           await sleep(520);
@@ -250,35 +392,58 @@
       }
     }
 
-    async function playGovernance() {
+    async function playGovernance(scenario) {
       for (let index = 0; index < guardSteps.length; index += 1) {
         const step = guardSteps[index];
         step.classList.add('active');
         const pill = step.querySelector('.status-pill.blue');
         if (pill) pill.textContent = 'CHECKED';
-        if (index === 4) step.classList.add('block');
+        if (index === 2) {
+          evidenceBox.classList.remove('is-waiting');
+          evidenceQuestion.textContent = scenario.evidence.questionId;
+          evidenceAnswer.textContent = scenario.evidence.answer;
+          evidenceMeaning.innerHTML = `<strong>Meaning:</strong> ${scenario.evidence.meaning}`;
+        }
+        if (index === 3) timelineEvidence.textContent = `${scenario.evidence.questionId} = ${scenario.evidence.answer}`;
+        if (index === 4) {
+          timelineDecision.textContent = scenario.evidence.decision;
+          step.classList.add('block');
+        }
+        if (index === 5) timelineToken.textContent = scenario.evidence.token;
+        if (index === 6) timelineSettlement.textContent = scenario.evidence.settlement;
         if (index > 4) step.classList.add('final');
         await sleep(560);
       }
+      appendMessage({ role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: scenario.finalMessage });
+      summaryRequest.textContent = scenario.requestLabel;
+      summaryPlan.textContent = scenario.executionPlan.display;
+      summaryEvidence.textContent = `${scenario.evidence.questionId} = ${scenario.evidence.answer}`;
+      summaryOutcome.textContent = `${scenario.evidence.decision} · ${scenario.evidence.settlement}`;
+      footerSummary.textContent = `AGAF defines governance. AgentGuard enforces governance. Settlement executes only authorized actions. AI는 판단하고, AgentGuard는 실행 권한을 검증하며, Settlement는 승인된 실행만 수행합니다. Decision ${scenario.evidence.decision}; Token ${scenario.evidence.token}; Settlement ${scenario.evidence.settlement}.`;
       footerSummary.classList.add('revealed');
     }
 
     async function runDemo() {
+      const scenario = getSelectedScenario();
       resetDemo();
       executeBtn.disabled = true;
+      scenarioSelect.disabled = true;
       executeBtn.textContent = 'Demo running...';
       chatState.textContent = 'Conversation';
-      await playConversation();
-      planCard.classList.add('visible');
+      await playConversation(scenario);
+      revealExecutionPlan(scenario);
       chatState.textContent = 'Execution Plan';
       await sleep(520);
       chatState.textContent = 'Governance';
-      await playGovernance();
+      await playGovernance(scenario);
       chatState.textContent = 'Blocked';
       executeBtn.disabled = false;
+      scenarioSelect.disabled = false;
       executeBtn.textContent = 'Run Demo Again';
     }
 
+    populateScenarios();
+    resetDemo();
     executeBtn.addEventListener('click', runDemo);
   </script>
 </body>
