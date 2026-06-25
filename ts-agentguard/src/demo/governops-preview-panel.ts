@@ -1,61 +1,7 @@
 import type { GovernOpsPreview } from "../governops/preview-adapter";
+import { createGovernOpsPreview } from "../governops/preview-adapter";
 
-export const kgldGovernOpsPreviewData = {
-  runtimePolicy: {
-    policyId: "KGLD-GOVERNOPS-POLICY-001",
-    sourceQuestionIds: ["Q031", "Q032", "Q053"],
-    actionTaxonomy: "gold.purchase",
-    budgetLimit: 5_000_000,
-    approvalRequired: true,
-    enforcementType: "BLOCK",
-    decisionRecordLevel: "FULL",
-    identityRequirement: "AGENT_IDENTITY_REQUIRED",
-    contextRequirement: "USER_REQUEST_AMOUNT_MATCH_REQUIRED",
-  },
-  runtimeContext: {
-    contextId: "CTX-KGLD-001",
-    userRequestAmount: 5_000_000,
-    agentDecisionAmount: 50_000_000,
-    deviationPercent: 900,
-    promptHash: "kgld-demo-user-request-gold-5m",
-    ragHash: "kgld-demo-rag-context-v1",
-    reputationScore: 80,
-    riskScore: 95,
-    timestamp: "2026-06-25T00:00:00.000Z",
-  },
-  decisionRecord: {
-    decisionId: "DEC-KGLD-001",
-    policyId: "KGLD-GOVERNOPS-POLICY-001",
-    sourceQuestionIds: ["Q031", "Q032", "Q053"],
-    agentId: "AGT-001",
-    contextId: "CTX-KGLD-001",
-    userRequestAmount: 5_000_000,
-    agentDecisionAmount: 50_000_000,
-    riskScore: 95,
-    enforcementAction: "BLOCK",
-    approvalState: "PENDING",
-    tokenStatus: "NOT_ISSUED",
-    executionResult: "NOT_EXECUTED",
-    auditCorrelationId: "AUD-KGLD-001",
-    createdAt: "2026-06-25T00:00:00.000Z",
-  },
-  harnessResult: {
-    enforcementAction: "BLOCK",
-    reason: "Agent decision amount deviates 900% from the user-requested gold purchase budget.",
-    sourceQuestionIds: ["Q031", "Q032", "Q053"],
-    policyId: "KGLD-GOVERNOPS-POLICY-001",
-    decisionId: "DEC-KGLD-001",
-    approvalState: "PENDING",
-    executionAllowed: false,
-    tokenStatus: "NOT_ISSUED",
-  },
-  summary:
-    "User requested 5M KRW.\n" +
-    "Agent attempted 50M KRW.\n" +
-    "GovernOps blocked execution before settlement.\n" +
-    "Token was not issued.",
-} satisfies GovernOpsPreview;
-
+const preview = createGovernOpsPreview();
 function formatKrw(amount: number): string {
   return `${amount.toLocaleString("en-US")} KRW`;
 }
@@ -70,9 +16,9 @@ function renderDecisionBadge(decision: string): string {
 }
 
 export function renderGovernOpsPreviewPanelHtml(
-  preview: GovernOpsPreview = kgldGovernOpsPreviewData,
+  governOpsPreview: GovernOpsPreview = preview,
 ): string {
-  const { runtimePolicy, runtimeContext, decisionRecord, harnessResult } = preview;
+  const { runtimePolicy, runtimeContext, decisionRecord, harnessResult } = governOpsPreview;
 
   return [
     '<div class="kv">',
