@@ -10,7 +10,7 @@ export const kgldRuntimePolicySample: GovernOpsRuntimePolicy = {
   budgetLimit: 5000000,
   approvalRequired: true,
   enforcementType: "BLOCK",
-  decisionRecordLevel: "FULL",
+  decisionRecordLevel: "FORENSIC",
   identityRequirement: "AGENT_IDENTITY_REQUIRED",
   contextRequirement: "USER_REQUEST_AMOUNT_MATCH_REQUIRED",
 };
