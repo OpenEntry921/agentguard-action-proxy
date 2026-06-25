@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AgentGuard | KGLD AGAF Q043 Execution Gate Demo</title>
+  <title>AgentGuard | KGLD AI Conversation Execution Gate Demo</title>
   <style>
     :root {
       --bg:#eef3f8; --panel:#ffffff; --panel-soft:#f8fafc; --line:#d9e2ef; --text:#0f172a; --muted:#64748b;
       --blue:#2563eb; --blue-soft:#eff6ff; --red:#dc2626; --red-soft:#fef2f2; --amber:#d97706; --amber-soft:#fff7ed;
-      --green:#059669; --green-soft:#ecfdf5; --dark:#0b1220;
+      --green:#059669; --green-soft:#ecfdf5; --dark:#0b1220; --purple:#7c3aed; --purple-soft:#f5f3ff;
     }
     * { box-sizing:border-box; }
     body { margin:0; font-family:Inter, Segoe UI, Arial, sans-serif; background:radial-gradient(circle at top left,#dbeafe 0,#eef3f8 34%,#f8fafc 100%); color:var(--text); }
@@ -29,180 +29,257 @@
     .metric:last-child { border-right:0; }
     .metric .k { color:var(--muted); font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; }
     .metric .v { margin-top:7px; font-size:17px; font-weight:900; }
-    .layout { display:grid; grid-template-columns:1fr 1fr 1.15fr; gap:14px; align-items:start; }
-    .panel { padding:18px; min-height:440px; }
+    .layout { display:grid; grid-template-columns:1.25fr .95fr; gap:14px; align-items:start; }
+    .panel { padding:18px; min-height:620px; }
     .panel-number { display:inline-grid; place-items:center; width:28px; height:28px; margin-right:8px; border-radius:999px; background:#0f172a; color:#fff; font-size:13px; }
-    .instruction-box { border:1px solid #bfdbfe; background:linear-gradient(180deg,#fff,#eff6ff); border-radius:18px; padding:18px; margin:16px 0; }
     .label { color:var(--muted); font-size:11px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
-    .instruction { margin-top:8px; font-size:27px; font-weight:950; letter-spacing:-.02em; }
-    .translation { margin-top:7px; color:#1d4ed8; font-weight:800; }
     button { width:100%; margin-top:12px; border:0; border-radius:14px; padding:14px 16px; background:var(--blue); color:#fff; font-size:15px; font-weight:900; cursor:pointer; box-shadow:0 10px 20px rgba(37,99,235,.22); }
     button:hover { filter:brightness(.97); }
     button:disabled { cursor:not-allowed; opacity:.72; }
     .note { border:1px solid var(--line); background:var(--panel-soft); border-radius:14px; padding:12px; color:#475569; font-size:13px; line-height:1.45; }
-    .agent-log { margin-top:14px; min-height:222px; border-radius:16px; background:var(--dark); color:#dbeafe; padding:14px; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    .log-line { display:flex; gap:9px; align-items:flex-start; margin:0 0 10px; font-size:13px; opacity:.98; }
-    .dot { flex:0 0 auto; width:9px; height:9px; margin-top:4px; border-radius:999px; background:#60a5fa; box-shadow:0 0 0 4px rgba(96,165,250,.13); }
+    .conversation-shell { margin-top:14px; border:1px solid var(--line); border-radius:22px; overflow:hidden; background:#fff; }
+    .conversation-header { display:flex; justify-content:space-between; gap:10px; align-items:center; padding:14px 16px; background:#0f172a; color:#fff; }
+    .conversation-header strong { display:block; }
+    .conversation-header span { color:#cbd5e1; font-size:12px; }
+    .live-pill { flex:0 0 auto; border:1px solid rgba(255,255,255,.22); border-radius:999px; padding:6px 10px; font-size:11px; font-weight:950; letter-spacing:.08em; text-transform:uppercase; }
+    .chat-thread { min-height:438px; max-height:438px; overflow:auto; padding:16px; background:linear-gradient(180deg,#f8fafc,#fff); }
+    .chat-message { display:grid; grid-template-columns:42px 1fr; gap:10px; align-items:start; margin-bottom:14px; opacity:0; transform:translateY(8px); animation:messageIn .32s ease forwards; }
+    .avatar { width:38px; height:38px; display:grid; place-items:center; border-radius:999px; border:1px solid var(--line); background:#fff; font-size:19px; }
+    .bubble { max-width:86%; border:1px solid var(--line); border-radius:18px; padding:12px 14px; background:#fff; box-shadow:0 10px 20px rgba(15,23,42,.05); }
+    .chat-message.user { grid-template-columns:1fr 42px; }
+    .chat-message.user .avatar { grid-column:2; background:var(--blue-soft); border-color:#bfdbfe; }
+    .chat-message.user .bubble { grid-column:1; justify-self:end; background:#2563eb; color:#fff; border-color:#2563eb; }
+    .chat-message.user .speaker, .chat-message.user .text { color:#fff; }
+    .speaker { color:#334155; font-size:12px; font-weight:950; margin-bottom:5px; }
+    .text { color:#0f172a; line-height:1.55; white-space:pre-line; font-weight:700; }
+    .typing { display:inline-flex; gap:4px; align-items:center; }
+    .typing i { width:6px; height:6px; border-radius:999px; background:#94a3b8; animation:bounce 1s infinite ease-in-out; }
+    .typing i:nth-child(2) { animation-delay:.14s; }
+    .typing i:nth-child(3) { animation-delay:.28s; }
+    .input-bar { display:grid; grid-template-columns:1fr 180px; gap:10px; padding:13px; border-top:1px solid var(--line); background:#fff; }
+    .prompt-preview { border:1px solid var(--line); border-radius:14px; padding:13px 14px; color:#0f172a; background:var(--panel-soft); font-weight:900; }
+    .input-bar button { margin:0; }
     .plan-card { margin-top:14px; border:2px solid #fed7aa; background:var(--amber-soft); border-radius:18px; padding:16px; display:none; }
     .plan-card.visible { display:block; animation:pop .28s ease-out; }
     .plan-title { color:#9a3412; font-size:12px; font-weight:950; text-transform:uppercase; letter-spacing:.08em; }
     .plan-value { margin-top:7px; font-size:25px; font-weight:950; color:#9a3412; }
-    .compare { display:grid; grid-template-columns:1fr; gap:10px; margin:12px 0; }
+    .compare { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0; }
     .compare-card { border:1px solid var(--line); border-radius:15px; padding:13px; background:var(--panel-soft); }
     .compare-card.attempt { border-color:#fed7aa; background:var(--amber-soft); }
-    .compare-card .value { margin-top:5px; font-size:21px; font-weight:950; }
+    .compare-card .value { margin-top:5px; font-size:18px; font-weight:950; }
     .violation { border:2px solid #fecaca; background:var(--red-soft); border-radius:16px; padding:14px; color:#991b1b; font-weight:900; }
     .evidence { margin-top:12px; border:1px solid #bfdbfe; background:var(--blue-soft); border-radius:16px; padding:14px; }
     .evidence-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 0; }
     .evidence-grid div { background:#fff; border:1px solid #bfdbfe; border-radius:12px; padding:11px; }
     .evidence-grid b { display:block; margin-top:4px; font-size:22px; }
-    .decision-chain { display:grid; grid-template-columns:1fr; gap:8px; margin-top:14px; }
-    .decision { display:flex; justify-content:space-between; align-items:center; gap:10px; border-radius:14px; padding:13px; border:1px solid var(--line); background:#fff; }
-    .decision strong { font-size:18px; }
-    .decision.block { border-color:#fecaca; background:var(--red-soft); color:#991b1b; }
-    .decision.neutral { background:var(--panel-soft); }
+    .governance-timeline { display:grid; gap:9px; margin-top:14px; }
+    .guard-step { display:flex; justify-content:space-between; align-items:center; gap:10px; border-radius:14px; padding:13px; border:1px solid var(--line); background:#fff; opacity:.28; transform:translateY(6px); transition:opacity .24s ease, transform .24s ease, border-color .24s ease, background .24s ease; }
+    .guard-step.active { opacity:1; transform:translateY(0); border-color:#bfdbfe; background:var(--blue-soft); }
+    .guard-step.block { border-color:#fecaca; background:var(--red-soft); color:#991b1b; }
+    .guard-step.final { background:var(--panel-soft); }
+    .guard-step strong { font-size:17px; }
     .status-pill { display:inline-flex; align-items:center; justify-content:center; min-width:118px; border-radius:999px; padding:7px 11px; font-size:12px; font-weight:950; letter-spacing:.04em; }
     .status-pill.red { background:#fee2e2; color:#991b1b; }
     .status-pill.gray { background:#e2e8f0; color:#334155; }
-    .footer-summary { margin-top:16px; padding:15px; border-radius:16px; background:#0f172a; color:#fff; font-weight:900; line-height:1.45; }
-    .hidden-until-run { opacity:.38; }
-    .hidden-until-run.revealed { opacity:1; transition:opacity .2s ease; }
+    .status-pill.blue { background:#dbeafe; color:#1d4ed8; }
+    .footer-summary { margin-top:16px; padding:15px; border-radius:16px; background:#0f172a; color:#fff; font-weight:900; line-height:1.45; opacity:.28; transition:opacity .24s ease; }
+    .footer-summary.revealed { opacity:1; }
     @keyframes pop { from { transform:scale(.98); opacity:.2; } to { transform:scale(1); opacity:1; } }
-    @media (max-width:1050px) { .layout, .message, .strip { grid-template-columns:1fr; } .metric { border-right:0; border-bottom:1px solid var(--line); } .metric:last-child { border-bottom:0; } }
+    @keyframes messageIn { to { opacity:1; transform:translateY(0); } }
+    @keyframes bounce { 0%, 80%, 100% { transform:translateY(0); opacity:.4; } 40% { transform:translateY(-4px); opacity:1; } }
+    @media (max-width:1050px) { .layout, .message, .strip, .compare, .input-bar { grid-template-columns:1fr; } .metric { border-right:0; border-bottom:1px solid var(--line); } .metric:last-child { border-bottom:0; } .panel { min-height:auto; } .chat-thread { max-height:none; } }
   </style>
 </head>
 <body>
   <main class="container">
     <section class="hero">
-      <div class="eyebrow">KGLD · AGAF Q043 · 5,000,000 KRW request · 50,000,000 KRW AI attempt</div>
-      <h1>KGLD Demo: AgentGuard blocks a 50,000,000 KRW AI mis-execution</h1>
+      <div class="eyebrow">KGLD · AI Conversation · AGAF Q043 Execution Gate</div>
+      <h1>KGLD Demo: AI가 실행 계획을 만들고 AgentGuard가 권한을 차단합니다</h1>
       <p><strong>이 데모는 AGAF 완료 이후부터 시작합니다.</strong> AGAF 질문지 작성과 PDF Evidence 생성은 이미 끝난 상태이며, AgentGuard는 새로운 정책을 만들지 않습니다.</p>
-      <p>사용자가 5,000,000원 매수를 지시했지만 Mock AI Agent가 50,000,000원 실행 계획을 만들면, AgentGuard Execution Gate가 AGAF Evidence <strong>Q043 = NO</strong>를 근거로 실행 권한을 차단합니다.</p>
+      <p>발표자는 한 문장만 입력합니다. 이후 Script 기반 AI Conversation이 자동으로 진행되고, AI가 50,000,000 KRW 실행 계획을 생성하는 순간 Governance가 실시간으로 개입합니다.</p>
       <div class="message">
-        <div><span>Governance</span>AGAF defines governance.</div>
-        <div><span>Enforcement</span>AgentGuard enforces governance.</div>
-        <div><span>Settlement</span>Settlement executes only authorized actions.</div>
+        <div><span>Conversation</span>User talks to an AI assistant.</div>
+        <div><span>Execution Gate</span>AgentGuard validates the AI request.</div>
+        <div><span>Settlement</span>Blocked actions never receive a token.</div>
       </div>
     </section>
 
     <section class="strip" aria-label="Demo outcome summary">
-      <div class="metric"><div class="k">User Request</div><div class="v">Buy KGLD 5,000,000 KRW</div></div>
-      <div class="metric"><div class="k">AI Agent Attempt</div><div class="v">Buy KGLD 50,000,000 KRW</div></div>
-      <div class="metric"><div class="k">AGAF Evidence</div><div class="v">Q043 = NO</div></div>
+      <div class="metric"><div class="k">User Says</div><div class="v">금 500만원만 매수해줘.</div></div>
+      <div class="metric"><div class="k">AI Plan</div><div class="v">Buy KGLD 50,000,000 KRW</div></div>
+      <div class="metric"><div class="k">Governance Evidence</div><div class="v">Q043 = NO</div></div>
       <div class="metric"><div class="k">Final Outcome</div><div class="v">BLOCK · NOT EXECUTED</div></div>
     </section>
 
     <section class="layout">
-      <section class="panel" aria-labelledby="user-panel-title">
-        <h2 id="user-panel-title"><span class="panel-number">1</span>User Instruction Panel</h2>
-        <p>사용자는 AI Agent에게 단순한 금 매수 지시를 내립니다. 기본 지시는 한국어로 표시하고, 실행 대상은 KGLD 매수로 해석됩니다.</p>
-        <div class="instruction-box">
-          <div class="label">Default instruction</div>
-          <div class="instruction" id="userInstruction">금 5,000,000원 매수</div>
-          <div class="translation">Buy KGLD worth 5,000,000 KRW</div>
+      <section class="panel" aria-labelledby="conversation-panel-title">
+        <h2 id="conversation-panel-title"><span class="panel-number">1</span>AI Conversation</h2>
+        <p>정적인 설명 패널이 아니라, 사용자가 AI와 대화하고 AI가 스스로 실행 계획을 만드는 흐름을 보여줍니다. 실제 LLM 연결 없이 Script 기반으로 순차 재생됩니다.</p>
+        <div class="conversation-shell">
+          <div class="conversation-header">
+            <div><strong>AgentGuard Demo Chat</strong><span>Scripted AI assistant · no external API call</span></div>
+            <div class="live-pill" id="chatState">Ready</div>
+          </div>
+          <div class="chat-thread" id="chatThread" aria-live="polite"></div>
+          <div class="input-bar">
+            <div class="prompt-preview" id="promptPreview">금 500만원만 매수해줘.</div>
+            <button id="executeBtn" type="button">Send & Run Demo</button>
+          </div>
         </div>
-        <button id="executeBtn" type="button">Execute Mock AI Agent</button>
+        <div class="plan-card" id="planCard">
+          <div class="plan-title">Execution Plan Generated</div>
+          <div class="plan-value">Buy KGLD 50,000,000 KRW</div>
+          <p>AI Assistant가 사용자 요청보다 10배 큰 금액의 KGLD 매수 실행 계획을 생성했습니다.</p>
+        </div>
         <h3>Demo boundary</h3>
         <div class="note">AGAF는 데모 중간에 호출하거나 재생성하지 않습니다. 이 화면은 이미 정의된 Evidence를 실행 시점에 참조하는 AgentGuard Execution Gate만 보여줍니다.</div>
       </section>
 
-      <section class="panel" aria-labelledby="agent-panel-title">
-        <h2 id="agent-panel-title"><span class="panel-number">2</span>Mock AI Agent Panel</h2>
-        <p>Mock AI Agent는 실제 LLM이 아니라 정해진 script 기반 흐름입니다. 의도적으로 잘못된 실행 계획을 생성해 Execution Gate의 역할을 보여줍니다.</p>
-        <div class="agent-log" id="agentLog" aria-live="polite">
-          <div class="log-line"><span class="dot"></span><span>Ready. Click Execute to start the scripted mock agent.</span></div>
-        </div>
-        <div class="plan-card" id="planCard">
-          <div class="plan-title">AI Agent Execution Plan Generated</div>
-          <div class="plan-value">Buy KGLD 50,000,000 KRW</div>
-          <p>Wrong amount: the generated plan is 10x larger than the user instruction.</p>
-        </div>
-      </section>
-
       <section class="panel" aria-labelledby="guard-panel-title">
-        <h2 id="guard-panel-title"><span class="panel-number">3</span>AgentGuard / Execution Evidence Panel</h2>
-        <p>AgentGuard는 AI Agent의 실행 요청을 그대로 통과시키지 않고, AGAF에서 이미 정의된 Evidence를 실행 시점에 참조합니다.</p>
-        <div id="guardContent" class="hidden-until-run">
-          <div class="compare">
-            <div class="compare-card">
-              <div class="label">User Request</div>
-              <div class="value">Buy KGLD 5,000,000 KRW</div>
-            </div>
-            <div class="compare-card attempt">
-              <div class="label">AI Attempt</div>
-              <div class="value">Buy KGLD 50,000,000 KRW</div>
-            </div>
+        <h2 id="guard-panel-title"><span class="panel-number">2</span>Governance / Execution Evidence Panel</h2>
+        <p>AI Conversation에서 Execution Plan이 생성되는 순간, AgentGuard가 실행 요청을 받아 기존 AGAF Evidence를 순차적으로 검증합니다.</p>
+        <div class="compare">
+          <div class="compare-card">
+            <div class="label">User Request</div>
+            <div class="value">Buy KGLD 5,000,000 KRW</div>
           </div>
-          <div class="violation">Violation: AI Agent attempted a wrong amount. Requested 5,000,000 KRW, attempted 50,000,000 KRW.</div>
-          <div class="evidence">
-            <div class="label">AGAF Evidence referenced by AgentGuard</div>
-            <div class="evidence-grid">
-              <div><span class="label">Question ID</span><b>Q043</b></div>
-              <div><span class="label">Answer</span><b>NO</b></div>
-            </div>
-            <p><strong>Meaning:</strong> AI가 잘못된 금액이나 잘못된 거래처로 처리하지 않도록 확인 절차가 없음</p>
+          <div class="compare-card attempt">
+            <div class="label">AI Attempt</div>
+            <div class="value">Buy KGLD 50,000,000 KRW</div>
           </div>
-          <div class="decision-chain">
-            <div class="decision block"><span>AgentGuard Decision</span><strong>BLOCK</strong></div>
-            <div class="decision neutral"><span>Ephemeral Token</span><span class="status-pill gray">NOT ISSUED</span></div>
-            <div class="decision neutral"><span>Settlement</span><span class="status-pill gray">NOT EXECUTED</span></div>
-          </div>
-          <div class="footer-summary">AI Agent가 500만원 매수를 요청받고도 5,000만원 실행을 시도했지만, AgentGuard가 AGAF Evidence Q043 = NO를 근거로 실행 권한을 차단했습니다.</div>
         </div>
+        <div class="violation">Violation: AI Assistant attempted a wrong amount. Requested 5,000,000 KRW, attempted 50,000,000 KRW.</div>
+        <div class="evidence">
+          <div class="label">AGAF Evidence referenced by AgentGuard</div>
+          <div class="evidence-grid">
+            <div><span class="label">Question ID</span><b>Q043</b></div>
+            <div><span class="label">Answer</span><b>NO</b></div>
+          </div>
+          <p><strong>Meaning:</strong> AI가 잘못된 금액이나 잘못된 거래처로 처리하지 않도록 확인 절차가 없음</p>
+        </div>
+        <div class="governance-timeline" id="governanceTimeline" aria-live="polite">
+          <div class="guard-step" data-step="guard"><span>Execution Request Received</span><span class="status-pill blue">WAITING</span></div>
+          <div class="guard-step" data-step="guard"><span>Checking Runtime Context</span><span class="status-pill blue">WAITING</span></div>
+          <div class="guard-step" data-step="guard"><span>Reading AGAF Evidence</span><span class="status-pill blue">WAITING</span></div>
+          <div class="guard-step" data-step="guard"><span>Q043 Evidence</span><strong>NO</strong></div>
+          <div class="guard-step" data-step="guard"><span>Decision</span><strong>BLOCK</strong></div>
+          <div class="guard-step" data-step="guard"><span>Ephemeral Token</span><span class="status-pill gray">NOT ISSUED</span></div>
+          <div class="guard-step" data-step="guard"><span>Settlement</span><span class="status-pill gray">NOT EXECUTED</span></div>
+        </div>
+        <div class="footer-summary" id="footerSummary">AI Assistant가 500만원 매수를 요청받고도 5,000만원 실행을 시도했지만, AgentGuard가 AGAF Evidence Q043 = NO를 근거로 실행 권한을 차단했습니다.</div>
       </section>
     </section>
   </main>
 
   <script>
-    const agentSteps = [
-      'User instruction received',
-      'Interpreting KGLD buy request: 5,000,000 KRW',
-      'Mistakenly expanding amount to 50,000,000 KRW',
-      'Requesting execution authorization from AgentGuard',
-      'AgentGuard blocks execution using AGAF Q043 = NO'
+    const chatScript = [
+      { role: 'user', speaker: 'User', avatar: '👤', text: '금 500만원만 매수해줘.' },
+      { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '네.\n금을 매수하겠습니다.' },
+      { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '시장 가격을 확인하고 있습니다...' },
+      { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: 'Vault를 확인하고 있습니다...' },
+      { role: 'assistant', speaker: 'AI Assistant', avatar: '🤖', text: '실행 계획을 생성하고 있습니다...' }
     ];
 
     const executeBtn = document.getElementById('executeBtn');
-    const agentLog = document.getElementById('agentLog');
+    const chatThread = document.getElementById('chatThread');
+    const chatState = document.getElementById('chatState');
     const planCard = document.getElementById('planCard');
-    const guardContent = document.getElementById('guardContent');
+    const guardSteps = Array.from(document.querySelectorAll('[data-step="guard"]'));
+    const footerSummary = document.getElementById('footerSummary');
 
-    function appendAgentStep(message) {
-      const line = document.createElement('div');
-      line.className = 'log-line';
-      line.innerHTML = `<span class="dot"></span><span>${message}</span>`;
-      agentLog.appendChild(line);
-      agentLog.scrollTop = agentLog.scrollHeight;
+    function sleep(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    function appendMessage(message) {
+      const row = document.createElement('div');
+      row.className = `chat-message ${message.role}`;
+      row.innerHTML = `
+        <div class="avatar" aria-hidden="true">${message.avatar}</div>
+        <div class="bubble">
+          <div class="speaker">${message.speaker}</div>
+          <div class="text">${message.text}</div>
+        </div>
+      `;
+      chatThread.appendChild(row);
+      chatThread.scrollTop = chatThread.scrollHeight;
+    }
+
+    function appendTyping() {
+      const row = document.createElement('div');
+      row.className = 'chat-message assistant';
+      row.id = 'typingIndicator';
+      row.innerHTML = `
+        <div class="avatar" aria-hidden="true">🤖</div>
+        <div class="bubble">
+          <div class="speaker">AI Assistant</div>
+          <div class="typing" aria-label="AI Assistant typing"><i></i><i></i><i></i></div>
+        </div>
+      `;
+      chatThread.appendChild(row);
+      chatThread.scrollTop = chatThread.scrollHeight;
+    }
+
+    function removeTyping() {
+      const typing = document.getElementById('typingIndicator');
+      if (typing) typing.remove();
     }
 
     function resetDemo() {
-      agentLog.innerHTML = '';
+      chatThread.innerHTML = '';
       planCard.classList.remove('visible');
-      guardContent.classList.remove('revealed');
+      footerSummary.classList.remove('revealed');
+      guardSteps.forEach((step) => {
+        step.classList.remove('active', 'block', 'final');
+        const pill = step.querySelector('.status-pill.blue');
+        if (pill) pill.textContent = 'WAITING';
+      });
+      chatState.textContent = 'Ready';
     }
 
-    function runMockAgentDemo() {
+    async function playConversation() {
+      for (let index = 0; index < chatScript.length; index += 1) {
+        const message = chatScript[index];
+        if (message.role === 'assistant') {
+          appendTyping();
+          await sleep(520);
+          removeTyping();
+        }
+        appendMessage(message);
+        await sleep(index === 0 ? 680 : 760);
+      }
+    }
+
+    async function playGovernance() {
+      for (let index = 0; index < guardSteps.length; index += 1) {
+        const step = guardSteps[index];
+        step.classList.add('active');
+        const pill = step.querySelector('.status-pill.blue');
+        if (pill) pill.textContent = 'CHECKED';
+        if (index === 4) step.classList.add('block');
+        if (index > 4) step.classList.add('final');
+        await sleep(560);
+      }
+      footerSummary.classList.add('revealed');
+    }
+
+    async function runDemo() {
       resetDemo();
       executeBtn.disabled = true;
-      executeBtn.textContent = 'Mock AI Agent running...';
-
-      agentSteps.forEach((step, index) => {
-        window.setTimeout(() => {
-          appendAgentStep(step);
-
-          if (index === agentSteps.length - 1) {
-            planCard.classList.add('visible');
-            window.setTimeout(() => {
-              guardContent.classList.add('revealed');
-              executeBtn.disabled = false;
-              executeBtn.textContent = 'Run Demo Again';
-            }, 550);
-          }
-        }, index * 650);
-      });
+      executeBtn.textContent = 'Demo running...';
+      chatState.textContent = 'Conversation';
+      await playConversation();
+      planCard.classList.add('visible');
+      chatState.textContent = 'Execution Plan';
+      await sleep(520);
+      chatState.textContent = 'Governance';
+      await playGovernance();
+      chatState.textContent = 'Blocked';
+      executeBtn.disabled = false;
+      executeBtn.textContent = 'Run Demo Again';
     }
 
-    executeBtn.addEventListener('click', runMockAgentDemo);
+    executeBtn.addEventListener('click', runDemo);
   </script>
 </body>
 </html>
