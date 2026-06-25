@@ -98,17 +98,14 @@ function publicDecision(d){ if(d==='ALLOW') return 'APPROVED'; if(d==='DENY') re
 
 async function renderGovernOpsPreviewPanel(){
   const panel = document.getElementById('governOpsPreviewPanel');
-  const modulePaths = ['./governops-preview-panel.js', './demo/governops-preview-panel.js'];
-  for (const modulePath of modulePaths) {
-    try {
-      const previewPanel = await import(modulePath);
-      panel.innerHTML = previewPanel.renderGovernOpsPreviewPanelHtml();
-      return;
-    } catch (error) {
-      console.error("GovernOps Preview Panel load failed:", modulePath, error);
-    }
+  try {
+    const response = await fetch('/demo/governops-preview-panel');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    panel.innerHTML = await response.text();
+  } catch (error) {
+    console.error('GovernOps Preview Panel load failed:', error);
+    panel.textContent = 'GovernOps Preview Panel failed to load.';
   }
-  panel.textContent = 'GovernOps Preview Panel failed to load.';
 }
 function narrative(type,p){ if(type==='vault') return 'The AI Agent attempted to<br>execute a loan using an<br><b>unauthorized vault</b>.<br><br>AgentGuard compared the<br>approved target vault with<br>the execution target vault.<br><br>The mismatch was detected.<br><br><b>Execution was blocked.</b>';  if(type==='drift') return 'The AI Agent first requested a 500 RLUSD loan and received approval.<br><br>Before execution, the agent attempted to mutate the loan amount from 500 RLUSD to 900 RLUSD.<br><br>AgentGuard compared the approved request with the execution request, detected the mismatch, and blocked settlement.'; if(type==='safe') return `AI Agent requested<br>a <b>500 RLUSD</b> loan.<br><br>AgentGuard evaluated<br>the collateral position.<br><br>LTV was calculated at <b>50%</b>.<br><br>The request was classified<br>as <b>${p?.risk_level||'LOW'}</b> risk and approved.<br><br>Settlement execution<br>was authorized.`; if(type==='margin') return 'AI Agent requested<br>a <b>650 RLUSD</b> loan.<br><br>AgentGuard calculated<br><b>65% LTV</b>.<br><br><b>Additional collateral</b><br>is required before<br>loan settlement.'; return 'AI Agent requested<br>a <b>900 RLUSD</b> loan.<br><br>The request exceeds<br>the maximum risk threshold.<br><br><b>Settlement is blocked.</b>'; }
 document.getElementById('market').innerHTML = Object.entries(marketRows).map(([k,v])=>row(k,v)).join(''); renderAgent();

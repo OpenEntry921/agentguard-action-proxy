@@ -8,6 +8,7 @@ import { ApprovalStore } from "./approval";
 import { AuditLog } from "./audit";
 import { assessmentDashboardHtml, assessmentLandingHtml, assessmentQuestionnaireHtml, executiveAssessmentSummaryHtml } from "./assessment";
 import { demoAssessmentAnswers, evaluateAssessment } from "./assessment/scoring";
+import { renderGovernOpsPreviewPanelHtml } from "./demo/governops-preview-panel";
 import { MockBrowserExecutor } from "./executors/mock-browser";
 import { MockGitHubExecutor } from "./executors/mock-github";
 import { SettlementOrchestratorExecutor } from "./executors/settlement-orchestrator";
@@ -305,26 +306,9 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
 
   app.get("/demo/kgld", async (_request, reply) => reply.type("text/html; charset=utf-8").send(kgldDemoHtml()));
 
-  app.get("/demo/governops-preview-panel.js", async (_request, reply) => {
-    const candidates = [
-      join(process.cwd(), "dist", "demo", "governops-preview-panel.js"),
-      join(process.cwd(), "src", "demo", "governops-preview-panel.js"),
-      join(__dirname, "demo", "governops-preview-panel.js"),
-    ];
-
-    const modulePath = candidates.find((candidate) => existsSync(candidate));
-
-    if (!modulePath) {
-      return reply.status(404).send({
-        message: "GovernOps Preview Panel module not found",
-        searched: candidates,
-      });
-    }
-
-    return reply
-      .type("application/javascript; charset=utf-8")
-      .send(readFileSync(modulePath, "utf-8"));
-  });
+  app.get("/demo/governops-preview-panel", async (_request, reply) =>
+    reply.type("text/html; charset=utf-8").send(renderGovernOpsPreviewPanelHtml()),
+  );
 
   app.get("/demo/assessment", async (_request, reply) =>
     reply.type("text/html; charset=utf-8").send(assessmentLandingHtml()),
