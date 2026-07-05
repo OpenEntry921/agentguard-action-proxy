@@ -40,11 +40,11 @@ export function assessmentLandingHtml(): string {
         <div class="stat"><strong>25</strong><span>25개 질문</span></div>
         <div class="stat"><strong>5분</strong><span>약 5분 소요</span></div>
       </div>
-      <div class="actions"><a class="button" href="/assessment/start">Start Assessment</a><a class="button" href="/assessment/policy?source=%EA%B4%91%EC%A3%BC%EC%9D%80%ED%96%89_AI_%EC%A0%95%EC%B1%85.pdf">Upload Policy PDF</a></div>
+      <div class="actions"><a class="button" href="/assessment/start">Start Assessment</a></div>
       <section class="policy-upload" aria-labelledby="policy-upload-title">
         <div class="eyebrow">Policy-based Assessment</div>
         <h2 id="policy-upload-title">Upload Policy PDF</h2>
-        <p>샘플 AI 정책 PDF를 선택하면 AGAF가 정책 기반 AI 거버넌스 평가를 수행하는 데모 흐름으로 이동합니다. 실제 PDF Parsing 없이 파일명 기준 Mock Data를 사용합니다.</p>
+        <p>부서별 AI 정책(PDF)을 업로드하면 정책 기반 AI 거버넌스 수준을 분석하고 경영진 보고서를 자동 생성합니다.</p>
         <form class="policy-form" action="/assessment/policy" method="get">
           <label class="sr-only" for="policy-source">Policy PDF</label>
           <select id="policy-source" name="source" aria-label="Policy PDF 샘플 선택">
@@ -52,7 +52,7 @@ export function assessmentLandingHtml(): string {
             <option value="OO은행_AI_정책.pdf">OO은행 AI 정책.pdf</option>
             <option value="OpenEntry_AI_Policy.pdf">OpenEntry AI Policy.pdf</option>
           </select>
-          <button class="button" type="submit">Upload</button>
+          <button class="button" type="submit">Analyze Policy</button>
         </form>
       </section>
     </section>
