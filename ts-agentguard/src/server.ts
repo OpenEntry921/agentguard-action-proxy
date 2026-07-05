@@ -8,6 +8,7 @@ import { ApprovalStore } from "./approval";
 import { AuditLog } from "./audit";
 import { assessmentDashboardHtml, assessmentLandingHtml, assessmentQuestionnaireHtml, executiveAssessmentSummaryHtml } from "./assessment";
 import { demoAssessmentAnswers, evaluateAssessment } from "./assessment/scoring";
+import { getPolicyAssessmentResult, policyAssessmentDashboardHtml, policyAssessmentReportHtml } from "./assessment/policy-assessment";
 import { renderGovernOpsPreviewPanelHtml } from "./demo/governops-preview-panel";
 import { MockBrowserExecutor } from "./executors/mock-browser";
 import { MockGitHubExecutor } from "./executors/mock-github";
@@ -120,6 +121,14 @@ const AssessmentDashboardBodySchema = z.object({
 
 const AssessmentSummaryBodySchema = z.object({
   result: z.custom<ReturnType<typeof evaluateAssessment>>((value) => typeof value === "object" && value !== null),
+});
+
+const PolicyAssessmentQuerySchema = z.object({
+  source: z.string().optional(),
+});
+
+const PolicyAssessmentReportBodySchema = z.object({
+  source: z.string(),
 });
 
 export function buildServer(state: AgentGuardState = createState()): FastifyInstance {
@@ -318,6 +327,12 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
     reply.type("text/html; charset=utf-8").send(assessmentQuestionnaireHtml()),
   );
 
+  app.get("/assessment/policy", async (request, reply) => {
+    const query = PolicyAssessmentQuerySchema.parse(request.query);
+    const result = getPolicyAssessmentResult(query.source ?? "광주은행_AI_정책.pdf");
+    return reply.type("text/html; charset=utf-8").send(policyAssessmentDashboardHtml(result));
+  });
+
   app.post("/assessment/dashboard", async (request, reply) => {
     const body = validateBody(AssessmentDashboardBodySchema, request.body, reply);
     if (!body) {
@@ -355,6 +370,16 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
 
     const result = evaluateAssessment(body.answers);
     return reply.type("text/html; charset=utf-8").send(executiveAssessmentSummaryHtml(result));
+  });
+
+  app.post("/assessment/policy/report", async (request, reply) => {
+    const body = validateBody(PolicyAssessmentReportBodySchema, request.body, reply);
+    if (!body) {
+      return reply;
+    }
+
+    const result = getPolicyAssessmentResult(body.source);
+    return reply.type("text/html; charset=utf-8").send(policyAssessmentReportHtml(result));
   });
 
   app.get("/demo", async (_request, reply) => reply.type("text/html; charset=utf-8").send(demoHtml()));

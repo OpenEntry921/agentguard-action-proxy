@@ -18,8 +18,14 @@ export function assessmentLandingHtml(): string {
     .stat { border: 1px solid var(--border); border-radius: 18px; background: rgba(7, 17, 31, .54); padding: 20px; text-align: center; }
     .stat strong { display: block; color: var(--text); font-size: 2rem; line-height: 1; margin-bottom: 8px; }
     .stat span { color: var(--muted); font-weight: 700; }
-    .button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; border-radius: 14px; background: var(--button); color: white; font-weight: 800; padding: 0 22px; text-decoration: none; box-shadow: 0 14px 34px rgba(47, 128, 237, .32); }
+    .button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; border: 0; border-radius: 14px; background: var(--button); color: white; font: inherit; font-weight: 800; padding: 0 22px; text-decoration: none; box-shadow: 0 14px 34px rgba(47, 128, 237, .32); cursor: pointer; }
     .button:focus, .button:hover { background: #1f6fd6; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .policy-upload { margin-top: 28px; padding-top: 28px; border-top: 1px solid rgba(184,199,220,.18); }
+    .policy-upload h2 { margin: 0 0 10px; font-size: 1.35rem; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    .policy-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 18px; }
+    select { min-height: 48px; min-width: min(100%, 320px); border: 1px solid var(--border); border-radius: 14px; background: rgba(7, 17, 31, .72); color: var(--text); font: inherit; font-weight: 800; padding: 0 14px; }
     @media (max-width: 700px) { .stats { grid-template-columns: 1fr; } main { padding: 36px 0; } }
   </style>
 </head>
@@ -34,7 +40,21 @@ export function assessmentLandingHtml(): string {
         <div class="stat"><strong>25</strong><span>25개 질문</span></div>
         <div class="stat"><strong>5분</strong><span>약 5분 소요</span></div>
       </div>
-      <a class="button" href="/assessment/start">Start Assessment</a>
+      <div class="actions"><a class="button" href="/assessment/start">Start Assessment</a></div>
+      <section class="policy-upload" aria-labelledby="policy-upload-title">
+        <div class="eyebrow">Policy-based Assessment</div>
+        <h2 id="policy-upload-title">Upload Policy PDF</h2>
+        <p>샘플 AI 정책 PDF를 선택하면 AGAF가 정책 기반 AI 거버넌스 평가를 수행하는 데모 흐름으로 이동합니다. 실제 PDF Parsing 없이 파일명 기준 Mock Data를 사용합니다.</p>
+        <form class="policy-form" action="/assessment/policy" method="get">
+          <label class="sr-only" for="policy-source">Policy PDF</label>
+          <select id="policy-source" name="source" aria-label="Policy PDF 샘플 선택">
+            <option value="광주은행_AI_정책.pdf">광주은행 AI 정책.pdf</option>
+            <option value="OO은행_AI_정책.pdf">OO은행 AI 정책.pdf</option>
+            <option value="OpenEntry_AI_Policy.pdf">OpenEntry AI Policy.pdf</option>
+          </select>
+          <button class="button" type="submit">Upload</button>
+        </form>
+      </section>
     </section>
   </main>
 </body>
