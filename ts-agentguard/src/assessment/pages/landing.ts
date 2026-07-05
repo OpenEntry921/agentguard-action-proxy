@@ -40,7 +40,7 @@ export function assessmentLandingHtml(): string {
         <div class="stat"><strong>25</strong><span>25개 질문</span></div>
         <div class="stat"><strong>5분</strong><span>약 5분 소요</span></div>
       </div>
-      <div class="actions"><a class="button" href="/assessment/start">Start Assessment</a></div>
+      <div class="actions"><a class="button" href="/assessment/start">Start Assessment</a><a class="button" href="/assessment/policy?source=%EA%B4%91%EC%A3%BC%EC%9D%80%ED%96%89_AI_%EC%A0%95%EC%B1%85.pdf">Upload Policy PDF</a></div>
       <section class="policy-upload" aria-labelledby="policy-upload-title">
         <div class="eyebrow">Policy-based Assessment</div>
         <h2 id="policy-upload-title">Upload Policy PDF</h2>
