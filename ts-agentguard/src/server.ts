@@ -329,7 +329,7 @@ export function buildServer(state: AgentGuardState = createState()): FastifyInst
 
   app.get("/assessment/policy", async (request, reply) => {
     const query = PolicyAssessmentQuerySchema.parse(request.query);
-    const result = getPolicyAssessmentResult(query.source ?? "광주은행_AI_정책.pdf");
+    const result = getPolicyAssessmentResult(query.source ?? "오픈은행_AI_정책.pdf");
     return reply.type("text/html; charset=utf-8").send(policyAssessmentDashboardHtml(result));
   });
 

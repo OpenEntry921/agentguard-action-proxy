@@ -48,9 +48,9 @@ export function assessmentLandingHtml(): string {
         <form class="policy-form" action="/assessment/policy" method="get">
           <label class="sr-only" for="policy-source">Policy PDF</label>
           <select id="policy-source" name="source" aria-label="Policy PDF 샘플 선택">
-            <option value="광주은행_AI_정책.pdf">광주은행 AI 정책.pdf</option>
-            <option value="OO은행_AI_정책.pdf">OO은행 AI 정책.pdf</option>
-            <option value="OpenEntry_AI_Policy.pdf">OpenEntry AI Policy.pdf</option>
+            <option value="오픈은행_AI_정책.pdf">오픈은행 AI 정책.pdf</option>
+            <option value="오픈카드_AI_정책.pdf">오픈카드 AI 정책.pdf</option>
+            <option value="오픈증권_AI_정책.pdf">오픈증권 AI 정책.pdf</option>
           </select>
           <button class="button" type="submit">Analyze Policy</button>
         </form>

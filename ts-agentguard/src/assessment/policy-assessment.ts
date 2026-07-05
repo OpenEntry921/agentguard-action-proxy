@@ -5,9 +5,9 @@ function escapeHtml(value: string): string {
 }
 
 export const policySamples = [
-  "광주은행_AI_정책.pdf",
-  "OO은행_AI_정책.pdf",
-  "OpenEntry_AI_Policy.pdf",
+  "오픈은행_AI_정책.pdf",
+  "오픈카드_AI_정책.pdf",
+  "오픈증권_AI_정책.pdf",
 ] as const;
 
 export type PolicySampleFile = (typeof policySamples)[number];
@@ -38,14 +38,14 @@ const base = {
 };
 
 const policyResults: Record<PolicySampleFile, PolicyAssessmentResult> = {
-  "광주은행_AI_정책.pdf": {
+  "오픈은행_AI_정책.pdf": {
     ...base,
-    organizationName: "광주은행",
-    policySource: "광주은행_AI_정책.pdf",
+    organizationName: "오픈은행",
+    policySource: "오픈은행_AI_정책.pdf",
     policySourceAssessmentBasis: { analyzedClauses: 18, extractedControls: 42, assessmentStandards: ["금융위원회 AI 가이드라인", "ISO/IEC 42001", "NIST AI RMF"] },
     totalScore: 58,
-    policyOverview: "광주은행 디지털전략부 AI 정책은 AI 활용 범위와 기본 사용 절차를 정의하고 있으나, 실행 승인·Prompt 관리·로그 보존·위험평가 기준은 별도 통제로 분리되어 있지 않습니다.",
-    executiveSummary: "광주은행 디지털전략부 AI 정책은 AI 사용 절차는 정의되어 있으나 Prompt 관리, AI 승인, 위험평가, 로그 관리, 개인정보 통제가 부족합니다.\n\n우선적으로 AI 실행 승인, Prompt Logging, AI Risk Review를 도입하고 외부 LLM 사용 승인 기준을 명확히 할 것을 권장합니다.",
+    policyOverview: "오픈은행 디지털전략부 AI 정책은 AI 활용 범위와 기본 사용 절차를 정의하고 있으나, 실행 승인·Prompt 관리·로그 보존·위험평가 기준은 별도 통제로 분리되어 있지 않습니다.",
+    executiveSummary: "오픈은행 디지털전략부 AI 정책은 AI 사용 절차는 정의되어 있으나 Prompt 관리, AI 승인, 위험평가, 로그 관리, 개인정보 통제가 부족합니다.\n\n우선적으로 AI 실행 승인, Prompt Logging, AI Risk Review를 도입하고 외부 LLM 사용 승인 기준을 명확히 할 것을 권장합니다.",
     domainScores: [
       { domain: "STRATEGIC_GOVERNANCE", label: "전략 거버넌스", score: 54, maxScore: 100 },
       { domain: "AI_RISK_MANAGEMENT", label: "AI 위험관리", score: 50, maxScore: 100 },
@@ -69,14 +69,14 @@ const policyResults: Record<PolicySampleFile, PolicyAssessmentResult> = {
     explanations: [],
     gapAnalysis: ["Prompt와 출력 결과에 대한 보존기간·접근권한 정의 부족", "고위험 AI 사용 전 승인 및 위험평가 단계 부족", "외부 AI 서비스 사용 현황을 중앙에서 추적하는 통제 부족"],
   },
-  "OO은행_AI_정책.pdf": {
+  "오픈카드_AI_정책.pdf": {
     ...base,
-    organizationName: "OO은행",
-    policySource: "OO은행_AI_정책.pdf",
+    organizationName: "오픈카드",
+    policySource: "오픈카드_AI_정책.pdf",
     policySourceAssessmentBasis: { analyzedClauses: 16, extractedControls: 37, assessmentStandards: ["금융위원회 AI 가이드라인", "ISO/IEC 42001", "NIST AI RMF"] },
     totalScore: 64,
-    policyOverview: "OO은행 AI 정책은 부서별 AI 활용 원칙과 개인정보 입력 제한을 포함하지만, 승인 이력과 모델·Prompt 변경관리의 감사 추적성이 제한적입니다.",
-    executiveSummary: "OO은행 AI 정책은 개인정보 보호 원칙과 AI 사용 제한 사항은 비교적 명확하지만 승인 이력, Prompt 변경관리, 모델 사용 목적별 위험등급 관리가 미흡합니다.\n\nAI Risk Register와 승인 Workflow를 연결하고 감사 대응 로그를 표준화할 것을 권장합니다.",
+    policyOverview: "오픈카드 AI 정책은 부서별 AI 활용 원칙과 개인정보 입력 제한을 포함하지만, 승인 이력과 모델·Prompt 변경관리의 감사 추적성이 제한적입니다.",
+    executiveSummary: "오픈카드 AI 정책은 개인정보 보호 원칙과 AI 사용 제한 사항은 비교적 명확하지만 승인 이력, Prompt 변경관리, 모델 사용 목적별 위험등급 관리가 미흡합니다.\n\nAI Risk Register와 승인 Workflow를 연결하고 감사 대응 로그를 표준화할 것을 권장합니다.",
     domainScores: [
       { domain: "STRATEGIC_GOVERNANCE", label: "전략 거버넌스", score: 62, maxScore: 100 },
       { domain: "AI_RISK_MANAGEMENT", label: "AI 위험관리", score: 58, maxScore: 100 },
@@ -100,17 +100,17 @@ const policyResults: Record<PolicySampleFile, PolicyAssessmentResult> = {
     explanations: [],
     gapAnalysis: ["승인 이력과 정책 예외 이력의 중앙 관리 부족", "Prompt 변경관리 기준 부족", "위험등급별 재평가 주기 미정의"],
   },
-  "OpenEntry_AI_Policy.pdf": {
+  "오픈증권_AI_정책.pdf": {
     ...base,
-    organizationName: "OpenEntry",
-    policySource: "OpenEntry_AI_Policy.pdf",
+    organizationName: "오픈증권",
+    policySource: "오픈증권_AI_정책.pdf",
     policySourceAssessmentBasis: { analyzedClauses: 22, extractedControls: 51, assessmentStandards: ["금융위원회 AI 가이드라인", "ISO/IEC 42001", "NIST AI RMF"] },
     totalScore: 72,
     riskLevel: "Medium Risk",
     regulatoryReadiness: "Ready",
     auditReadiness: "Partially Ready",
-    policyOverview: "OpenEntry AI Policy는 AI 사용 목적, 승인 책임, 로그 관리 방향을 포함하고 있어 정책 기반 평가 흐름을 보여주기에 적합한 샘플입니다.",
-    executiveSummary: "OpenEntry AI Policy는 AI 승인과 로그 관리 방향이 정의되어 있으나 운영 증적의 표준화와 외부 AI 사용에 대한 위험등급별 통제는 추가 보완이 필요합니다.\n\nAGAF 기반으로 Prompt Logging, Risk Register, 분기별 Control Review를 연결하면 감사 대응 수준을 빠르게 높일 수 있습니다.",
+    policyOverview: "오픈증권 AI 정책은 AI 사용 목적, 승인 책임, 로그 관리 방향을 포함하고 있어 정책 기반 평가 흐름을 보여주기에 적합한 샘플입니다.",
+    executiveSummary: "오픈증권 AI 정책은 AI 승인과 로그 관리 방향이 정의되어 있으나 운영 증적의 표준화와 외부 AI 사용에 대한 위험등급별 통제는 추가 보완이 필요합니다.\n\nAGAF 기반으로 Prompt Logging, Risk Register, 분기별 Control Review를 연결하면 감사 대응 수준을 빠르게 높일 수 있습니다.",
     domainScores: [
       { domain: "STRATEGIC_GOVERNANCE", label: "전략 거버넌스", score: 76, maxScore: 100 },
       { domain: "AI_RISK_MANAGEMENT", label: "AI 위험관리", score: 70, maxScore: 100 },
@@ -141,7 +141,7 @@ export function isPolicySampleFile(value: string): value is PolicySampleFile {
 }
 
 export function getPolicyAssessmentResult(source: string): PolicyAssessmentResult {
-  return isPolicySampleFile(source) ? policyResults[source] : policyResults["광주은행_AI_정책.pdf"];
+  return isPolicySampleFile(source) ? policyResults[source] : policyResults["오픈은행_AI_정책.pdf"];
 }
 
 function renderSummaryText(summary: string): string {
