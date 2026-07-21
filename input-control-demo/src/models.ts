@@ -1,6 +1,6 @@
 export type Decision='ALLOW'|'MASK'|'REVIEW'|'BLOCK';export type Severity='LOW'|'MEDIUM'|'HIGH'|'CRITICAL';
 export type DestinationType='internal_model'|'approved_external_llm'|'unapproved_external_llm'|'external_api'|'unknown';export interface Destination{type:DestinationType;provider?:string;approved?:boolean;dataRetention?:string;trainingUse?:string;region?:string}
-export interface Location{source:string;start:number;end:number}export interface Finding{category:string;severity:Severity;type?:string;matchedRule:string;evidence:string;location:Location;confidence?:number;validation?:Record<string,unknown>;maskedValue?:string;originalValueStored?:false;fingerprint?:string;decisionContribution?:Decision}
+export interface Location{source:string;start:number;end:number}export interface Finding{category:string;severity:Severity;type?:string;matchedRule:string;evidence:string;location:Location;confidence?:number;validation?:Record<string,unknown>;maskedValue?:string;originalValueStored?:false;fingerprint?:string;decisionContribution?:Decision|'NONE';maskingRequired?:boolean;reason?:string}
 export interface CompositeRisk{ruleId:string;matchedTypes:string[];risk:'LOW'|'MEDIUM'|'HIGH'|'CRITICAL';decisionContribution:Decision;reason:string}
 export interface MaskingResult{originalRetained:false;maskingApplied:boolean;maskedTypes:string[];maskedCount:number;safeText:string;residualFindings:Finding[]}
 export interface Evidence{evidenceId:string;inputHash:string;policyVersion:string;scannerVersion:string;timestamp:string;originalContentStored:false}

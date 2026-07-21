@@ -1,0 +1,21 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {inspectText} from '../src/inspection-engine.js';import {detectFinancialData} from '../src/detectors/financial-data-detector.js';import {maskText} from '../src/masking-engine.js';import {listAudit,resetAudit} from '../src/audit-log.js';
+const xrpl='rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh';
+const eth='0x52908400098527886E0F7030069857D2E4169EE7';
+const btc='bc1qar0srr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+const fakePrivate='private key: 1111111111111111111111111111111111111111111111111111111111111111';
+
+test('XRPL public address only is allowed and informational',()=>{const r=inspectText('bw1',`테스트용 공개 지갑 주소\n${xrpl} 로 송금 내역을 확인해줘.`,'prompt',{type:'unapproved_external_llm',approved:false});assert.equal(r.decision,'ALLOW');assert.equal(r.riskScore,5);assert.equal(r.masking.applied,false);assert.equal(r.summary,'공개 블록체인 주소가 확인되었습니다. 비밀 키가 아니므로 마스킹하지 않습니다.');const f=r.findings.find(x=>x.type==='XRPL_PUBLIC_ADDRESS')!;assert.equal(f.category,'PUBLIC_IDENTIFIER');assert.equal(f.severity,'LOW');assert.equal(f.maskingRequired,false);assert.equal(f.decisionContribution,'NONE');assert.equal(f.reason,'공개 블록체인 주소는 비밀 키가 아닙니다.')});
+test('Ethereum public address only is allowed',()=>assert.equal(inspectText('bw2',eth).decision,'ALLOW'));
+test('Bitcoin public address only is allowed',()=>assert.equal(inspectText('bw3',btc).decision,'ALLOW'));
+test('public address balance lookup is allowed',()=>assert.equal(inspectText('bw4',`${eth} 주소의 잔액을 알려줘`, 'prompt',{type:'unapproved_external_llm',approved:false}).decision,'ALLOW'));
+test('public address transaction history lookup is allowed',()=>assert.equal(inspectText('bw5',`${xrpl} 주소의 거래내역을 확인해줘`, 'prompt',{type:'unapproved_external_llm',approved:false}).decision,'ALLOW'));
+test('public address is unchanged by masking result and is not mask decision cause',()=>{const findings=detectFinancialData(xrpl);const m=maskText(xrpl,findings);assert.equal(m.maskingApplied,false);assert.equal(m.safeText,xrpl);const r=inspectText('bw6',xrpl);assert.equal(r.decision,'ALLOW');assert.equal(r.appliedPolicies.includes('wallet_informational'),true)});
+test('public address plus email masks only email',()=>{const text=`${xrpl} owner test@example.com`;const r=inspectText('bw7',text);assert.equal(r.decision,'MASK');assert.equal(r.masking.safeText?.includes(xrpl),true);assert.equal(r.masking.safeText?.includes('test@example.com'),false);assert.equal(r.masking.maskedCount,1)});
+test('public address plus phone masks only phone',()=>{const text=`${eth} 010-1234-5678`;const r=inspectText('bw8',text);assert.equal(r.decision,'MASK');assert.equal(r.masking.safeText?.includes(eth),true);assert.equal(r.masking.safeText?.includes('010-1234-5678'),false);assert.equal(r.masking.maskedCount,1)});
+test('public address plus real name is review',()=>assert.equal(inspectText('bw9',`홍길동 ${xrpl}`).decision,'REVIEW'));
+test('public address plus customer number is review',()=>assert.equal(inspectText('bw10',`${xrpl} 고객번호 CUST-12345`).decision,'REVIEW'));
+test('bulk wallet address list is review',()=>{const list=Array.from({length:10},(_,i)=>`0x${String(i).repeat(40)}`).join('\n');assert.equal(inspectText('bw11',list).decision,'REVIEW')});
+test('public address plus blockchain private key is blocked',()=>assert.equal(inspectText('bw12',`${xrpl} ${fakePrivate}`).decision,'BLOCK'));
+test('XRPL Family Seed is blocked',()=>assert.equal(inspectText('bw13','wallet seed sEd11111111111111111111111111111').decision,'BLOCK'));
+test('Seed Phrase is blocked',()=>assert.equal(inspectText('bw14','wallet recovery abandon ability able about above absent absorb abstract absurd abuse access accident').decision,'BLOCK'));
+test('private key and seed raw values are absent from response and audit logs',()=>{resetAudit();const text=`${fakePrivate} wallet seed sEd11111111111111111111111111111`;const r=inspectText('bw15',text);const serialized=JSON.stringify({r,audit:listAudit()});assert.equal(r.decision,'BLOCK');assert.equal(serialized.includes('1111111111111111111111111111111111111111111111111111111111111111'),false);assert.equal(serialized.includes('sEd11111111111111111111111111111'),false)});
