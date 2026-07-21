@@ -1,0 +1,4 @@
+import {Decision,Finding} from './models.js';import {loadPolicy} from './config.js';
+const rank:Record<Decision,number>={ALLOW:0,MASK:1,REVIEW:2,BLOCK:3};
+export function riskLevel(score:number):'LOW'|'MEDIUM'|'HIGH'|'CRITICAL'{return score>=85?'CRITICAL':score>=70?'HIGH':score>=40?'MEDIUM':'LOW'}
+export function evaluatePolicy(findings:Finding[],maskingApplied=false){const p=loadPolicy();let decision:Decision=maskingApplied?'MASK':'ALLOW',riskScore=maskingApplied?45:5;const applied:string[]=[];for(const r of p.rules){const matched=findings.filter(f=>(r.matchTypes?.includes(f.type))||(r.matchCategories?.includes(f.category)));if(!matched.length)continue;let d=r.decision as Decision;if(r.reviewThreshold&&matched.length>=r.reviewThreshold)d='REVIEW';if(rank[d]>rank[decision])decision=d;riskScore=Math.max(riskScore,r.riskScore);applied.push(r.id)}return{decision,riskScore,riskLevel:riskLevel(riskScore),appliedPolicies:applied}}

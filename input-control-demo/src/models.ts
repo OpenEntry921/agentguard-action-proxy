@@ -1,0 +1,6 @@
+export type Decision='ALLOW'|'MASK'|'REVIEW'|'BLOCK';export type Severity='LOW'|'MEDIUM'|'HIGH'|'CRITICAL';
+export interface Location{source:string;start:number;end:number}export interface Finding{category:string;severity:Severity;type?:string;matchedRule:string;evidence:string;location:Location;confidence?:number}
+export interface MaskingResult{originalRetained:false;maskingApplied:boolean;maskedTypes:string[];maskedCount:number;safeText:string;residualFindings:Finding[]}
+export interface Evidence{evidenceId:string;inputHash:string;policyVersion:string;scannerVersion:string;timestamp:string;originalContentStored:false}
+export interface InspectionResponse{requestId:string;decision:Decision;riskScore:number;riskLevel:'LOW'|'MEDIUM'|'HIGH'|'CRITICAL';summary:string;findings:Finding[];appliedPolicies:string[];masking:{applied:boolean;maskedCount:number;safeText?:string};evidence:Evidence;fileMetadata?:FileMetadata}
+export interface FileMetadata{originalName:string;normalizedName:string;extension:string;mimeType:string;size:number;sha256:string;title?:string;author?:string;createdAt?:string;modifiedAt?:string;pageCount?:number;documentLength?:number;extractedTextLength:number;encrypted:boolean;parseSuccess:boolean;externalLinks:string[]}
