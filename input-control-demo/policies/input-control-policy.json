@@ -124,12 +124,12 @@
     {
       "id": "wallet_informational",
       "matchTypes": [
-        "ETHEREUM_ADDRESS",
-        "BITCOIN_ADDRESS",
-        "XRPL_ADDRESS"
+        "ETHEREUM_PUBLIC_ADDRESS",
+        "BITCOIN_PUBLIC_ADDRESS",
+        "XRPL_PUBLIC_ADDRESS"
       ],
       "decision": "ALLOW",
-      "riskScore": 20
+      "riskScore": 0
     },
     {
       "id": "financial_review",
