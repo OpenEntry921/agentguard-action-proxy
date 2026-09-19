@@ -25,7 +25,8 @@ export function assessmentHtml(): string {
   <style>
     :root { color-scheme: dark; --bg: #07111f; --panel: #101c2d; --line: #26364d; --text: #eef5ff; --muted: #a9bad3; --accent: #62d5ff; --warn: #ffbd59; }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: radial-gradient(circle at top left, #15375c 0, var(--bg) 36rem); color: var(--text); }
+    button, input, textarea, select { font-family: inherit; }
+    body { margin: 0; font-family: Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; background: radial-gradient(circle at top left, #15375c 0, var(--bg) 36rem); color: var(--text); }
     main { max-width: 1180px; margin: 0 auto; padding: 44px 22px 56px; }
     .hero { display: grid; gap: 18px; margin-bottom: 28px; }
     .eyebrow { color: var(--accent); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
@@ -35,7 +36,7 @@ export function assessmentHtml(): string {
     .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
     .card { grid-column: span 4; background: rgba(16, 28, 45, .88); border: 1px solid var(--line); border-radius: 22px; padding: 22px; box-shadow: 0 20px 55px rgba(0,0,0,.22); }
     .wide { grid-column: span 8; } .full { grid-column: 1 / -1; }
-    .metric { font-size: 2.5rem; font-weight: 800; margin-top: 10px; }
+    .metric { font-size: 2.5rem; font-weight: 600; margin-top: 10px; }
     .label { color: var(--muted); font-size: .95rem; }
     .badge { display: inline-flex; padding: 8px 12px; border-radius: 999px; background: rgba(255,189,89,.16); color: var(--warn); font-weight: 700; }
     .domains { display: grid; gap: 12px; }
