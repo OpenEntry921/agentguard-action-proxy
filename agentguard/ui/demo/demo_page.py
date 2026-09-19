@@ -5,8 +5,9 @@ def get_demo_html() -> str:
     <head>
       <title>AgentGuard Demo</title>
       <style>
-        body {
-          font-family: Arial;
+        button, input, textarea, select { font-family: inherit; }
+    body {
+          font-family: Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
           padding: 40px;
           background: #f5f5f5;
         }

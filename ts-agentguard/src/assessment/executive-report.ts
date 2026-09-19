@@ -60,51 +60,52 @@ export function executiveAssessmentSummaryHtml(result: AssessmentResult): string
   <style>
     :root { color-scheme: light; --bg: #eef1f5; --paper: #ffffff; --ink: #172033; --muted: #5d687a; --line: #d7dde7; --navy: #12213a; --blue: #1f4e79; --gold: #a67c00; --red: #9f2f2f; }
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; font-family: Georgia, "Times New Roman", serif; background: var(--bg); color: var(--ink); }
+    button, input, textarea, select { font-family: inherit; }
+    body { margin: 0; min-height: 100vh; font-family: Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; background: var(--bg); color: var(--ink); }
     .toolbar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: flex-end; gap: 10px; padding: 14px 22px; background: rgba(238,241,245,.96); border-bottom: 1px solid var(--line); }
-    .toolbar a, .toolbar button { border: 1px solid var(--navy); border-radius: 4px; background: var(--navy); color: white; padding: 10px 14px; font: 700 .9rem Arial, sans-serif; text-decoration: none; cursor: pointer; }
+    .toolbar a, .toolbar button { border: 1px solid var(--navy); border-radius: 4px; background: var(--navy); color: white; padding: 10px 14px; font: 700 .9rem Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; text-decoration: none; cursor: pointer; }
     .toolbar a { background: white; color: var(--navy); }
     main { width: min(960px, calc(100% - 32px)); margin: 28px auto 42px; }
     .report { background: var(--paper); border: 1px solid var(--line); box-shadow: 0 18px 45px rgba(18,33,58,.13); padding: clamp(30px, 5vw, 58px); }
     header { display: grid; grid-template-columns: 1fr auto; gap: 24px; padding-bottom: 24px; border-bottom: 3px solid var(--navy); }
-    .eyebrow { color: var(--blue); font: 800 .78rem Arial, sans-serif; letter-spacing: .16em; text-transform: uppercase; }
+    .eyebrow { color: var(--blue); font: 600 .78rem Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; letter-spacing: .16em; text-transform: uppercase; }
     h1 { margin: 10px 0 0; color: var(--navy); font-size: clamp(2rem, 4.4vw, 3.7rem); line-height: 1.02; letter-spacing: -.03em; }
     .meta { min-width: 270px; border: 1px solid var(--line); }
-    .meta div { display: flex; justify-content: space-between; gap: 16px; padding: 11px 13px; border-bottom: 1px solid var(--line); font: 700 .88rem Arial, sans-serif; }
+    .meta div { display: flex; justify-content: space-between; gap: 16px; padding: 11px 13px; border-bottom: 1px solid var(--line); font: 700 .88rem Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
     .meta div:last-child { border-bottom: 0; }
     .meta span { color: var(--muted); }
     section { padding: 26px 0; border-bottom: 1px solid var(--line); break-inside: avoid; }
-    h2 { margin: 0 0 18px; color: var(--navy); font: 800 1rem Arial, sans-serif; letter-spacing: .13em; text-transform: uppercase; }
+    h2 { margin: 0 0 18px; color: var(--navy); font: 600 1rem Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; letter-spacing: .13em; text-transform: uppercase; }
     h3, p { margin: 0; }
     p, li { color: var(--muted); line-height: 1.68; }
     .score-grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: 20px; }
     .score-box { border: 2px solid var(--navy); padding: 24px; text-align: center; }
-    .score-label { color: var(--blue); font: 800 .82rem Arial, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
-    .score { margin-top: 10px; color: var(--navy); font: 900 clamp(4rem, 10vw, 6.8rem) Arial, sans-serif; line-height: .9; }
+    .score-label { color: var(--blue); font: 600 .82rem Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+    .score { margin-top: 10px; color: var(--navy); font: 700 clamp(4rem, 10vw, 6.8rem) Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; line-height: .9; }
     .score small { color: var(--muted); font-size: .3em; }
-    .risk-badge { display: inline-flex; margin-top: 16px; border: 1px solid var(--red); color: var(--red); padding: 8px 12px; font: 900 .94rem Arial, sans-serif; }
+    .risk-badge { display: inline-flex; margin-top: 16px; border: 1px solid var(--red); color: var(--red); padding: 8px 12px; font: 700 .94rem Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
     .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .metric { border-left: 4px solid var(--blue); background: #f7f9fc; padding: 14px; }
-    .metric span { display: block; color: var(--muted); font: 800 .76rem Arial, sans-serif; text-transform: uppercase; }
-    .metric strong { display: block; margin-top: 8px; color: var(--navy); font: 900 1.7rem Arial, sans-serif; }
+    .metric span { display: block; color: var(--muted); font: 600 .76rem Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; text-transform: uppercase; }
+    .metric strong { display: block; margin-top: 8px; color: var(--navy); font: 700 1.7rem Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
     .narrative p + p { margin-top: 12px; }
     .risk-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
     .risk-list li { display: grid; grid-template-columns: auto 1fr; gap: 14px; padding: 15px; border: 1px solid var(--line); background: #fbfcfe; }
-    .item-index { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; background: var(--navy); color: white; font: 900 1rem Arial, sans-serif; }
-    .risk-list strong { color: var(--navy); font: 900 1rem Arial, sans-serif; }
-    .risk-list span { display: block; margin: 4px 0; color: var(--gold); font: 900 .88rem Arial, sans-serif; }
+    .item-index { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; background: var(--navy); color: white; font: 700 1rem Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
+    .risk-list strong { color: var(--navy); font: 700 1rem Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
+    .risk-list span { display: block; margin: 4px 0; color: var(--gold); font: 700 .88rem Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
     .roadmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
     .roadmap-card, .standard-card, .recommendation, .empty-state { border: 1px solid var(--line); background: #fbfcfe; padding: 16px; }
-    .roadmap-card h3 { color: var(--blue); font: 900 1.1rem Arial, sans-serif; margin-bottom: 10px; }
+    .roadmap-card h3 { color: var(--blue); font: 700 1.1rem Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; margin-bottom: 10px; }
     ul { margin: 0; padding-left: 20px; }
     .standards-grid { display: grid; gap: 12px; }
     .standard-card { display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: start; }
-    .standard-card h3 { color: var(--navy); font: 900 1rem Arial, sans-serif; margin-bottom: 6px; }
-    .standard-score { min-width: 76px; text-align: right; font-family: Arial, sans-serif; }
+    .standard-card h3 { color: var(--navy); font: 700 1rem Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; margin-bottom: 6px; }
+    .standard-score { min-width: 76px; text-align: right; font-family: Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
     .standard-score strong { display: block; color: var(--navy); font-size: 2rem; line-height: 1; }
-    .standard-score span { color: var(--gold); font-weight: 900; text-transform: uppercase; }
+    .standard-score span { color: var(--gold); font-weight: 700; text-transform: uppercase; }
     .recommendation { border-left: 5px solid var(--navy); }
-    footer { padding-top: 22px; color: var(--muted); font: 700 .9rem Arial, sans-serif; display: flex; justify-content: space-between; gap: 18px; }
+    footer { padding-top: 22px; color: var(--muted); font: 700 .9rem Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; display: flex; justify-content: space-between; gap: 18px; }
     footer strong { color: var(--navy); }
     @media (max-width: 820px) { header, .score-grid, .metric-grid, .roadmap, .standard-card, footer { grid-template-columns: 1fr; } .meta { min-width: 0; } }
     @media print { body { background: white; } .toolbar { display: none; } main { width: 100%; margin: 0; } .report { border: 0; box-shadow: none; padding: 0; } section { break-inside: avoid; } }

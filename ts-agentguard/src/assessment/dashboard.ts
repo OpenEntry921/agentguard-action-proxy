@@ -131,28 +131,29 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
   <style>
     :root { color-scheme: dark; --bg: #07111f; --card: #0f1c2e; --panel: #0b1728; --border: #223555; --text: #eaf2ff; --muted: #b8c7dc; --accent: #66d9ef; --good: #8fffcc; --warn: #ffbd59; --risk: #ff6b6b; }
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: radial-gradient(circle at top left, #164a7d 0, var(--bg) 34rem); color: var(--text); }
+    button, input, textarea, select { font-family: inherit; }
+    body { margin: 0; min-height: 100vh; font-family: Helvetica, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; background: radial-gradient(circle at top left, #164a7d 0, var(--bg) 34rem); color: var(--text); }
     main { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 44px 0 72px; }
     header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18px; align-items: center; margin-bottom: 22px; }
     h1 { margin: 0; font-size: clamp(2.2rem, 5vw, 4.6rem); line-height: .95; letter-spacing: -.05em; }
     h2, h3 { margin: 0; }
     p { color: var(--muted); line-height: 1.7; }
-    .eyebrow, .section-kicker { color: var(--accent); font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+    .eyebrow, .section-kicker { color: var(--accent); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
     .header-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: flex-end; }
-    .back, .summary-button { display: inline-flex; align-items: center; color: var(--text); text-decoration: none; border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; font: inherit; font-weight: 900; background: rgba(102,217,239,.08); cursor: pointer; }
+    .back, .summary-button { display: inline-flex; align-items: center; color: var(--text); text-decoration: none; border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; font: inherit; font-weight: 700; background: rgba(102,217,239,.08); cursor: pointer; }
     .summary-button { border-color: rgba(102,217,239,.5); color: var(--accent); }
     .dashboard-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
     section { border: 1px solid var(--border); border-radius: 28px; background: rgba(15, 28, 46, .92); box-shadow: 0 22px 60px rgba(0,0,0,.28); padding: 24px; }
     .hero { grid-column: 1 / -1; display: grid; grid-template-columns: 1.1fr 1.9fr; gap: 18px; padding: 0; border: 0; background: transparent; box-shadow: none; }
     .score-panel, .summary-panel { border: 1px solid var(--border); border-radius: 30px; padding: 30px; background: linear-gradient(145deg, rgba(102,217,239,.16), rgba(11,23,40,.92)); box-shadow: 0 24px 70px rgba(0,0,0,.32); }
-    .score-panel .label { color: var(--accent); font-weight: 900; text-transform: uppercase; letter-spacing: .14em; }
-    .score { margin: 18px 0 10px; font-size: clamp(3.7rem, 9vw, 7rem); line-height: .9; font-weight: 950; letter-spacing: -.07em; }
+    .score-panel .label { color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: .14em; }
+    .score { margin: 18px 0 10px; font-size: clamp(3.7rem, 9vw, 7rem); line-height: .9; font-weight: 700; letter-spacing: -.07em; }
     .score small { color: var(--muted); font-size: .38em; letter-spacing: -.03em; }
-    .risk-badge { display: inline-flex; align-items: center; margin-top: 12px; padding: 10px 14px; border-radius: 999px; background: rgba(255,189,89,.16); color: var(--warn); border: 1px solid rgba(255,189,89,.46); font-weight: 900; }
+    .risk-badge { display: inline-flex; align-items: center; margin-top: 12px; padding: 10px 14px; border-radius: 999px; background: rgba(255,189,89,.16); color: var(--warn); border: 1px solid rgba(255,189,89,.46); font-weight: 700; }
     .summary-panel h2 { margin: 8px 0 14px; font-size: clamp(1.7rem, 3vw, 2.4rem); }
     .metrics { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
     .metric-card { min-height: 150px; border: 1px solid var(--border); border-radius: 24px; background: linear-gradient(145deg, rgba(143,255,204,.1), rgba(11,23,40,.9)); padding: 22px; }
-    .metric-card span { color: var(--muted); font-size: .82rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+    .metric-card span { color: var(--muted); font-size: .82rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
     .metric-card strong { display: block; margin-top: 16px; font-size: clamp(2.1rem, 5vw, 4rem); line-height: 1; }
     .metric-card p { margin: 12px 0 0; }
     .domains { grid-column: span 7; }
@@ -166,10 +167,10 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
     .progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--good)); }
     ol, ul { margin: 0; padding-left: 24px; }
     li { margin: 0 0 14px; color: var(--muted); line-height: 1.55; }
-    li::marker { color: var(--accent); font-weight: 900; }
-    .risks li span { display: block; margin: 4px 0; color: var(--warn); font-weight: 900; }
+    li::marker { color: var(--accent); font-weight: 700; }
+    .risks li span { display: block; margin: 4px 0; color: var(--warn); font-weight: 700; }
     .risks li p { margin: 0; }
-    .empty-state { margin: 0; padding: 18px; border: 1px solid rgba(143,255,204,.26); border-radius: 18px; background: rgba(143,255,204,.08); color: var(--text); font-weight: 850; }
+    .empty-state { margin: 0; padding: 18px; border: 1px solid rgba(143,255,204,.26); border-radius: 18px; background: rgba(143,255,204,.08); color: var(--text); font-weight: 700; }
     .actions { grid-column: 1 / -1; }
     .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
     .action-grid article { padding: 20px; border: 1px solid var(--border); border-radius: 20px; background: var(--panel); }
@@ -186,7 +187,7 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
     .alignment-head p { margin: 8px 0 0; }
     .alignment-score { min-width: 86px; text-align: right; }
     .alignment-score strong { display: block; color: var(--text); font-size: 2.4rem; line-height: 1; }
-    .alignment-score span, .impact-badge { display: inline-flex; margin-top: 8px; padding: 7px 10px; border-radius: 999px; color: var(--text); border: 1px solid rgba(184,199,220,.24); background: rgba(184,199,220,.08); font-weight: 900; text-transform: uppercase; letter-spacing: .05em; font-size: .74rem; }
+    .alignment-score span, .impact-badge { display: inline-flex; margin-top: 8px; padding: 7px 10px; border-radius: 999px; color: var(--text); border: 1px solid rgba(184,199,220,.24); background: rgba(184,199,220,.08); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: .74rem; }
     .impact-badge { color: var(--warn); text-transform: none; letter-spacing: 0; }
     .standard-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 16px 0 0; }
     .standard-card { border: 1px solid rgba(184,199,220,.14); border-radius: 14px; background: rgba(102,217,239,.06); color: var(--muted); overflow: hidden; }
@@ -195,7 +196,7 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
     .standard-card summary span { display: block; margin-left: 20px; color: var(--muted); font-size: .9rem; }
     .standard-card dl { display: grid; gap: 10px; margin: 0; padding: 0 12px 14px; }
     .standard-card dl div { padding-top: 10px; border-top: 1px solid rgba(184,199,220,.12); }
-    .standard-card dt { color: var(--accent); font-size: .72rem; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; }
+    .standard-card dt { color: var(--accent); font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
     .standard-card dd { margin: 4px 0 0; color: var(--muted); line-height: 1.62; }
     .explainability { grid-column: 1 / -1; }
     .explanation-grid { display: grid; gap: 16px; margin-top: 18px; }
@@ -206,9 +207,9 @@ export function assessmentDashboardHtml(result: AssessmentResult): string {
     table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; overflow: hidden; border-radius: 16px; }
     th, td { padding: 12px; border-bottom: 1px solid rgba(184,199,220,.14); text-align: left; color: var(--muted); }
     th { color: var(--text); background: rgba(102,217,239,.08); font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; }
-    td:first-child, td:nth-child(2), td:nth-child(3) { color: var(--text); font-weight: 900; white-space: nowrap; }
+    td:first-child, td:nth-child(2), td:nth-child(3) { color: var(--text); font-weight: 700; white-space: nowrap; }
     .findings { display: grid; gap: 10px; padding: 16px; border: 1px solid rgba(255,189,89,.36); border-radius: 18px; background: rgba(255,189,89,.08); }
-    .findings span { color: var(--warn); font-weight: 950; }
+    .findings span { color: var(--warn); font-weight: 700; }
     .findings li { margin-bottom: 6px; }
     @media (max-width: 920px) { .hero, .metrics, .dashboard-grid, .action-grid, .alignment-grid, .standard-list { grid-template-columns: 1fr; } .domains, .risks, .actions, .standards, .hero, .metrics { grid-column: 1; } }
   </style>
